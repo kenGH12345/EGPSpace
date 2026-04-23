@@ -1,0 +1,74 @@
+{
+  "protocolVersion": "evidence-v1",
+  "generatedAt": "2026-04-23T07:17:56.336Z",
+  "sessionId": "wf-20260423-144617",
+  "runCategory": "prod",
+  "traceFingerprint": {
+    "exists": true,
+    "path": "c:\\workspace\\EGPSpace\\output\\health\\prod\\workflow-trace.jsonl",
+    "size": 9339,
+    "mtime": "2026-04-23T07:17:56.293Z",
+    "hash": "a3cf570efdd25f96325c1b4e42111d108ae84865fd4e00518212388f443217ba"
+  },
+  "qualityReportFingerprint": {
+    "exists": false,
+    "path": "c:\\workspace\\EGPSpace\\output\\health\\prod\\quality-report.md",
+    "size": 0,
+    "hash": null,
+    "mtime": null
+  },
+  "evolutionLogFingerprint": {
+    "exists": false,
+    "path": "c:\\workspace\\EGPSpace\\output\\health\\prod\\evolution-log.json",
+    "size": 0,
+    "hash": null,
+    "mtime": null
+  },
+  "stageArtifacts": [
+    {
+      "stage": "ANALYSE",
+      "exists": true,
+      "path": "c:\\workspace\\EGPSpace\\output\\analysis.md",
+      "size": 14562,
+      "mtime": "2026-04-23T06:49:12.801Z",
+      "hash": "4fc057527f6e3a0fe2c630ed1b135e7c559a2b9e20623c589ac7b0c7b41a250b"
+    },
+    {
+      "stage": "ARCHITECT",
+      "exists": true,
+      "path": "c:\\workspace\\EGPSpace\\output\\architecture.md",
+      "size": 12290,
+      "mtime": "2026-04-23T06:51:26.384Z",
+      "hash": "487c2ee524edc8802e3d626c79eb73fbeaf60592269fffb1832cc7a0982fffe6"
+    },
+    {
+      "stage": "PLAN",
+      "exists": true,
+      "path": "c:\\workspace\\EGPSpace\\output\\execution-plan.md",
+      "size": 11311,
+      "mtime": "2026-04-23T07:00:58.784Z",
+      "hash": "b996ad18ee00c068463451154f7ea0911487ebcde02263d8e966a482062f4b5d"
+    },
+    {
+      "stage": "CODE",
+      "exists": true,
+      "path": "c:\\workspace\\EGPSpace\\output\\code.diff",
+      "size": 20330,
+      "mtime": "2026-04-23T05:15:44.157Z",
+      "hash": "3aee3276750cf0483219053da2a5d94d82e74ed404f0a3a2c6ac9b04a26545b4"
+    },
+    {
+      "stage": "TEST",
+      "exists": true,
+      "path": "c:\\workspace\\EGPSpace\\output\\test-report.md",
+      "size": 4045,
+      "mtime": "2026-04-23T07:17:42.760Z",
+      "hash": "743fd98be37adbdc55b5ccec1a9f9e1c092a92383175bb0dfe4bb56b397b8e6a"
+    }
+  ],
+  "verification": {
+    "missingStageArtifacts": [],
+    "stageCount": 5,
+    "completedStages": 2
+  }
+}

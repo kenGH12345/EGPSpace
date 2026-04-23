@@ -1,0 +1,64 @@
+{
+  "sessions": {
+    "wf-20260422-214612": {
+      "lastSeq": 1,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260422-214612.jsonl",
+      "updatedAt": "2026-04-22T13:46:13.134Z"
+    },
+    "wf-20260422-215306": {
+      "lastSeq": 9,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260422-215306.jsonl",
+      "updatedAt": "2026-04-22T14:07:20.162Z"
+    },
+    "wf-20260422-235201": {
+      "lastSeq": 1,
+      "filePath": "c:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260422-235201.jsonl",
+      "updatedAt": "2026-04-22T15:52:01.767Z"
+    },
+    "wf-20260423-000434": {
+      "lastSeq": 15,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-000434.jsonl",
+      "updatedAt": "2026-04-22T16:43:05.309Z"
+    },
+    "wf-20260423-005959": {
+      "lastSeq": 1,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-005959.jsonl",
+      "updatedAt": "2026-04-22T17:00:00.043Z"
+    },
+    "wf-20260423-011725": {
+      "lastSeq": 2,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-011725.jsonl",
+      "updatedAt": "2026-04-22T17:22:09.433Z"
+    },
+    "wf-20260423-083120": {
+      "lastSeq": 1,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-083120.jsonl",
+      "updatedAt": "2026-04-23T00:31:20.299Z"
+    },
+    "wf-20260423-083331": {
+      "lastSeq": 2,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-083331.jsonl",
+      "updatedAt": "2026-04-23T02:24:10.317Z"
+    },
+    "wf-20260423022901.": {
+      "lastSeq": 3,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423022901..jsonl",
+      "updatedAt": "2026-04-23T03:11:54.858Z"
+    },
+    "wf-20260423-120434": {
+      "lastSeq": 6,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-120434.jsonl",
+      "updatedAt": "2026-04-23T04:18:23.636Z"
+    },
+    "wf-20260423042819.": {
+      "lastSeq": 7,
+      "filePath": "C:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423042819..jsonl",
+      "updatedAt": "2026-04-23T05:23:34.881Z"
+    },
+    "wf-20260423-144617": {
+      "lastSeq": 6,
+      "filePath": "c:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-144617.jsonl",
+      "updatedAt": "2026-04-23T07:17:56.387Z"
+    }
+  }
+}

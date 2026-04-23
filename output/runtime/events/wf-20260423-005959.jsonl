@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260423-005959","createdAt":"2026-04-22T17:00:00.043Z"}
+{"seq":1,"ts":"2026-04-22T17:00:00.043Z","sessionId":"wf-20260423-005959","kind":"stage_started","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageInput":"output/requirement.md,output/analysis.md,output/architecture.md"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

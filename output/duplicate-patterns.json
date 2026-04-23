@@ -1,0 +1,1677 @@
+{
+  "generated": "2026-04-22T11:04:33.346Z",
+  "strategy": "ide-first",
+  "stats": {
+    "totalFunctions": 44,
+    "exactDuplicateGroups": 3,
+    "exactDuplicateInstances": 6,
+    "similarFunctionGroups": 3,
+    "similarFunctionInstances": 6,
+    "duplicateBlockCount": 20,
+    "duplicationRate": "7%",
+    "strategy": "ide-first"
+  },
+  "exactDuplicates": [
+    {
+      "type": "exact",
+      "hash": "9ece05f9c",
+      "lineCount": 48,
+      "instances": [
+        {
+          "name": "evaluateExpression",
+          "file": "src/lib/calculations-browser.ts",
+          "line": 33,
+          "content": "export function evaluateExpression(\n  expression: string,\n  params: Record<string, number>\n): number | string {\n  // 如果是纯数字或纯字符串，直接返回\n  if (typeof expression === 'number') return expression;\n  if (typ..."
+        },
+        {
+          "name": "evaluateExpression",
+          "file": "src/lib/calculations.ts",
+          "line": 33,
+          "content": "export function evaluateExpression(\n  expression: string,\n  params: Record<string, number>\n): number | string {\n  // 如果是纯数字或纯字符串，直接返回\n  if (typeof expression === 'number') return expression;\n  if (typ..."
+        }
+      ],
+      "suggestion": "Extract into a shared utility function (found in 2 locations)"
+    },
+    {
+      "type": "exact",
+      "hash": "-2ac2d61ec",
+      "lineCount": 25,
+      "instances": [
+        {
+          "name": "determineRefraction",
+          "file": "src/lib/calculations-browser.ts",
+          "line": 120,
+          "content": "export function determineRefraction(\n  incidentAngle: number,\n  n1: number,\n  n2: number\n): {\n  type: string;\n  refractionAngle?: number;\n  criticalAngle?: number;\n} {\n  const sinRefraction = (n1 * Ma..."
+        },
+        {
+          "name": "determineRefraction",
+          "file": "src/lib/calculations.ts",
+          "line": 109,
+          "content": "export function determineRefraction(\n  incidentAngle: number,\n  n1: number,\n  n2: number\n): {\n  type: string;\n  refractionAngle?: number;\n  criticalAngle?: number;\n} {\n  const sinRefraction = (n1 * Ma..."
+        }
+      ],
+      "suggestion": "Extract into a shared utility function (found in 2 locations)"
+    },
+    {
+      "type": "exact",
+      "hash": "-26fc7b888",
+      "lineCount": 24,
+      "instances": [
+        {
+          "name": "determineImageType",
+          "file": "src/lib/calculations-browser.ts",
+          "line": 94,
+          "content": "export function determineImageType(\n  objectDistance: number,\n  focalLength: number\n): {\n  realOrVirtual: string;\n  size: string;\n  orientation: string;\n} {\n  if (objectDistance <= focalLength) {\n    ..."
+        },
+        {
+          "name": "determineImageType",
+          "file": "src/lib/calculations.ts",
+          "line": 83,
+          "content": "export function determineImageType(\n  objectDistance: number,\n  focalLength: number\n): {\n  realOrVirtual: string;\n  size: string;\n  orientation: string;\n} {\n  if (objectDistance <= focalLength) {\n    ..."
+        }
+      ],
+      "suggestion": "Extract into a shared utility function (found in 2 locations)"
+    }
+  ],
+  "similarFunctions": [
+    {
+      "type": "similar",
+      "similarity": "100%",
+      "instances": [
+        {
+          "name": "evaluateExpression",
+          "file": "src/lib/calculations-browser.ts",
+          "line": 33,
+          "tokenCount": 99
+        },
+        {
+          "name": "evaluateExpression",
+          "file": "src/lib/calculations.ts",
+          "line": 33,
+          "tokenCount": 99,
+          "similarity": "100%"
+        }
+      ]
+    },
+    {
+      "type": "similar",
+      "similarity": "100%",
+      "instances": [
+        {
+          "name": "determineImageType",
+          "file": "src/lib/calculations-browser.ts",
+          "line": 94,
+          "tokenCount": 36
+        },
+        {
+          "name": "determineImageType",
+          "file": "src/lib/calculations.ts",
+          "line": 83,
+          "tokenCount": 36,
+          "similarity": "100%"
+        }
+      ]
+    },
+    {
+      "type": "similar",
+      "similarity": "100%",
+      "instances": [
+        {
+          "name": "determineRefraction",
+          "file": "src/lib/calculations-browser.ts",
+          "line": 120,
+          "tokenCount": 40
+        },
+        {
+          "name": "determineRefraction",
+          "file": "src/lib/calculations.ts",
+          "line": 109,
+          "tokenCount": 40,
+          "similarity": "100%"
+        }
+      ]
+    }
+  ],
+  "duplicateBlocks": [
+    {
+      "hash": "aae2474b",
+      "locations": [
+        {
+          "file": "src\\components\\ui\\alert-dialog.tsx",
+          "line": 36,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\alert-dialog.tsx",
+          "line": 84,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\alert.tsx",
+          "line": 40,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\alert.tsx",
+          "line": 56,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\avatar.tsx",
+          "line": 14,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\avatar.tsx",
+          "line": 43,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\breadcrumb.tsx",
+          "line": 13,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\button-group.tsx",
+          "line": 49,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\button-group.tsx",
+          "line": 67,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\calendar.tsx",
+          "line": 208,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 9,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 22,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 55,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\carousel.tsx",
+          "line": 162,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 20,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 89,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 117,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 146,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 162,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 85,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 126,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 196,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 225,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\dialog.tsx",
+          "line": 38,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\dialog.tsx",
+          "line": 95,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\drawer.tsx",
+          "line": 38,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\drawer.tsx",
+          "line": 78,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 74,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 155,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 184,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 230,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 9,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 22,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 75,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 88,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 12,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 32,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 45,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 98,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 116,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 129,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 144,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 23,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 115,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 131,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 147,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\input.tsx",
+          "line": 12,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 107,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 120,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 134,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 157,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 170,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\kbd.tsx",
+          "line": 10,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\label.tsx",
+          "line": 14,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 14,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 56,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 103,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 173,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 202,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 248,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\navigation-menu.tsx",
+          "line": 36,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\navigation-menu.tsx",
+          "line": 90,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\navigation-menu.tsx",
+          "line": 128,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\pagination.tsx",
+          "line": 57,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\separator.tsx",
+          "line": 18,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sheet.tsx",
+          "line": 36,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 46,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 59,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 72,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 85,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\tabs.tsx",
+          "line": 27,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\tabs.tsx",
+          "line": 43,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        },
+        {
+          "file": "src\\components\\ui\\textarea.tsx",
+          "line": 9,
+          "preview": "        className\n      )}\n      {...props}\n    />\n  )\n}"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "111485614",
+      "locations": [
+        {
+          "file": "src\\components\\ui\\alert-dialog.tsx",
+          "line": 37,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\alert-dialog.tsx",
+          "line": 85,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\alert.tsx",
+          "line": 41,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\alert.tsx",
+          "line": 57,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\avatar.tsx",
+          "line": 15,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\avatar.tsx",
+          "line": 44,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\breadcrumb.tsx",
+          "line": 14,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\button-group.tsx",
+          "line": 50,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\button-group.tsx",
+          "line": 68,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\calendar.tsx",
+          "line": 209,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 10,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 23,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 56,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\carousel.tsx",
+          "line": 163,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 21,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 90,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 118,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 147,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 163,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 86,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 127,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 197,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 226,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\dialog.tsx",
+          "line": 39,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\dialog.tsx",
+          "line": 96,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\drawer.tsx",
+          "line": 39,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\drawer.tsx",
+          "line": 79,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 75,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 156,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 185,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 231,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 10,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 23,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 76,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 89,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 13,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 33,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 46,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 99,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 117,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 130,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\field.tsx",
+          "line": 145,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 24,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 116,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 132,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 148,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\input.tsx",
+          "line": 13,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 108,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 121,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 135,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 158,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 171,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\kbd.tsx",
+          "line": 11,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\label.tsx",
+          "line": 15,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 15,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 57,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 104,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 174,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 203,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 249,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\navigation-menu.tsx",
+          "line": 37,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\navigation-menu.tsx",
+          "line": 91,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\navigation-menu.tsx",
+          "line": 129,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\pagination.tsx",
+          "line": 58,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\separator.tsx",
+          "line": 19,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sheet.tsx",
+          "line": 37,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 47,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 60,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 73,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 86,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\tabs.tsx",
+          "line": 28,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\tabs.tsx",
+          "line": 44,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\textarea.tsx",
+          "line": 10,
+          "preview": "      )}\n      {...props}\n    />\n  )\n}\n"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "20406578b",
+      "locations": [
+        {
+          "file": "src\\components\\ui\\alert-dialog.tsx",
+          "line": 136,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\button-group.tsx",
+          "line": 69,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 77,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\command.tsx",
+          "line": 164,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\context-menu.tsx",
+          "line": 227,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\dialog.tsx",
+          "line": 123,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\drawer.tsx",
+          "line": 116,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\dropdown-menu.tsx",
+          "line": 232,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\empty.tsx",
+          "line": 90,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\input-group.tsx",
+          "line": 149,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\item.tsx",
+          "line": 172,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\menubar.tsx",
+          "line": 250,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\sheet.tsx",
+          "line": 121,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        },
+        {
+          "file": "src\\components\\ui\\table.tsx",
+          "line": 100,
+          "preview": "      {...props}\n    />\n  )\n}\n\nexport {"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "fb09dfb6",
+      "locations": [
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 197,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 288,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 470,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 587,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 688,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 789,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 880,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\experiment-prompts.ts",
+          "line": 416,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 25,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 120,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 393,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 505,
+          "preview": "      gestureControl: {\n        finger: 'index',\n        direction: 'horizontal',\n        sensitivit..."
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "2d9f561c",
+      "locations": [
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 198,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 289,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 471,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 588,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 689,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 790,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 881,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\experiment-prompts.ts",
+          "line": 417,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 26,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 121,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 394,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 506,
+          "preview": "        finger: 'index',\n        direction: 'horizontal',\n        sensitivity: 0.5,\n      },\n    },\n..."
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "c9d65dc8",
+      "locations": [
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 52,
+          "preview": "\n  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = ..."
+        },
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 53,
+          "preview": "  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = c..."
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 16,
+          "preview": "\n  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = ..."
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 17,
+          "preview": "  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = c..."
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 32,
+          "preview": "\n  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = ..."
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 33,
+          "preview": "  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = c..."
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 132,
+          "preview": "\n  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = ..."
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 133,
+          "preview": "  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n    const ctx = c..."
+        },
+        {
+          "file": "src\\components\\experiment-canvas.tsx",
+          "line": 911,
+          "preview": "  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n\n    const ctx = ..."
+        },
+        {
+          "file": "src\\components\\interactive-experiment-canvas.tsx",
+          "line": 82,
+          "preview": "  useEffect(() => {\n    const canvas = canvasRef.current;\n    if (!canvas) return;\n\n    const ctx = ..."
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "49d0a4b2",
+      "locations": [
+        {
+          "file": "src\\components\\ui\\resizable.tsx",
+          "line": 24,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 280,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 294,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 358,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 390,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 412,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 551,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 573,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 623,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 669,
+          "preview": "        className,\n      )}\n      {...props}\n    />\n  );\n}"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "13a537fef",
+      "locations": [
+        {
+          "file": "src\\components\\ui\\resizable.tsx",
+          "line": 25,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 281,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 295,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 359,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 391,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 413,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 552,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 574,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 624,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 670,
+          "preview": "      )}\n      {...props}\n    />\n  );\n}\n"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "227904a91",
+      "locations": [
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 59,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 241,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 332,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 540,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 641,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 924,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        },
+        {
+          "file": "src\\lib\\experiment-prompts.ts",
+          "line": 460,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 69,
+          "preview": "      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {\n      icon: 'info',"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "-25ca9996",
+      "locations": [
+        {
+          "file": "src\\app\\demo\\page.tsx",
+          "line": 521,
+          "preview": "        </div>\n      </div>\n    </div>\n  );\n}\n"
+        },
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 371,
+          "preview": "        </div>\n      </div>\n    </div>\n  );\n}\n"
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 389,
+          "preview": "        </div>\n      </div>\n    </div>\n  );\n}\n"
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 297,
+          "preview": "        </div>\n      </div>\n    </div>\n  );\n}\n"
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 343,
+          "preview": "        </div>\n      </div>\n    </div>\n  );\n}\n"
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 578,
+          "preview": "        </div>\n      </div>\n    </div>\n  );\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sidebar.tsx",
+          "line": 230,
+          "preview": "        </div>\n      </div>\n    </div>\n  );\n}\n"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "-5b8c8aa",
+      "locations": [
+        {
+          "file": "src\\app\\demo\\page.tsx",
+          "line": 520,
+          "preview": "          </div>\n        </div>\n      </div>\n    </div>\n  );\n}"
+        },
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 370,
+          "preview": "          </div>\n        </div>\n      </div>\n    </div>\n  );\n}"
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 388,
+          "preview": "          </div>\n        </div>\n      </div>\n    </div>\n  );\n}"
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 296,
+          "preview": "          </div>\n        </div>\n      </div>\n    </div>\n  );\n}"
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 342,
+          "preview": "          </div>\n        </div>\n      </div>\n    </div>\n  );\n}"
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 577,
+          "preview": "          </div>\n        </div>\n      </div>\n    </div>\n  );\n}"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "-118961eb3",
+      "locations": [
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 367,
+          "preview": "                </div>\n              </div>\n            </div>\n          </div>\n        </div>\n     ..."
+        },
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 368,
+          "preview": "              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>"
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 386,
+          "preview": "              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>"
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 293,
+          "preview": "                </div>\n              </div>\n            </div>\n          </div>\n        </div>\n     ..."
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 294,
+          "preview": "              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>"
+        },
+        {
+          "file": "src\\app\\page.tsx",
+          "line": 306,
+          "preview": "                </div>\n              </div>\n            </div>\n          </div>\n        </div>\n     ..."
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "438898f6e",
+      "locations": [
+        {
+          "file": "src\\components\\ui\\alert-dialog.tsx",
+          "line": 111,
+          "preview": "      className={cn(\"text-muted-foreground text-sm\", className)}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\card.tsx",
+          "line": 43,
+          "preview": "      className={cn(\"text-muted-foreground text-sm\", className)}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\dialog.tsx",
+          "line": 122,
+          "preview": "      className={cn(\"text-muted-foreground text-sm\", className)}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\drawer.tsx",
+          "line": 115,
+          "preview": "      className={cn(\"text-muted-foreground text-sm\", className)}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\form.tsx",
+          "line": 126,
+          "preview": "      className={cn(\"text-muted-foreground text-sm\", className)}\n      {...props}\n    />\n  )\n}\n"
+        },
+        {
+          "file": "src\\components\\ui\\sheet.tsx",
+          "line": 120,
+          "preview": "      className={cn(\"text-muted-foreground text-sm\", className)}\n      {...props}\n    />\n  )\n}\n"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "204e87c92",
+      "locations": [
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 57,
+          "preview": "      value: '',\n      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: ["
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 330,
+          "preview": "      value: '',\n      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: ["
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 639,
+          "preview": "      value: '',\n      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: ["
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 922,
+          "preview": "      value: '',\n      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: ["
+        },
+        {
+          "file": "src\\lib\\experiment-prompts.ts",
+          "line": 458,
+          "preview": "      value: '',\n      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: ["
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 67,
+          "preview": "      value: '',\n      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: ["
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "25a666f7c",
+      "locations": [
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 58,
+          "preview": "      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 331,
+          "preview": "      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 640,
+          "preview": "      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {"
+        },
+        {
+          "file": "src\\lib\\additional-experiments.ts",
+          "line": 923,
+          "preview": "      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {"
+        },
+        {
+          "file": "src\\lib\\experiment-prompts.ts",
+          "line": 459,
+          "preview": "      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {"
+        },
+        {
+          "file": "src\\lib\\experiments.ts",
+          "line": 68,
+          "preview": "      unit: '',\n      color: '#F59E0B',\n    },\n  ],\n  tips: [\n    {"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "-8e918b1b",
+      "locations": [
+        {
+          "file": "src\\app\\demo\\page.tsx",
+          "line": 519,
+          "preview": "            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  );"
+        },
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 369,
+          "preview": "            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  );"
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 387,
+          "preview": "            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  );"
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 295,
+          "preview": "            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  );"
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 341,
+          "preview": "            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  );"
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "1078f6d5",
+      "locations": [
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 148,
+          "preview": "\n  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 62,
+          "preview": "\n  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 97,
+          "preview": "\n  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 152,
+          "preview": "\n  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 450,
+          "preview": "\n  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 ..."
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "154e3f62",
+      "locations": [
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 149,
+          "preview": "  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0..."
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 63,
+          "preview": "  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0..."
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 98,
+          "preview": "  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0..."
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 153,
+          "preview": "  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0..."
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 451,
+          "preview": "  return (\n    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0..."
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "-5098c3b2d",
+      "locations": [
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 150,
+          "preview": "    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 64,
+          "preview": "    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 99,
+          "preview": "    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 154,
+          "preview": "    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 ..."
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 452,
+          "preview": "    <div className=\"min-h-screen\" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 ..."
+        }
+      ],
+      "lineCount": 6
+    },
+    {
+      "hash": "-63a65abb7",
+      "locations": [
+        {
+          "file": "src\\app\\experiments\\acid-base\\page.tsx",
+          "line": 180,
+          "preview": "            <div className=\"bg-white rounded-2xl p-5 border border-gray-200\">\n              <h3 clas..."
+        },
+        {
+          "file": "src\\app\\experiments\\circuit\\page.tsx",
+          "line": 100,
+          "preview": "            <div className=\"bg-white rounded-2xl p-5 border border-gray-200\">\n              <h3 clas..."
+        },
+        {
+          "file": "src\\app\\experiments\\lever\\page.tsx",
+          "line": 135,
+          "preview": "            <div className=\"bg-white rounded-2xl p-5 border border-gray-200\">\n              <h3 clas..."
+        },
+        {
+          "file": "src\\app\\experiments\\refraction\\page.tsx",
+          "line": 190,
+          "preview": "            <div className=\"bg-white rounded-2xl p-5 border border-gray-200\">\n              <h3 clas..."
+        },
+        {
+          "file": "src\\app\\experiments\\[id]\\page.tsx",
+          "line": 557,
+          "preview": "              <div className=\"bg-white rounded-2xl p-5 border border-gray-200\">\n                <h3 ..."
+        }
+      ],
+      "lineCount": 6
+    }
+  ]
+}

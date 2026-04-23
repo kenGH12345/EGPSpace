@@ -1,0 +1,12 @@
+{"ts":"2026-04-22T13:46:13.111Z","sessionId":"wf-20260422-214612","runCategory":"prod","healthScore":52,"healthGrade":"F","scoringModel":"unified-v1"}
+{"ts":"2026-04-22T14:07:20.138Z","sessionId":"wf-20260422-215306","runCategory":"prod","healthScore":73,"healthGrade":"C","scoringModel":"unified-v1"}
+{"ts":"2026-04-22T15:52:01.730Z","sessionId":"wf-20260422-235201","runCategory":"prod","healthScore":52,"healthGrade":"F","scoringModel":"unified-v1"}
+{"ts":"2026-04-22T16:43:05.229Z","sessionId":"wf-20260423-000434","runCategory":"prod","healthScore":66,"healthGrade":"D","scoringModel":"unified-v1"}
+{"ts":"2026-04-22T17:00:00.017Z","sessionId":"wf-20260423-005959","runCategory":"prod","healthScore":52,"healthGrade":"F","scoringModel":"unified-v1"}
+{"ts":"2026-04-22T17:22:09.374Z","sessionId":"wf-20260423-011725","runCategory":"prod","healthScore":59,"healthGrade":"F","scoringModel":"unified-v1"}
+{"ts":"2026-04-23T00:31:20.273Z","sessionId":"wf-20260423-083120","runCategory":"prod","healthScore":52,"healthGrade":"F","scoringModel":"unified-v1"}
+{"ts":"2026-04-23T02:24:10.290Z","sessionId":"wf-20260423-083331","runCategory":"prod","healthScore":52,"healthGrade":"F","scoringModel":"unified-v1"}
+{"ts":"2026-04-23T03:11:54.829Z","sessionId":"wf-20260423022901.","runCategory":"prod","healthScore":59,"healthGrade":"F","scoringModel":"unified-v1"}
+{"ts":"2026-04-23T04:18:23.580Z","sessionId":"wf-20260423-120434","runCategory":"prod","healthScore":66,"healthGrade":"D","scoringModel":"unified-v1"}
+{"ts":"2026-04-23T05:23:34.829Z","sessionId":"wf-20260423042819.","runCategory":"prod","healthScore":73,"healthGrade":"C","scoringModel":"unified-v1"}
+{"ts":"2026-04-23T07:17:56.335Z","sessionId":"wf-20260423-144617","runCategory":"prod","healthScore":66,"healthGrade":"D","scoringModel":"unified-v1"}

@@ -1,0 +1,78 @@
+﻿
+C:\workspace\EGPSpace\src\workflow\__tests__\engine.test.ts
+    2:30  warning  'WorkflowExecution' is defined but never used  @typescript-eslint/no-unused-vars
+  269:18  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\workflow\__tests__\types.test.ts
+  5:3  warning  'WorkflowError' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\workflow\__tests__\validator.test.ts
+   69:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  445:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  510:96  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  523:83  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  536:90  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  549:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  616:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  632:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  646:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\workflow\engine.ts
+   10:3   warning  'ExecutionError' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   11:3   warning  'TimeoutError' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   12:3   warning  'DEFAULT_TIMEOUT' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   13:3   warning  'DEFAULT_RETRY_CONFIG' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   19:39  error    The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type  @typescript-eslint/no-unsafe-function-type
+   22:33  error    Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+   29:38  error    Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  147:11  warning  'context' is assigned a value but never used                                                                             @typescript-eslint/no-unused-vars
+  171:23  warning  'workflowId' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  171:43  warning  'currentStepId' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+  308:30  error    Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  332:31  error    The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type  @typescript-eslint/no-unsafe-function-type
+  342:45  error    Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\workflow\index.ts
+   10:100  warning  'ValidationError' is defined but never used    @typescript-eslint/no-unused-vars
+   13:27   warning  'FileSystemStorage' is defined but never used  @typescript-eslint/no-unused-vars
+   79:78   error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  190:121  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\workflow\storage.ts
+    6:3   warning  'WorkflowError' is defined but never used    @typescript-eslint/no-unused-vars
+  353:23  warning  'execution' is defined but never used        @typescript-eslint/no-unused-vars
+  358:22  warning  'executionId' is defined but never used      @typescript-eslint/no-unused-vars
+  363:25  warning  'execution' is defined but never used        @typescript-eslint/no-unused-vars
+  368:25  warning  'executionId' is defined but never used      @typescript-eslint/no-unused-vars
+  375:5   warning  'limit' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  376:5   warning  'offset' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  389:30  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\workflow\types.ts
+   10:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   21:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   72:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   97:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:10  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  109:85  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  148:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  155:10  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  181:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\workflow\validator.ts
+  140:76  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  162:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  464:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  531:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+鉁?57 problems (39 errors, 18 warnings)
+

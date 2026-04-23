@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260422-235201","createdAt":"2026-04-22T15:52:01.767Z"}
+{"seq":1,"ts":"2026-04-22T15:52:01.766Z","sessionId":"wf-20260422-235201","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"DynamicExperiment.tsx, experiment-methodology.ts, route.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

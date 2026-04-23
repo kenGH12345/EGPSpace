@@ -1,0 +1,36 @@
+﻿src/workflow/__tests__/validator.test.ts(515,48): error TS2345: Argument of type '{ id: string; workflowId: string; status: "pending"; stepHistory: { status: string; startedAt: Date; attempts: number; }[]; variables: {}; createdAt: Date; updatedAt: Date; }' is not assignable to parameter of type 'WorkflowExecution'.
+  Types of property 'stepHistory' are incompatible.
+    Type '{ status: string; startedAt: Date; attempts: number; }[]' is not assignable to type 'StepExecutionHistory[]'.
+      Property 'stepId' is missing in type '{ status: string; startedAt: Date; attempts: number; }' but required in type 'StepExecutionHistory'.
+src/workflow/__tests__/validator.test.ts(528,48): error TS2345: Argument of type '{ id: string; workflowId: string; status: "pending"; stepHistory: { stepId: string; startedAt: Date; attempts: number; }[]; variables: {}; createdAt: Date; updatedAt: Date; }' is not assignable to parameter of type 'WorkflowExecution'.
+  Types of property 'stepHistory' are incompatible.
+    Type '{ stepId: string; startedAt: Date; attempts: number; }[]' is not assignable to type 'StepExecutionHistory[]'.
+      Property 'status' is missing in type '{ stepId: string; startedAt: Date; attempts: number; }' but required in type 'StepExecutionHistory'.
+src/workflow/__tests__/validator.test.ts(541,48): error TS2345: Argument of type '{ id: string; workflowId: string; status: "pending"; stepHistory: { stepId: string; status: string; attempts: number; }[]; variables: {}; createdAt: Date; updatedAt: Date; }' is not assignable to parameter of type 'WorkflowExecution'.
+  Types of property 'stepHistory' are incompatible.
+    Type '{ stepId: string; status: string; attempts: number; }[]' is not assignable to type 'StepExecutionHistory[]'.
+      Property 'startedAt' is missing in type '{ stepId: string; status: string; attempts: number; }' but required in type 'StepExecutionHistory'.
+src/workflow/__tests__/validator.test.ts(554,48): error TS2345: Argument of type '{ id: string; workflowId: string; status: "pending"; stepHistory: { stepId: string; status: string; startedAt: Date; attempts: number; }[]; variables: {}; createdAt: Date; updatedAt: Date; }' is not assignable to parameter of type 'WorkflowExecution'.
+  Types of property 'stepHistory' are incompatible.
+    Type '{ stepId: string; status: string; startedAt: Date; attempts: number; }[]' is not assignable to type 'StepExecutionHistory[]'.
+      Type '{ stepId: string; status: string; startedAt: Date; attempts: number; }' is not assignable to type 'StepExecutionHistory'.
+        Types of property 'status' are incompatible.
+          Type 'string' is not assignable to type 'StepExecutionStatus'.
+src/workflow/__tests__/validator.test.ts(574,48): error TS2345: Argument of type '{ id: string; workflowId: string; status: "pending"; stepHistory: { stepId: string; status: string; startedAt: Date; completedAt: Date; attempts: number; }[]; variables: {}; createdAt: Date; updatedAt: Date; }' is not assignable to parameter of type 'WorkflowExecution'.
+  Types of property 'stepHistory' are incompatible.
+    Type '{ stepId: string; status: string; startedAt: Date; completedAt: Date; attempts: number; }[]' is not assignable to type 'StepExecutionHistory[]'.
+      Type '{ stepId: string; status: string; startedAt: Date; completedAt: Date; attempts: number; }' is not assignable to type 'StepExecutionHistory'.
+        Types of property 'status' are incompatible.
+          Type 'string' is not assignable to type 'StepExecutionStatus'.
+src/workflow/__tests__/validator.test.ts(594,48): error TS2345: Argument of type '{ id: string; workflowId: string; status: "pending"; stepHistory: { stepId: string; status: string; startedAt: Date; completedAt: Date; attempts: number; }[]; variables: {}; createdAt: Date; updatedAt: Date; }' is not assignable to parameter of type 'WorkflowExecution'.
+  Types of property 'stepHistory' are incompatible.
+    Type '{ stepId: string; status: string; startedAt: Date; completedAt: Date; attempts: number; }[]' is not assignable to type 'StepExecutionHistory[]'.
+      Type '{ stepId: string; status: string; startedAt: Date; completedAt: Date; attempts: number; }' is not assignable to type 'StepExecutionHistory'.
+        Types of property 'status' are incompatible.
+          Type 'string' is not assignable to type 'StepExecutionStatus'.
+src/workflow/index.ts(4,29): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/workflow/index.ts(4,47): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/workflow/index.ts(5,78): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/workflow/index.ts(5,103): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/workflow/index.ts(5,119): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/workflow/index.ts(5,134): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.

@@ -1,0 +1,110 @@
+{
+  "version": "2.0",
+  "sessionId": "init-1776855873355",
+  "requirement": "Project initialization for EGPSpace",
+  "createdAt": "2026-04-22T11:04:33.355Z",
+  "updatedAt": "2026-04-22T11:04:33.355Z",
+  "columns": [
+    {
+      "id": "backlog",
+      "name": "待办",
+      "tasks": []
+    },
+    {
+      "id": "in_progress",
+      "name": "进行中",
+      "tasks": []
+    },
+    {
+      "id": "review",
+      "name": "待评审",
+      "tasks": []
+    },
+    {
+      "id": "done",
+      "name": "已完成",
+      "tasks": []
+    }
+  ],
+  "stages": [
+    {
+      "id": "ANALYSE",
+      "name": "需求分析",
+      "status": "backlog",
+      "priority": "high",
+      "assignee": "analyst-agent",
+      "subtasks": []
+    },
+    {
+      "id": "ARCHITECT",
+      "name": "架构设计",
+      "status": "backlog",
+      "priority": "high",
+      "assignee": "architect-agent",
+      "subtasks": []
+    },
+    {
+      "id": "PLAN",
+      "name": "执行规划",
+      "status": "backlog",
+      "priority": "medium",
+      "assignee": "planner-agent",
+      "subtasks": []
+    },
+    {
+      "id": "DEVELOP",
+      "name": "开发实现",
+      "status": "backlog",
+      "priority": "high",
+      "assignee": "developer-agent",
+      "subtasks": [],
+      "blockedBy": [
+        "PRE-DEVELOP-GATE"
+      ]
+    },
+    {
+      "id": "TEST",
+      "name": "测试验证",
+      "status": "backlog",
+      "priority": "high",
+      "assignee": "tester-agent",
+      "subtasks": []
+    },
+    {
+      "id": "REVIEW",
+      "name": "代码评审",
+      "status": "backlog",
+      "priority": "medium",
+      "assignee": "reviewer-agent",
+      "subtasks": []
+    },
+    {
+      "id": "DEPLOY",
+      "name": "部署交付",
+      "status": "backlog",
+      "priority": "medium",
+      "assignee": "deploy-agent",
+      "subtasks": [],
+      "blockedBy": [
+        "PRE-DEPLOY-GATE"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "id": "PRE-DEVELOP-GATE",
+      "name": "开发前检查",
+      "status": "pending"
+    },
+    {
+      "id": "PRE-DEPLOY-GATE",
+      "name": "部署前检查",
+      "status": "pending"
+    }
+  ],
+  "metrics": {
+    "totalTasks": 7,
+    "completedTasks": 0,
+    "completionRate": 0
+  }
+}

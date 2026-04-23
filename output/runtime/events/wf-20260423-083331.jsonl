@@ -1,0 +1,3 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260423-083331","createdAt":"2026-04-23T00:33:31.291Z"}
+{"seq":1,"ts":"2026-04-23T00:33:31.291Z","sessionId":"wf-20260423-083331","kind":"stage_started","stage":"DEVELOP","taskId":null,"attempt":null,"payload":{"stageInput":"output/execution-plan.md"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":2,"ts":"2026-04-23T02:24:10.317Z","sessionId":"wf-20260423-083331","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"page.tsx, experiment-canvas.tsx"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

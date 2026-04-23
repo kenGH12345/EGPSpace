@@ -1,0 +1,40 @@
+[
+  {
+    "id": "F001",
+    "category": "functional",
+    "description": "[EXAMPLE] Project starts up without errors",
+    "steps": [
+      "Run bash init.sh",
+      "Verify the server starts without errors",
+      "Check that the main entry point is accessible",
+      "Verify no errors in logs"
+    ],
+    "passes": false,
+    "priority": 1,
+    "deps": [],
+    "verificationNote": null,
+    "status": "not_started",
+    "createdAt": "2026-04-22T10:59:26.803Z",
+    "updatedAt": "2026-04-22T10:59:26.803Z"
+  },
+  {
+    "id": "F002",
+    "category": "functional",
+    "description": "[EXAMPLE] Replace this with your actual feature description",
+    "steps": [
+      "Navigate to the relevant UI or endpoint",
+      "Perform the user action",
+      "Verify the expected outcome",
+      "Confirm no errors in console or logs"
+    ],
+    "passes": false,
+    "priority": 2,
+    "deps": [
+      "F001"
+    ],
+    "verificationNote": null,
+    "status": "not_started",
+    "createdAt": "2026-04-22T10:59:26.803Z",
+    "updatedAt": "2026-04-22T10:59:26.803Z"
+  }
+]

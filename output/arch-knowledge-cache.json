@@ -1,0 +1,144 @@
+{
+  "version": "1.1.0",
+  "updatedAt": "2026-04-22T11:04:33.014Z",
+  "dirtyFlags": {
+    "structure": false,
+    "techStack": false,
+    "codeGraph": false,
+    "taskHistory": false,
+    "capabilityIndex": false
+  },
+  "structure": {
+    "packages": [
+      {
+        "name": "Modified Files table",
+        "dir": "| # | File | Action | Description |"
+      },
+      {
+        "name": "Entry Points",
+        "dir": "src/server.ts"
+      }
+    ],
+    "topDirs": []
+  },
+  "techStack": {
+    "frameworks": [
+      "Next.js"
+    ],
+    "architecture": "Component-based (Unity/Game)",
+    "dataLayer": {
+      "orm": [
+        "Drizzle"
+      ],
+      "databases": [
+        "PostgreSQL",
+        "Supabase"
+      ]
+    },
+    "testing": []
+  },
+  "codeGraph": {
+    "symbolCount": 46,
+    "modules": [
+      {
+        "dir": "src/lib",
+        "files": 9,
+        "classes": 0,
+        "functions": 26
+      },
+      {
+        "dir": "src/hooks",
+        "files": 2,
+        "classes": 0,
+        "functions": 14
+      },
+      {
+        "dir": "src/app/api/generate",
+        "files": 1,
+        "classes": 0,
+        "functions": 5
+      },
+      {
+        "dir": "src/app/api/llm",
+        "files": 1,
+        "classes": 0,
+        "functions": 1
+      }
+    ],
+    "hotspots": [
+      {
+        "name": "calcDistance",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "calcFingerExtension",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "recognizeGesture",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "useMediaPipeHands",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "hands",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "processFrame",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "startCamera",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "processVideo",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "stopCamera",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      },
+      {
+        "name": "drawHandLandmarks",
+        "refs": 12,
+        "calls": 12,
+        "category": "hub",
+        "file": "src/hooks/useMediaPipeHands.ts"
+      }
+    ]
+  },
+  "recentTasks": [],
+  "capabilityIndex": null,
+  "distilledSummary": "## Architecture Knowledge Cache\n\n> Auto-distilled. Last updated: 2026-04-22T11:04:33.014Z\n\n### Module Map\n\n| Module | Files | Classes | Functions |\n|--------|-------|---------|-----------|\n| `src/lib` | 9 | 0 | 26 |\n| `src/hooks` | 2 | 0 | 14 |\n| `src/app/api/generate` | 1 | 0 | 5 |\n| `src/app/api/llm` | 1 | 0 | 1 |\n> 46 symbols total\n\n### 🔥 Hotspots\n\n- **calcDistance** ← 12 refs, 12 calls [hub]\n- **calcFingerExtension** ← 12 refs, 12 calls [hub]\n- **recognizeGesture** ← 12 refs, 12 calls [hub]\n- **useMediaPipeHands** ← 12 refs, 12 calls [hub]\n- **hands** ← 12 refs, 12 calls [hub]\n- **processFrame** ← 12 refs, 12 calls [hub]\n- **startCamera** ← 12 refs, 12 calls [hub]\n- **processVideo** ← 12 refs, 12 calls [hub]\n- **stopCamera** ← 12 refs, 12 calls [hub]\n- **drawHandLandmarks** ← 12 refs, 12 calls [hub]\n\n### Tech Stack\n\n- Frameworks: Next.js\n- Architecture: Component-based (Unity/Game)\n- Data: Drizzle + PostgreSQL, Supabase\n\n"
+}

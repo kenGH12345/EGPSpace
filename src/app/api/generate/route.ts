@@ -1,0 +1,413 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { LLMClient, Message } from 'coze-coding-dev-sdk';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import type { ExperimentSchema, PhysicsEngineType, ParamDefinition, FormulaDefinition, TeachingDesign, ExperimentScene, SubjectDomain, UnderstandingDesign, ReasoningDesign, ExperimentDesign, ErrorDesign, EvaluationDesign } from '@/lib/experiment-schema';
+import { validateSchema, createDefaultSchema } from '@/lib/experiment-schema';
+import { enrichSchema } from '@/lib/schema-enricher';
+import { validateWithKnowledge } from '@/lib/schema-validator';
+
+const client = new LLMClient();
+
+// Skill 目录路径（跨学科）
+const SKILL_DIR = '/workspace/projects/experiment-design-skill';
+
+/**
+ * 加载学科知识库
+ */
+function loadSubjectKnowledge(subject: string): string {
+  const subjectMap: Record<string, string[]> = {
+    '物理': ['physics/knowledge.md'],
+    '化学': ['chemistry/knowledge.md'],
+    '生物': ['biology/knowledge.md'],
+    '地理': ['geography/knowledge.md'],
+  };
+  
+  const files = subjectMap[subject] || ['physics/knowledge.md'];
+  let content = '';
+  
+  for (const file of files) {
+    const filePath = join(SKILL_DIR, 'references', file);
+    if (existsSync(filePath)) {
+      content += `\n## ${file.split('/')[0].toUpperCase()} 知识库\n`;
+      content += readFileSync(filePath, 'utf-8');
+    }
+  }
+  
+  return content || '';
+}
+
+/**
+ * 构建跨学科 System Prompt
+ */
+function buildSystemPrompt(subject?: string): string {
+  // 加载主 Skill 文件
+  const skillPath = join(SKILL_DIR, 'SKILL.md');
+  let skillContent = '';
+  if (existsSync(skillPath)) {
+    skillContent = readFileSync(skillPath, 'utf-8');
+  }
+  
+  // 加载学科知识库
+  const subjectKnowledge = subject ? loadSubjectKnowledge(subject) : '';
+  
+  return `你是「Eureka」实验教学平台的 AI 实验设计专家。
+
+## 核心设计理念
+
+**自主推理 vs 规则灌输**：
+- ❌ 不要死板套用规则
+- ✅ 先理解概念本质，再自主设计实验
+- ✅ 参考知识库，但要有自己的理解和判断
+
+## 设计流程：STEP 框架
+
+### S - Study（学习理解）
+在设计实验前，先完成以下思考：
+1. 核心概念是什么？
+2. 相关原理/定律有哪些？
+3. 历史案例或经典实验？
+4. 生活应用场景？
+
+### T - Think（推理分析）
+完成概念理解后，分析：
+1. 实验变量设计
+2. 可能出现的错误/误解
+3. 误差来源
+
+### E - Experiment（实验设计）
+基于以上分析，设计具体实验
+
+### P - Practice（实践反馈）
+设计评价与拓展
+
+${subjectKnowledge ? `## 学科知识库参考\n${subjectKnowledge}` : ''}
+
+## 重要原则
+
+1. **科学严谨性**：所有参数必须符合学科规律
+2. **先理解后设计**：不要急于输出，先思考
+3. **融入历史**：结合科学家故事激发兴趣
+4. **联系生活**：用身边现象引入
+
+## 输出要求
+
+必须返回 JSON 格式，遵循统一的 ExperimentSchema 结构。
+系统会根据 physicsType 自动补全 canvas/physics/interactions，你只需关注核心层。
+
+{
+  "meta": {
+    "name": "实验名称",
+    "subject": "physics|chemistry|biology|geography|math",
+    "topic": "具体主题",
+    "description": "一句话描述",
+    "icon": "emoji",
+    "gradient": "from-xxx-500 to-xxx-500",
+    "physicsType": "buoyancy|lever|refraction|circuit|pendulum|wave|generic"
+  },
+  "params": [
+    {
+      "name": "变量名(英文)",
+      "label": "中文标签",
+      "unit": "单位",
+      "defaultValue": 默认值,
+      "min": 最小值,
+      "max": 最大值,
+      "step": 步长,
+      "category": "input",
+      "description": "说明"
+    }
+  ],
+  "formulas": [
+    {
+      "name": "公式名称",
+      "expression": "公式表达式",
+      "description": "公式说明",
+      "variables": ["变量1", "变量2"],
+      "resultVariable": "结果变量名"
+    }
+  ],
+  "teaching": {
+    "understanding": {
+      "objective": "学习目标",
+      "keyConcepts": ["核心概念"],
+      "prerequisites": ["前置知识"]
+    },
+    "reasoning": {
+      "hypothesis": "实验假设",
+      "variables": ["实验变量"],
+      "controlMethod": "控制方法"
+    },
+    "design": {
+      "steps": ["实验步骤"],
+      "dataCollection": "数据收集方法",
+      "analysisMethod": "分析方法"
+    },
+    "errors": {
+      "common": ["常见错误"],
+      "prevention": ["预防措施"]
+    },
+    "evaluation": {
+      "questions": ["评价问题"],
+      "criteria": ["评价标准"]
+    }
+  },
+  "scenes": [
+    {
+      "name": "场景名称",
+      "description": "场景描述",
+      "params": { "变量名": 值 }
+    }
+  ]
+}
+
+关键规则：
+1. params 中至少要有1个 category="input" 的输入参数
+2. formulas 中至少要有1个公式
+3. physicsType 必须从列表中选择，这决定系统使用哪个物理引擎
+4. 你只需生成 meta + params + formulas + teaching + scenes，canvas/physics/interactions 由系统自动补充
+5. 参数范围要科学合理，符合物理规律
+
+只返回 JSON，不要其他内容！`;
+}
+
+/**
+ * 识别学科
+ */
+function identifySubject(concept: string): string {
+  const subjectKeywords: Record<string, string[]> = {
+    '物理': ['力', '能', '热', '光', '电', '磁', '运动', '速度', '加速度', '质量', '密度', '浮力', '折射', '反射', '电路', '杠杆', '摆', '波', '振动'],
+    '化学': ['反应', '酸', '碱', '盐', '元素', '分子', '原子', '离子', '氧化', '还原', '燃烧', '中和', '滴定', 'PH', '催化'],
+    '生物': ['细胞', '光合', '呼吸', '遗传', '变异', 'DNA', 'RNA', '蛋白质', '酶', '激素', '生态', '种群', '进化', '消化', '循环'],
+    '地理': ['地球', '气候', '地形', '地貌', '板块', '运动', '经纬度', '天气', '降水', '温度', '季风', '洋流', '人口', '城市'],
+  };
+  
+  for (const [subject, keywords] of Object.entries(subjectKeywords)) {
+    if (keywords.some(k => concept.includes(k))) {
+      return subject;
+    }
+  }
+  
+  return '物理'; // 默认物理
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { concept } = await request.json();
+
+    if (!concept || typeof concept !== 'string') {
+      return NextResponse.json(
+        { error: '请输入有效的概念名称' },
+        { status: 400 }
+      );
+    }
+
+    // 自动识别学科
+    const subject = identifySubject(concept);
+    
+    // 构建 prompt
+    const systemPrompt = buildSystemPrompt(subject);
+
+    const messages: Message[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `请为「${concept}」设计一个交互实验。\n\n学科：${subject}\n\n请按照 STEP 框架，先理解概念，再设计实验。` }
+    ];
+
+    const response = await client.invoke(messages, {
+      temperature: 0.7,
+    });
+
+    const content = response.content;
+    
+    // 提取 JSON（更宽松的匹配）
+    let rawJson: Record<string, unknown> | null = null;
+    
+    const jsonPatterns = [
+      /```json\s*([\s\S]*?)\s*```/,
+      /```\s*([\s\S]*?)\s*```/,
+      /(\{[\s\S]*\})/,
+    ];
+    
+    for (const pattern of jsonPatterns) {
+      const match = content.match(pattern);
+      if (match) {
+        try {
+          rawJson = JSON.parse(match[1].trim());
+          break;
+        } catch {
+          try {
+            const cleaned = match[1].replace(/```json|```/g, '').trim();
+            rawJson = JSON.parse(cleaned);
+            break;
+          } catch {
+            continue;
+          }
+        }
+      }
+    }
+    
+    // 转换为 ExperimentSchema 格式并补全
+    let schema: ExperimentSchema;
+    
+    let validationReport = null;
+
+    if (rawJson) {
+      const partial = transformToSchema(rawJson, subject);
+      schema = enrichSchema(partial);
+      
+      const validation = validateSchema(schema);
+      if (!validation.valid) {
+        console.log('[Generate] Schema validation warnings:', validation.errors);
+      }
+
+      // Knowledge-based validation layer
+      const validationOutput = validateWithKnowledge(schema, concept);
+      schema = validationOutput.schema;
+      validationReport = {
+        validationPassed: validationOutput.report.criticalCount === 0,
+        fallbackUsed: validationOutput.report.fallbackUsed,
+        fallbackReason: validationOutput.report.fallbackReason,
+        criticalCount: validationOutput.report.criticalCount,
+        errorCount: validationOutput.report.errorCount,
+        warningCount: validationOutput.report.warningCount,
+        checks: validationOutput.report.checks,
+      };
+
+      if (validationOutput.report.fallbackUsed) {
+        console.log('[Generate] Validation fallback triggered:', validationOutput.report.fallbackReason);
+      }
+    } else {
+      console.log('[Generate] JSON 解析失败，使用 fallback schema');
+      schema = createFallbackSchema(concept, subject);
+    }
+
+    return NextResponse.json({
+      success: true,
+      concept,
+      subject,
+      schema,
+      validationReport,
+    });
+  } catch (error) {
+    console.error('Generate API Error:', error);
+    return NextResponse.json(
+      { error: '生成实验失败，请重试' },
+      { status: 500 }
+    );
+  }
+}
+
+// Transform LLM output (old or new format) to ExperimentSchema partial
+function transformToSchema(raw: Record<string, unknown>, subject: string): Partial<ExperimentSchema> {
+  // Detect old format: has top-level "experiment" key
+  if (raw.experiment && typeof raw.experiment === 'object') {
+    const exp = raw.experiment as Record<string, unknown>;
+    const rules = (exp.rules ?? {}) as Record<string, unknown>;
+    const variables = (rules.variables ?? []) as Array<Record<string, unknown>>;
+    const meta = raw as Record<string, unknown>;
+    const teaching = (raw.teaching ?? {}) as Record<string, unknown>;
+
+    return {
+      meta: {
+        name: (meta.name as string) ?? '未命名实验',
+        subject: mapSubjectToEnum(meta.subject as string ?? subject),
+        topic: (meta.topic as string) ?? (meta.name as string) ?? '',
+        description: (meta.description as string) ?? '',
+        icon: (meta.icon as string) ?? '🔬',
+        gradient: (meta.gradient as string) ?? 'from-blue-500 to-purple-500',
+        physicsType: (rules.physicsType as PhysicsEngineType) ?? 'generic',
+      },
+      params: variables.map(v => ({
+        name: (v.name as string) ?? '',
+        label: (v.label as string) ?? '',
+        unit: (v.unit as string) ?? '',
+        defaultValue: (v.default as number) ?? (v.defaultValue as number) ?? 0,
+        min: (v.min as number) ?? 0,
+        max: (v.max as number) ?? 100,
+        step: (v.step as number) ?? 1,
+        category: 'input' as const,
+        description: (v.description as string) ?? '',
+      })),
+      formulas: (rules.formula as string) ? [{
+        name: '核心公式',
+        expression: rules.formula as string,
+        description: '',
+        variables: variables.map(v => v.name as string),
+        resultVariable: 'result',
+      }] : [],
+      teaching: {
+        understanding: (teaching.understanding ?? undefined) as UnderstandingDesign | undefined,
+        reasoning: (teaching.reasoning ?? undefined) as ReasoningDesign | undefined,
+        design: (teaching.design ?? undefined) as ExperimentDesign | undefined,
+        errors: (teaching.errors ?? undefined) as ErrorDesign | undefined,
+        evaluation: (teaching.evaluation ?? undefined) as EvaluationDesign | undefined,
+      },
+    };
+  }
+
+  // New format: has top-level "meta" key
+  const meta = (raw.meta ?? {}) as Record<string, unknown>;
+  return {
+    meta: {
+      name: (meta.name as string) ?? '未命名实验',
+      subject: mapSubjectToEnum(meta.subject as string ?? subject),
+      topic: (meta.topic as string) ?? '',
+      description: (meta.description as string) ?? '',
+      icon: (meta.icon as string) ?? '🔬',
+      gradient: (meta.gradient as string) ?? 'from-blue-500 to-purple-500',
+      physicsType: (meta.physicsType as PhysicsEngineType) ?? 'generic',
+    },
+    params: (raw.params as ParamDefinition[]) ?? [],
+    formulas: (raw.formulas as FormulaDefinition[]) ?? [],
+    teaching: (raw.teaching as TeachingDesign) ?? {},
+    scenes: (raw.scenes as ExperimentScene[]) ?? [],
+  };
+}
+
+function mapSubjectToEnum(subject: string): SubjectDomain {
+  const map: Record<string, SubjectDomain> = {
+    '物理': 'physics', '化学': 'chemistry', '生物': 'biology', '地理': 'geography', '数学': 'math',
+  };
+  return map[subject] ?? 'physics';
+}
+
+function createFallbackSchema(concept: string, subject: string): ExperimentSchema {
+  const partial: Partial<ExperimentSchema> = {
+    meta: {
+      name: `${concept}探究实验`,
+      subject: mapSubjectToEnum(subject),
+      topic: concept,
+      description: `探索${concept}的基本规律`,
+      icon: '🔬',
+      gradient: 'from-blue-500 to-purple-500',
+      physicsType: 'generic',
+    },
+    params: [{
+      name: 'parameter',
+      label: '实验参数',
+      unit: '',
+      defaultValue: 50,
+      min: 0,
+      max: 100,
+      step: 1,
+      category: 'input',
+      description: '可调节的实验参数',
+    }],
+    formulas: [{
+      name: '基础公式',
+      expression: 'result = parameter',
+      description: '参数与结果的关系',
+      variables: ['parameter'],
+      resultVariable: 'result',
+    }],
+    teaching: {
+      understanding: {
+        objective: `理解${concept}的基本概念`,
+        keyConcepts: [concept],
+        prerequisites: [],
+      },
+    },
+  };
+
+  return enrichSchema(partial);
+}

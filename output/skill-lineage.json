@@ -1,0 +1,32 @@
+{
+  "workflow-orchestration": [
+    {
+      "version": "1.0.0",
+      "parentVersion": null,
+      "type": "create",
+      "timestamp": "2026-04-22T10:59:26.795Z",
+      "summary": "Initial creation: Multi-agent workflow orchestration SOP",
+      "sourceExpId": null
+    }
+  ],
+  "code-review": [
+    {
+      "version": "1.0.0",
+      "parentVersion": null,
+      "type": "create",
+      "timestamp": "2026-04-22T10:59:26.797Z",
+      "summary": "Initial creation: Code review checklist and best practices",
+      "sourceExpId": null
+    }
+  ],
+  "typescript-dev": [
+    {
+      "version": "1.0.0",
+      "parentVersion": null,
+      "type": "create",
+      "timestamp": "2026-04-22T10:59:26.800Z",
+      "summary": "Initial creation: TypeScript development patterns",
+      "sourceExpId": null
+    }
+  ]
+}

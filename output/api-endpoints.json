@@ -1,0 +1,145 @@
+{
+  "generated": "2026-04-22T11:04:33.273Z",
+  "strategy": "ide-first",
+  "stats": {
+    "totalEndpoints": 0,
+    "totalHandlers": 10,
+    "totalRoutes": 0,
+    "frameworks": [],
+    "strategy": "ide-first",
+    "httpMethods": {}
+  },
+  "endpoints": [],
+  "handlers": [
+    {
+      "symbol": {
+        "name": "processFrame",
+        "kind": "function",
+        "file": "src/hooks/useMediaPipeHands.ts",
+        "line": 238,
+        "signature": "useCallback(async (video: HTMLVideoEleme",
+        "summary": "处理视频帧"
+      },
+      "category": "controller",
+      "callsOut": 12,
+      "calledByCount": 12
+    },
+    {
+      "symbol": {
+        "name": "processVideo",
+        "kind": "function",
+        "file": "src/hooks/useMediaPipeHands.ts",
+        "line": 254,
+        "signature": "",
+        "summary": "设置定时器处理视频帧"
+      },
+      "category": "controller",
+      "callsOut": 12,
+      "calledByCount": 12
+    },
+    {
+      "symbol": {
+        "name": "getFingerPosition",
+        "kind": "function",
+        "file": "src/hooks/useMediaPipeHands.ts",
+        "line": 312,
+        "signature": " landmarks: HandLandmark[], finger:     ",
+        "summary": "获取手指尖位置"
+      },
+      "category": "crud",
+      "callsOut": 12,
+      "calledByCount": 12
+    },
+    {
+      "symbol": {
+        "name": "getWristPosition",
+        "kind": "function",
+        "file": "src/hooks/useMediaPipeHands.ts",
+        "line": 327,
+        "signature": "landmarks: HandLandmark[]",
+        "summary": "获取手腕位置"
+      },
+      "category": "crud",
+      "callsOut": 12,
+      "calledByCount": 12
+    },
+    {
+      "symbol": {
+        "name": "getFingerAngle",
+        "kind": "function",
+        "file": "src/hooks/useMediaPipeHands.ts",
+        "line": 332,
+        "signature": " landmarks: HandLandmark[], finger:     ",
+        "summary": "计算手指指向角度"
+      },
+      "category": "crud",
+      "callsOut": 12,
+      "calledByCount": 12
+    },
+    {
+      "symbol": {
+        "name": "getExperimentResults",
+        "kind": "function",
+        "file": "src/lib/calculations-browser.ts",
+        "line": 552,
+        "signature": " experimentId: string, params: Record<st",
+        "summary": "根据实验ID获取计算结果"
+      },
+      "category": "crud",
+      "callsOut": 8,
+      "calledByCount": 8
+    },
+    {
+      "symbol": {
+        "name": "loadSubjectKnowledge",
+        "kind": "function",
+        "file": "src/app/api/generate/route.ts",
+        "line": 14,
+        "signature": "subject: string",
+        "summary": "加载学科知识库"
+      },
+      "category": "crud",
+      "callsOut": 4,
+      "calledByCount": 4
+    },
+    {
+      "symbol": {
+        "name": "createFallbackConfig",
+        "kind": "function",
+        "file": "src/app/api/generate/route.ts",
+        "line": 252,
+        "signature": "concept: string, subject: string",
+        "summary": "备用配置生成器"
+      },
+      "category": "crud",
+      "callsOut": 4,
+      "calledByCount": 4
+    },
+    {
+      "symbol": {
+        "name": "getExperimentById",
+        "kind": "function",
+        "file": "src/lib/experiments.ts",
+        "line": 600,
+        "signature": "id: string",
+        "summary": "根据ID获取实验"
+      },
+      "category": "crud",
+      "callsOut": 1,
+      "calledByCount": 1
+    },
+    {
+      "symbol": {
+        "name": "getExperimentCalculations",
+        "kind": "function",
+        "file": "src/lib/experiments.ts",
+        "line": 605,
+        "signature": " experimentId: string, params: Record<st",
+        "summary": "获取实验计算结果"
+      },
+      "category": "crud",
+      "callsOut": 1,
+      "calledByCount": 1
+    }
+  ]
+}
