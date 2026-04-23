@@ -181,102 +181,154 @@ export default function CircuitExperimentPage() {
               <div className="flex justify-center">
                 {/* SVG 电路图 */}
                 <svg width="400" height="200" viewBox="0 0 400 200">
-                  {/* 电池 */}
-                  <g transform="translate(20, 85)">
+                  {/* 电池 - 左侧 */}
+                  <g transform="translate(15, 85)">
                     <line x1="0" y1="15" x2="0" y2="0" stroke="#333" strokeWidth="2" />
                     <line x1="-5" y1="5" x2="5" y2="5" stroke="#333" strokeWidth="3" />
                     <line x1="-5" y1="12" x2="5" y2="12" stroke="#333" strokeWidth="3" />
                     <text x="0" y="30" textAnchor="middle" fontSize="12" fill="#666">{batteryVoltage}V</text>
                   </g>
 
-                  {/* 导线 */}
-                  <line x1="40" y1="100" x2="80" y2="100" stroke="#333" strokeWidth="2" />
-                  <line x1="40" y1="100" x2="40" y2="40" stroke="#333" strokeWidth="2" />
+                  {/* 电池正极向上导线 */}
+                  <line x1="15" y1="85" x2="15" y2="60" stroke="#333" strokeWidth="2" />
+                  {/* 电池负极向下导线 */}
+                  <line x1="15" y1="100" x2="15" y2="140" stroke="#333" strokeWidth="2" />
 
                   {circuitType === 'series' && (
                     <>
-                      {/* 串联电路 */}
+                      {/* 串联电路：R1 和 R2 串联 */}
+                      {/* 上方导线：正极到 R1 */}
+                      <line x1="15" y1="60" x2="80" y2="60" stroke="#333" strokeWidth="2" />
+                      
                       {/* R1 */}
-                      <g transform="translate(80, 60)">
+                      <g transform="translate(80, 45)">
                         <rect x="0" y="0" width="80" height="30" fill={isPowered ? '#E74C3C' : '#ccc'} rx="4" />
                         <text x="40" y="20" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">{resistances[0]}Ω</text>
                         <text x="40" y="-5" textAnchor="middle" fontSize="10" fill="#666">I={calculations.branchI[0].toFixed(2)}A</text>
                         <text x="40" y="45" textAnchor="middle" fontSize="10" fill="#666">U={calculations.voltages[0].toFixed(1)}V</text>
                       </g>
-                      <line x1="160" y1="75" x2="180" y2="75" stroke="#333" strokeWidth="2" />
+                      
+                      {/* R1 到 R2 的导线 */}
+                      <line x1="160" y1="60" x2="180" y2="60" stroke="#333" strokeWidth="2" />
                       
                       {/* R2 */}
-                      <g transform="translate(180, 60)">
+                      <g transform="translate(180, 45)">
                         <rect x="0" y="0" width="80" height="30" fill={isPowered ? '#27AE60' : '#ccc'} rx="4" />
                         <text x="40" y="20" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">{resistances[1]}Ω</text>
                         <text x="40" y="-5" textAnchor="middle" fontSize="10" fill="#666">I={calculations.branchI[0].toFixed(2)}A</text>
                         <text x="40" y="45" textAnchor="middle" fontSize="10" fill="#666">U={calculations.voltages[1].toFixed(1)}V</text>
                       </g>
-                      <line x1="260" y1="75" x2="280" y2="75" stroke="#333" strokeWidth="2" />
-                      <line x1="280" y1="75" x2="280" y2="140" stroke="#333" strokeWidth="2" />
-                      <line x1="280" y1="140" x2="40" y2="140" stroke="#333" strokeWidth="2" />
+                      
+                      {/* R2 右侧回到电池负极 */}
+                      <line x1="260" y1="60" x2="280" y2="60" stroke="#333" strokeWidth="2" />
+                      <line x1="280" y1="60" x2="280" y2="140" stroke="#333" strokeWidth="2" />
+                      <line x1="280" y1="140" x2="15" y2="140" stroke="#333" strokeWidth="2" />
                     </>
                   )}
-
                   {circuitType === 'parallel' && (
                     <>
-                      {/* 上支路 */}
-                      <line x1="200" y1="40" x2="200" y2="60" stroke="#333" strokeWidth="2" />
-                      <g transform="translate(160, 60)">
+                      {/* 并联电路：R1 和 R2 并联 */}
+                      {/* 上方导线：从电池正极到分流节点 */}
+                      <line x1="15" y1="85" x2="15" y2="55" stroke="#333" strokeWidth="2" />
+                      <line x1="15" y1="55" x2="120" y2="55" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 分流节点 */}
+                      <circle cx="120" cy="55" r="4" fill="#333" />
+                      
+                      {/* 上支路：分流节点到 R1 */}
+                      <line x1="120" y1="55" x2="140" y2="55" stroke="#333" strokeWidth="2" />
+                      
+                      {/* R1 */}
+                      <g transform="translate(140, 40)">
                         <rect x="0" y="0" width="80" height="30" fill={isPowered ? '#E74C3C' : '#ccc'} rx="4" />
                         <text x="40" y="20" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">{resistances[0]}Ω</text>
                         <text x="40" y="-5" textAnchor="middle" fontSize="10" fill="#666">I={calculations.branchI[0].toFixed(2)}A</text>
                       </g>
-                      <line x1="160" y1="75" x2="80" y2="75" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 上支路：R1 到汇流节点 */}
+                      <line x1="220" y1="55" x2="260" y2="55" stroke="#333" strokeWidth="2" />
 
-                      {/* 下支路 */}
-                      <line x1="200" y1="140" x2="200" y2="120" stroke="#333" strokeWidth="2" />
-                      <g transform="translate(160, 90)">
+                      {/* 下支路：分流节点到 R2 */}
+                      <line x1="120" y1="55" x2="120" y2="120" stroke="#333" strokeWidth="2" />
+                      <line x1="120" y1="120" x2="140" y2="120" stroke="#333" strokeWidth="2" />
+                      
+                      {/* R2 */}
+                      <g transform="translate(140, 105)">
                         <rect x="0" y="0" width="80" height="30" fill={isPowered ? '#27AE60' : '#ccc'} rx="4" />
                         <text x="40" y="20" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">{resistances[1]}Ω</text>
                         <text x="40" y="45" textAnchor="middle" fontSize="10" fill="#666">I={calculations.branchI[1].toFixed(2)}A</text>
                       </g>
-                      <line x1="160" y1="105" x2="80" y2="105" stroke="#333" strokeWidth="2" />
-                      <line x1="80" y1="75" x2="80" y2="105" stroke="#333" strokeWidth="2" />
-                      <line x1="240" y1="75" x2="320" y2="75" stroke="#333" strokeWidth="2" />
-                      <line x1="240" y1="105" x2="320" y2="105" stroke="#333" strokeWidth="2" />
+
+                      {/* 下支路：R2 到汇流节点 */}
+                      <line x1="220" y1="120" x2="260" y2="120" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 汇流节点 */}
+                      <circle cx="260" cy="55" r="4" fill="#333" />
+                      <line x1="260" y1="55" x2="260" y2="120" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 右侧导线：汇流节点回到电池负极 */}
+                      <line x1="260" y1="55" x2="340" y2="55" stroke="#333" strokeWidth="2" />
+                      <line x1="340" y1="55" x2="340" y2="140" stroke="#333" strokeWidth="2" />
+                      <line x1="15" y1="140" x2="340" y2="140" stroke="#333" strokeWidth="2" />
                     </>
                   )}
 
                   {circuitType === 'both' && (
                     <>
                       {/* 混联: R1+R2串联，再与R3并联 */}
+                      {/* 上方导线：从电池正极到分流节点 */}
+                      <line x1="15" y1="85" x2="15" y2="45" stroke="#333" strokeWidth="2" />
+                      <line x1="15" y1="45" x2="120" y2="45" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 分流节点 */}
+                      <circle cx="120" cy="45" r="4" fill="#333" />
+                      
+                      {/* 上支路：分流节点到 R1 */}
+                      <line x1="120" y1="45" x2="140" y2="45" stroke="#333" strokeWidth="2" />
+                      
                       {/* R1 */}
-                      <g transform="translate(200, 40)">
+                      <g transform="translate(140, 30)">
                         <rect x="0" y="0" width="60" height="24" fill={isPowered ? '#E74C3C' : '#ccc'} rx="4" />
                         <text x="30" y="17" textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">{resistances[0]}Ω</text>
                       </g>
-                      <line x1="260" y1="52" x2="280" y2="52" stroke="#333" strokeWidth="2" />
+                      
+                      {/* R1 到 R2 */}
+                      <line x1="200" y1="42" x2="220" y2="42" stroke="#333" strokeWidth="2" />
                       
                       {/* R2 */}
-                      <g transform="translate(280, 40)">
+                      <g transform="translate(220, 30)">
                         <rect x="0" y="0" width="60" height="24" fill={isPowered ? '#27AE60' : '#ccc'} rx="4" />
                         <text x="30" y="17" textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">{resistances[1]}Ω</text>
                       </g>
-                      <line x1="340" y1="52" x2="360" y2="52" stroke="#333" strokeWidth="2" />
-                      <line x1="360" y1="52" x2="360" y2="100" stroke="#333" strokeWidth="2" />
                       
-                      {/* 分流点 */}
-                      <circle cx="200" cy="52" r="4" fill="#333" />
-                      <line x1="200" y1="52" x2="200" y2="100" stroke="#333" strokeWidth="2" />
+                      {/* 上支路：R2 到汇流节点 */}
+                      <line x1="280" y1="42" x2="320" y2="42" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 下支路：分流节点到 R3 */}
+                      <line x1="120" y1="45" x2="120" y2="115" stroke="#333" strokeWidth="2" />
+                      <line x1="120" y1="115" x2="180" y2="115" stroke="#333" strokeWidth="2" />
                       
                       {/* R3 */}
-                      <g transform="translate(280, 88)">
+                      <g transform="translate(180, 100)">
                         <rect x="0" y="0" width="60" height="24" fill={isPowered ? '#3498DB' : '#ccc'} rx="4" />
                         <text x="30" y="17" textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">{resistances[2]}Ω</text>
                       </g>
-                      <line x1="280" y1="100" x2="200" y2="100" stroke="#333" strokeWidth="2" />
-                      <line x1="360" y1="100" x2="360" y2="140" stroke="#333" strokeWidth="2" />
-                      <line x1="360" y1="140" x2="40" y2="140" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 下支路：R3 到汇流节点 */}
+                      <line x1="240" y1="112" x2="320" y2="112" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 汇流节点 */}
+                      <circle cx="320" cy="42" r="4" fill="#333" />
+                      <line x1="320" y1="42" x2="320" y2="112" stroke="#333" strokeWidth="2" />
+                      
+                      {/* 右侧导线：汇流节点回到电池负极 */}
+                      <line x1="320" y1="42" x2="360" y2="42" stroke="#333" strokeWidth="2" />
+                      <line x1="360" y1="42" x2="360" y2="140" stroke="#333" strokeWidth="2" />
+                      <line x1="15" y1="140" x2="360" y2="140" stroke="#333" strokeWidth="2" />
                       
                       {/* 标注 */}
-                      <text x="200" y="170" textAnchor="middle" fontSize="10" fill="#666">
-                        R1+R2与R3并联
+                      <text x="220" y="170" textAnchor="middle" fontSize="10" fill="#666">
+                        R1+R2串联，再与R3并联
                       </text>
                     </>
                   )}
