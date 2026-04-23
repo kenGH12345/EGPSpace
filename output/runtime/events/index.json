@@ -59,6 +59,11 @@
       "lastSeq": 6,
       "filePath": "c:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260423-144617.jsonl",
       "updatedAt": "2026-04-23T07:17:56.387Z"
+    },
+    "wf-20260424-000600": {
+      "lastSeq": 1,
+      "filePath": "c:\\workspace\\EGPSpace\\output\\runtime\\events\\wf-20260424-000600.jsonl",
+      "updatedAt": "2026-04-23T16:06:00.432Z"
     }
   }
 }

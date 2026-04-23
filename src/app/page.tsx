@@ -79,12 +79,21 @@ export default function HomePage() {
 
   const currentExperiments = subjectExperiments[activeSubject] || physicsExperiments;
 
-  const handleExperimentClick = (id: string) => {
-    window.location.href = `/experiments/${id}`;
+  const presetExperimentIds = new Set(['buoyancy', 'lever', 'refraction', 'circuit', 'acid-base']);
+
+  const handleExperimentClick = (id: string, title?: string, description?: string) => {
+    if (presetExperimentIds.has(id)) {
+      window.location.href = `/experiments/${id}`;
+    } else {
+      // Non-preset experiment: auto-trigger LLM generation
+      const concept = title || id;
+      setInputValue(concept);
+      handleGenerateWithConcept(concept, description);
+    }
   };
 
-  const handleGenerate = async () => {
-    if (!inputValue.trim() || isGenerating) return;
+  const handleGenerateWithConcept = async (concept: string, description?: string) => {
+    if (!concept.trim() || isGenerating) return;
 
     setIsGenerating(true);
     setError(null);
@@ -95,7 +104,7 @@ export default function HomePage() {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concept: inputValue.trim() }),
+        body: JSON.stringify({ concept: concept.trim(), description }),
       });
 
       const data = await response.json();
@@ -106,9 +115,8 @@ export default function HomePage() {
 
       if (data.success && data.schema) {
         const schema = data.schema;
-        // 将 schema 转换为前端展示格式
         const exp: GeneratedExperiment = {
-          name: schema.meta?.name || inputValue,
+          name: schema.meta?.name || concept,
           description: schema.meta?.description || '',
           subject: schema.meta?.subject || 'physics',
           icon: schema.meta?.icon || '🔬',
@@ -116,9 +124,7 @@ export default function HomePage() {
           knowledge: schema.teaching?.understanding?.keyConcepts || [],
         };
         setGeneratedExp(exp);
-        // 使用 physicsType 直接跳转到对应实验页面
         const experimentId = schema.meta?.physicsType || mapConceptToExperiment(exp);
-        // 使用 sessionStorage 存储完整 schema，供实验页面使用
         sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));
         window.location.href = `/experiments/${experimentId}`;
       } else {
@@ -128,6 +134,10 @@ export default function HomePage() {
       setError(err instanceof Error ? err.message : '生成失败，请重试');
       setIsGenerating(false);
     }
+  };
+
+  const handleGenerate = async () => {
+    await handleGenerateWithConcept(inputValue);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -224,7 +234,7 @@ export default function HomePage() {
               {currentExperiments.map((exp) => (
                 <button
                   key={exp.id}
-                  onClick={() => handleExperimentClick(exp.id)}
+onClick={() => handleExperimentClick(exp.id, exp.title, exp.description)}
                   className="bg-white rounded-2xl p-5 text-left border border-gray-200 hover:border-amber-300 hover:shadow-lg transition-all duration-300 group"
                 >
                   <div className="flex items-start gap-4">
