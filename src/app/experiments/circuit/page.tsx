@@ -177,71 +177,74 @@ export default function CircuitExperimentPage() {
               <div className="flex justify-center">
                 {/* SVG 电路图 */}
                 <svg width="400" height="200" viewBox="0 0 400 200">
-                  {/* 标准电路符号 */}
+                  {/* 
+                    标准教学电路图样式
+                    - 电源在左侧，电池符号（长短线）
+                    - 电阻为3段锯齿波形
+                    - 标注：R=XXΩ在上方，I(红)在下方，U(蓝)在下方
+                  */}
 
-                  {/* 电源符号 - 长短线标准符号 */}
-                  <g transform="translate(20, 85)">
-                    {/* 电源正极线（长） */}
-                    <line x1="0" y1="15" x2="0" y2="5" stroke="#333" strokeWidth="2" />
-                    <line x1="-6" y1="5" x2="6" y2="5" stroke="#E74C3C" strokeWidth="3" />
-                    {/* 电源负极线（短） */}
-                    <line x1="-6" y1="12" x2="6" y2="12" stroke="#333" strokeWidth="2" />
-                    <line x1="0" y1="12" x2="0" y2="0" stroke="#333" strokeWidth="2" />
-                    <text x="0" y="30" textAnchor="middle" fontSize="12" fill="#666">{batteryVoltage}V</text>
-                    {/* + 符号 */}
-                    <text x="10" y="6" fontSize="10" fill="#E74C3C">+</text>
-                  </g>
-
-                  {/* 电阻符号 - 锯齿波形标准符号 */}
                   {circuitType === 'series' && (
                     <>
-                      {/* 串联电路 - 标准矩形布局 */}
-                      <line x1="40" y1="85" x2="40" y2="40" stroke="#333" strokeWidth="2" />
-                      <line x1="40" y1="40" x2="280" y2="40" stroke="#333" strokeWidth="2" />
-                      
-                      {/* R1 - 锯齿形电阻 */}
-                      <g transform="translate(80, 40)">
-                        {/* 连接线 */}
-                        <line x1="0" y1="25" x2="10" y2="25" stroke="#333" strokeWidth="2" />
-                        {/* 锯齿波形 */}
-                        <polyline points="10,25 15,15 25,35 35,15 45,35 55,15 65,35 70,25" fill="none" stroke={isPowered ? '#E74C3C' : '#ccc'} strokeWidth="2" />
-                        {/* 连接线 */}
-                        <line x1="70" y1="25" x2="80" y2="25" stroke="#333" strokeWidth="2" />
-                        {/* 标注 */}
-                        <text x="40" y="15" textAnchor="middle" fontSize="10" fill="#666">R₁={resistances[0]}Ω</text>
-                        <text x="40" y="48" textAnchor="middle" fontSize="9" fill="#E74C3C">I={calculations.branchI[0].toFixed(2)}A</text>
-                        <text x="40" y="58" textAnchor="middle" fontSize="9" fill="#3498DB">U={calculations.voltages[0].toFixed(1)}V</text>
+                      {/* 串联电路 - 水平线性布局 */}
+                      {/* 电源 */}
+                      <g transform="translate(40, 70)">
+                        {/* 正极（长线） */}
+                        <line x1="0" y1="0" x2="0" y2="-20" stroke="#333" strokeWidth="2" />
+                        <line x1="-5" y1="-20" x2="5" y2="-20" stroke="#E74C3C" strokeWidth="3" />
+                        <text x="8" y="-17" fontSize="10" fill="#E74C3C">+</text>
+                        {/* 负极（短线） */}
+                        <line x1="-5" y1="-8" x2="5" y2="-8" stroke="#333" strokeWidth="2" />
+                        <line x1="0" y1="-8" x2="0" y2="0" stroke="#333" strokeWidth="2" />
+                        <text x="0" y="15" textAnchor="middle" fontSize="11" fill="#666">{batteryVoltage}V</text>
                       </g>
-                      
-                      <line x1="160" y1="40" x2="180" y2="40" stroke="#333" strokeWidth="2" />
-                      
-                      {/* R2 - 锯齿形电阻 */}
-                      <g transform="translate(180, 40)">
+
+                      {/* 顶部导线：电源正极 → R1 → R2 → 右侧 */}
+                      <line x1="40" y1="50" x2="120" y2="50" stroke="#333" strokeWidth="2" />
+
+                      {/* R1 - 3段锯齿 */}
+                      <g transform="translate(120, 35)">
+                        <text x="35" y="-5" textAnchor="middle" fontSize="11" fill="#333" fontWeight="bold">R₁={resistances[0]}Ω</text>
                         {/* 连接线 */}
-                        <line x1="0" y1="25" x2="10" y2="25" stroke="#333" strokeWidth="2" />
-                        {/* 锯齿波形 */}
-                        <polyline points="10,25 15,15 25,35 35,15 45,35 55,15 65,35 70,25" fill="none" stroke={isPowered ? '#27AE60' : '#ccc'} strokeWidth="2" />
+                        <line x1="0" y1="15" x2="8" y2="15" stroke="#333" strokeWidth="2" />
+                        {/* 3段锯齿 */}
+                        <polyline points="8,15 13,8 18,22 23,8 28,22 33,8 38,22 43,8 48,22 53,8 58,22 62,15" fill="none" stroke={isPowered ? '#E74C3C' : '#ccc'} strokeWidth="2" />
                         {/* 连接线 */}
-                        <line x1="70" y1="25" x2="80" y2="25" stroke="#333" strokeWidth="2" />
-                        {/* 标注 */}
-                        <text x="40" y="15" textAnchor="middle" fontSize="10" fill="#666">R₂={resistances[1]}Ω</text>
-                        <text x="40" y="48" textAnchor="middle" fontSize="9" fill="#E74C3C">I={calculations.branchI[0].toFixed(2)}A</text>
-                        <text x="40" y="58" textAnchor="middle" fontSize="9" fill="#3498DB">U={calculations.voltages[1].toFixed(1)}V</text>
+                        <line x1="62" y1="15" x2="70" y2="15" stroke="#333" strokeWidth="2" />
+                        {/* 电流电压标注 */}
+                        <text x="35" y="32" textAnchor="middle" fontSize="10" fill="#E74C3C">I={calculations.branchI[0].toFixed(2)}A</text>
+                        <text x="35" y="44" textAnchor="middle" fontSize="10" fill="#3498DB">U={calculations.voltages[0].toFixed(1)}V</text>
                       </g>
-                      
-                      <line x1="260" y1="40" x2="280" y2="40" stroke="#333" strokeWidth="2" />
+
+                      {/* 导线：R1 → R2 */}
+                      <line x1="190" y1="50" x2="220" y2="50" stroke="#333" strokeWidth="2" />
+
+                      {/* R2 - 3段锯齿 */}
+                      <g transform="translate(220, 35)">
+                        <text x="35" y="-5" textAnchor="middle" fontSize="11" fill="#333" fontWeight="bold">R₂={resistances[1]}Ω</text>
+                        {/* 连接线 */}
+                        <line x1="0" y1="15" x2="8" y2="15" stroke="#333" strokeWidth="2" />
+                        {/* 3段锯齿 */}
+                        <polyline points="8,15 13,8 18,22 23,8 28,22 33,8 38,22 43,8 48,22 53,8 58,22 62,15" fill="none" stroke={isPowered ? '#27AE60' : '#ccc'} strokeWidth="2" />
+                        {/* 连接线 */}
+                        <line x1="62" y1="15" x2="70" y2="15" stroke="#333" strokeWidth="2" />
+                        {/* 电流电压标注 */}
+                        <text x="35" y="32" textAnchor="middle" fontSize="10" fill="#E74C3C">I={calculations.branchI[0].toFixed(2)}A</text>
+                        <text x="35" y="44" textAnchor="middle" fontSize="10" fill="#3498DB">U={calculations.voltages[1].toFixed(1)}V</text>
+                      </g>
+
                       {/* 右侧导线向下 */}
-                      <line x1="280" y1="40" x2="280" y2="100" stroke="#333" strokeWidth="2" />
+                      <line x1="290" y1="50" x2="290" y2="70" stroke="#333" strokeWidth="2" />
+
                       {/* 底部导线回到电源负极 */}
-                      <line x1="280" y1="100" x2="40" y2="100" stroke="#333" strokeWidth="2" />
-                      
+                      <line x1="290" y1="70" x2="40" y2="70" stroke="#333" strokeWidth="2" />
+
                       {/* 电流方向箭头 */}
                       {isPowered && (
                         <>
-                          <polygon points="100,35 95,32 95,38" fill="#E74C3C" />
-                          <polygon points="200,35 195,32 195,38" fill="#E74C3C" />
-                          <polygon points="270,85 267,80 273,80" fill="#E74C3C" />
-                          <polygon points="100,105 95,102 95,108" fill="#E74C3C" />
+                          <polygon points="80,45 75,42 75,48" fill="#E74C3C" />
+                          <polygon points="180,45 175,42 175,48" fill="#E74C3C" />
+                          <polygon points="250,45 245,42 245,48" fill="#E74C3C" />
                         </>
                       )}
                     </>
@@ -249,98 +252,126 @@ export default function CircuitExperimentPage() {
 
                   {circuitType === 'parallel' && (
                     <>
-                      {/* 并联电路 - 标准布局 */}
-                      <line x1="40" y1="85" x2="40" y2="40" stroke="#333" strokeWidth="2" />
-                      <line x1="40" y1="40" x2="120" y2="40" stroke="#333" strokeWidth="2" />
-                      
+                      {/* 并联电路 */}
+                      {/* 电源 */}
+                      <g transform="translate(40, 70)">
+                        <line x1="0" y1="0" x2="0" y2="-20" stroke="#333" strokeWidth="2" />
+                        <line x1="-5" y1="-20" x2="5" y2="-20" stroke="#E74C3C" strokeWidth="3" />
+                        <text x="8" y="-17" fontSize="10" fill="#E74C3C">+</text>
+                        <line x1="-5" y1="-8" x2="5" y2="-8" stroke="#333" strokeWidth="2" />
+                        <line x1="0" y1="-8" x2="0" y2="0" stroke="#333" strokeWidth="2" />
+                        <text x="0" y="15" textAnchor="middle" fontSize="11" fill="#666">{batteryVoltage}V</text>
+                      </g>
+
+                      {/* 电源正极到顶部 */}
+                      <line x1="40" y1="50" x2="40" y2="20" stroke="#333" strokeWidth="2" />
+                      <line x1="40" y1="20" x2="280" y2="20" stroke="#333" strokeWidth="2" />
+
                       {/* 分流点 */}
-                      <circle cx="120" cy="40" r="4" fill="#333" />
-                      <line x1="120" y1="40" x2="160" y2="40" stroke="#333" strokeWidth="2" />
-                      <circle cx="200" cy="40" r="4" fill="#333" />
-                      <line x1="200" y1="40" x2="240" y2="40" stroke="#333" strokeWidth="2" />
-                      
-                      {/* 上支路 - R1 */}
-                      <g transform="translate(120, 40)">
-                        <line x1="0" y1="0" x2="10" y2="0" stroke="#333" strokeWidth="2" />
-                        <polyline points="10,0 15,10 25,-10 35,10 45,-10 55,10 65,-10 70,0" fill="none" stroke={isPowered ? '#E74C3C' : '#ccc'} strokeWidth="2" />
-                        <line x1="70" y1="0" x2="80" y2="0" stroke="#333" strokeWidth="2" />
-                        <text x="40" y="-10" textAnchor="middle" fontSize="10" fill="#666">R₁={resistances[0]}Ω</text>
-                        <text x="40" y="20" textAnchor="middle" fontSize="9" fill="#E74C3C">I₁={calculations.branchI[0].toFixed(2)}A</text>
+                      <circle cx="140" cy="20" r="4" fill="#333" />
+                      <circle cx="240" cy="20" r="4" fill="#333" />
+
+                      {/* 上支路 R1 */}
+                      <g transform="translate(100, 20)">
+                        <text x="40" y="-5" textAnchor="middle" fontSize="11" fill="#333" fontWeight="bold">R₁={resistances[0]}Ω</text>
+                        <line x1="0" y1="0" x2="8" y2="0" stroke="#333" strokeWidth="2" />
+                        <polyline points="8,0 13,7 18,-7 23,7 28,-7 33,7 38,-7 43,7 48,-7 53,7 58,-7 62,0" fill="none" stroke={isPowered ? '#E74C3C' : '#ccc'} strokeWidth="2" />
+                        <line x1="62" y1="0" x2="80" y2="0" stroke="#333" strokeWidth="2" />
+                        <text x="40" y="18" textAnchor="middle" fontSize="10" fill="#E74C3C">I₁={calculations.branchI[0].toFixed(2)}A</text>
+                        <text x="40" y="30" textAnchor="middle" fontSize="10" fill="#3498DB">U={batteryVoltage}V</text>
                       </g>
-                      
-                      <line x1="200" y1="0" x2="200" y2="40" stroke="#333" strokeWidth="2" />
-                      
+
+                      {/* 上支路右侧导线向下 */}
+                      <line x1="180" y1="20" x2="180" y2="70" stroke="#333" strokeWidth="2" />
+                      <line x1="180" y1="70" x2="280" y2="70" stroke="#333" strokeWidth="2" />
+                      <line x1="280" y1="70" x2="280" y2="20" stroke="#333" strokeWidth="2" />
+
+                      {/* 下支路 R2 */}
+                      <g transform="translate(100, 50)">
+                        <text x="40" y="55" textAnchor="middle" fontSize="11" fill="#333" fontWeight="bold">R₂={resistances[1]}Ω</text>
+                        <line x1="0" y1="40" x2="8" y2="40" stroke="#333" strokeWidth="2" />
+                        <polyline points="8,40 13,33 18,47 23,33 28,47 33,33 38,47 43,33 48,47 53,33 58,47 62,40" fill="none" stroke={isPowered ? '#27AE60' : '#ccc'} strokeWidth="2" />
+                        <line x1="62" y1="40" x2="80" y2="40" stroke="#333" strokeWidth="2" />
+                        <text x="40" y="58" textAnchor="middle" fontSize="10" fill="#E74C3C">I₂={calculations.branchI[1].toFixed(2)}A</text>
+                        <text x="40" y="70" textAnchor="middle" fontSize="10" fill="#3498DB">U={batteryVoltage}V</text>
+                      </g>
+
+                      {/* 下支路左侧导线向下 */}
+                      <line x1="100" y1="50" x2="100" y2="70" stroke="#333" strokeWidth="2" />
+                      <line x1="100" y1="70" x2="40" y2="70" stroke="#333" strokeWidth="2" />
+
                       {/* 合流点 */}
-                      <circle cx="120" cy="100" r="4" fill="#333" />
-                      <circle cx="200" cy="100" r="4" fill="#333" />
-                      <line x1="200" y1="60" x2="200" y2="100" stroke="#333" strokeWidth="2" />
-                      
-                      {/* 下支路 - R2 */}
-                      <g transform="translate(120, 60)">
-                        <line x1="0" y1="40" x2="10" y2="40" stroke="#333" strokeWidth="2" />
-                        <polyline points="10,40 15,30 25,50 35,30 45,50 55,30 65,50 70,40" fill="none" stroke={isPowered ? '#27AE60' : '#ccc'} strokeWidth="2" />
-                        <line x1="70" y1="40" x2="80" y2="40" stroke="#333" strokeWidth="2" />
-                        <text x="40" y="55" textAnchor="middle" fontSize="10" fill="#666">R₂={resistances[1]}Ω</text>
-                        <text x="40" y="70" textAnchor="middle" fontSize="9" fill="#E74C3C">I₂={calculations.branchI[1].toFixed(2)}A</text>
-                      </g>
-                      
-                      <line x1="120" y1="60" x2="120" y2="100" stroke="#333" strokeWidth="2" />
-                      <line x1="40" y1="100" x2="120" y2="100" stroke="#333" strokeWidth="2" />
-                      <line x1="200" y1="100" x2="280" y2="100" stroke="#333" strokeWidth="2" />
-                      <line x1="280" y1="100" x2="280" y2="40" stroke="#333" strokeWidth="2" />
-                      <line x1="240" y1="40" x2="280" y2="40" stroke="#333" strokeWidth="2" />
-                      <line x1="40" y1="40" x2="40" y2="100" stroke="#333" strokeWidth="2" />
+                      <circle cx="140" cy="70" r="4" fill="#333" />
+                      <circle cx="240" cy="70" r="4" fill="#333" />
+                      <line x1="180" y1="70" x2="240" y2="70" stroke="#333" strokeWidth="2" />
+
+                      {/* 电流方向箭头 */}
+                      {isPowered && (
+                        <>
+                          <polygon points="220,15 215,12 215,18" fill="#E74C3C" />
+                          <polygon points="140,65 135,62 135,68" fill="#E74C3C" />
+                        </>
+                      )}
                     </>
                   )}
 
                   {circuitType === 'both' && (
                     <>
-                      {/* 混联电路 - 与并联相同布局 */}
-                      <line x1="40" y1="85" x2="40" y2="40" stroke="#333" strokeWidth="2" />
-                      <line x1="40" y1="40" x2="120" y2="40" stroke="#333" strokeWidth="2" />
-                      
+                      {/* 混联 - R1与R2并联 */}
+                      {/* 电源 */}
+                      <g transform="translate(40, 70)">
+                        <line x1="0" y1="0" x2="0" y2="-20" stroke="#333" strokeWidth="2" />
+                        <line x1="-5" y1="-20" x2="5" y2="-20" stroke="#E74C3C" strokeWidth="3" />
+                        <text x="8" y="-17" fontSize="10" fill="#E74C3C">+</text>
+                        <line x1="-5" y1="-8" x2="5" y2="-8" stroke="#333" strokeWidth="2" />
+                        <line x1="0" y1="-8" x2="0" y2="0" stroke="#333" strokeWidth="2" />
+                        <text x="0" y="15" textAnchor="middle" fontSize="11" fill="#666">{batteryVoltage}V</text>
+                      </g>
+
+                      {/* 电源正极到顶部 */}
+                      <line x1="40" y1="50" x2="40" y2="20" stroke="#333" strokeWidth="2" />
+                      <line x1="40" y1="20" x2="280" y2="20" stroke="#333" strokeWidth="2" />
+
                       {/* 分流点 */}
-                      <circle cx="120" cy="40" r="4" fill="#333" />
-                      <line x1="120" y1="40" x2="160" y2="40" stroke="#333" strokeWidth="2" />
-                      <circle cx="200" cy="40" r="4" fill="#333" />
-                      <line x1="200" y1="40" x2="240" y2="40" stroke="#333" strokeWidth="2" />
-                      
-                      {/* 上支路 - R1 */}
-                      <g transform="translate(120, 40)">
-                        <line x1="0" y1="0" x2="10" y2="0" stroke="#333" strokeWidth="2" />
-                        <polyline points="10,0 15,10 25,-10 35,10 45,-10 55,10 65,-10 70,0" fill="none" stroke={isPowered ? '#E74C3C' : '#ccc'} strokeWidth="2" />
-                        <line x1="70" y1="0" x2="80" y2="0" stroke="#333" strokeWidth="2" />
-                        <text x="40" y="-10" textAnchor="middle" fontSize="10" fill="#666">R₁={resistances[0]}Ω</text>
-                        <text x="40" y="20" textAnchor="middle" fontSize="9" fill="#E74C3C">I₁={calculations.branchI[0]?.toFixed(2) || '0.00'}A</text>
+                      <circle cx="140" cy="20" r="4" fill="#333" />
+                      <circle cx="240" cy="20" r="4" fill="#333" />
+
+                      {/* 上支路 R1 */}
+                      <g transform="translate(100, 20)">
+                        <text x="40" y="-5" textAnchor="middle" fontSize="11" fill="#333" fontWeight="bold">R₁={resistances[0]}Ω</text>
+                        <line x1="0" y1="0" x2="8" y2="0" stroke="#333" strokeWidth="2" />
+                        <polyline points="8,0 13,7 18,-7 23,7 28,-7 33,7 38,-7 43,7 48,-7 53,7 58,-7 62,0" fill="none" stroke={isPowered ? '#E74C3C' : '#ccc'} strokeWidth="2" />
+                        <line x1="62" y1="0" x2="80" y2="0" stroke="#333" strokeWidth="2" />
+                        <text x="40" y="18" textAnchor="middle" fontSize="10" fill="#E74C3C">I₁={calculations.branchI[0]?.toFixed(2) || '0.00'}A</text>
+                        <text x="40" y="30" textAnchor="middle" fontSize="10" fill="#3498DB">U={batteryVoltage}V</text>
                       </g>
-                      
-                      <line x1="200" y1="0" x2="200" y2="40" stroke="#333" strokeWidth="2" />
-                      
+
+                      {/* 上支路右侧导线向下 */}
+                      <line x1="180" y1="20" x2="180" y2="70" stroke="#333" strokeWidth="2" />
+                      <line x1="180" y1="70" x2="280" y2="70" stroke="#333" strokeWidth="2" />
+                      <line x1="280" y1="70" x2="280" y2="20" stroke="#333" strokeWidth="2" />
+
+                      {/* 下支路 R2 */}
+                      <g transform="translate(100, 50)">
+                        <text x="40" y="55" textAnchor="middle" fontSize="11" fill="#333" fontWeight="bold">R₂={resistances[1]}Ω</text>
+                        <line x1="0" y1="40" x2="8" y2="40" stroke="#333" strokeWidth="2" />
+                        <polyline points="8,40 13,33 18,47 23,33 28,47 33,33 38,47 43,33 48,47 53,33 58,47 62,40" fill="none" stroke={isPowered ? '#27AE60' : '#ccc'} strokeWidth="2" />
+                        <line x1="62" y1="40" x2="80" y2="40" stroke="#333" strokeWidth="2" />
+                        <text x="40" y="58" textAnchor="middle" fontSize="10" fill="#E74C3C">I₂={calculations.branchI[1]?.toFixed(2) || '0.00'}A</text>
+                        <text x="40" y="70" textAnchor="middle" fontSize="10" fill="#3498DB">U={batteryVoltage}V</text>
+                      </g>
+
+                      {/* 下支路左侧导线向下 */}
+                      <line x1="100" y1="50" x2="100" y2="70" stroke="#333" strokeWidth="2" />
+                      <line x1="100" y1="70" x2="40" y2="70" stroke="#333" strokeWidth="2" />
+
                       {/* 合流点 */}
-                      <circle cx="120" cy="100" r="4" fill="#333" />
-                      <circle cx="200" cy="100" r="4" fill="#333" />
-                      <line x1="200" y1="60" x2="200" y2="100" stroke="#333" strokeWidth="2" />
-                      
-                      {/* 下支路 - R2 */}
-                      <g transform="translate(120, 60)">
-                        <line x1="0" y1="40" x2="10" y2="40" stroke="#333" strokeWidth="2" />
-                        <polyline points="10,40 15,30 25,50 35,30 45,50 55,30 65,50 70,40" fill="none" stroke={isPowered ? '#27AE60' : '#ccc'} strokeWidth="2" />
-                        <line x1="70" y1="40" x2="80" y2="40" stroke="#333" strokeWidth="2" />
-                        <text x="40" y="55" textAnchor="middle" fontSize="10" fill="#666">R₂={resistances[1]}Ω</text>
-                        <text x="40" y="70" textAnchor="middle" fontSize="9" fill="#E74C3C">I₂={calculations.branchI[1]?.toFixed(2) || '0.00'}A</text>
-                      </g>
-                      
-                      <line x1="120" y1="60" x2="120" y2="100" stroke="#333" strokeWidth="2" />
-                      <line x1="40" y1="100" x2="120" y2="100" stroke="#333" strokeWidth="2" />
-                      <line x1="200" y1="100" x2="280" y2="100" stroke="#333" strokeWidth="2" />
-                      <line x1="280" y1="100" x2="280" y2="40" stroke="#333" strokeWidth="2" />
-                      <line x1="240" y1="40" x2="280" y2="40" stroke="#333" strokeWidth="2" />
-                      <line x1="40" y1="40" x2="40" y2="100" stroke="#333" strokeWidth="2" />
-                      
+                      <circle cx="140" cy="70" r="4" fill="#333" />
+                      <circle cx="240" cy="70" r="4" fill="#333" />
+                      <line x1="180" y1="70" x2="240" y2="70" stroke="#333" strokeWidth="2" />
+
                       {/* 标注 */}
-                      <text x="160" y="130" textAnchor="middle" fontSize="10" fill="#666">
-                        R₁∥R₂ 并联
-                      </text>
+                      <text x="160" y="95" textAnchor="middle" fontSize="10" fill="#666">R₁∥R₂ 并联</text>
                     </>
                   )}
 
