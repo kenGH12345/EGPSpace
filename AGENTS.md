@@ -11,6 +11,22 @@ Agents should read this file at the start of each session to understand the proj
 Single repository (no sub-packages detected). Simplified memory structure applied.
 ## Project Structure
 ```
+/workspace/projects/
+├── src/
+│   ├── app/           # Next.js App Router
+│   ├── components/   # React 组件
+│   ├── hooks/        # 自定义 Hooks
+│   ├── lib/          # 工具库
+│   └── server.ts     # 自定义 Next.js 服务器入口
+├── scripts/          # 构建和运行脚本
+│   ├── build.sh      # 生产构建脚本
+│   ├── dev.sh        # 开发预览脚本
+│   ├── prepare.sh     # 依赖安装脚本
+│   └── start.sh      # 生产启动脚本
+├── .coze            # Coze 项目配置
+├── package.json
+├── next.config.ts
+└── tsconfig.json
 ```
 ## 🏗️ Tech Stack
 
@@ -27,7 +43,44 @@ Single repository (no sub-packages detected). Simplified memory structure applie
 ## ⚠️ Code Quality Observations
 
 ✅ TypeScript project with type safety
-## Agent Guidelines
+## 运行与预览
+
+| 环境 | 命令 | 端口 |
+|------|------|------|
+| 开发预览 | `bash ./scripts/dev.sh` | 5000 |
+| 生产构建 | `bash ./scripts/build.sh` | - |
+| 生产启动 | `bash ./scripts/start.sh` | 5000 |
+
+**预览服务验证**：
+- HTTP 状态码: `curl -s -o /dev/null -w '%{http_code}' http://localhost:5000`
+- 端口监听: `ss -lptn 'sport = :5000'` (应为 `*:5000`)
+
+## Coze 配置
+
+`.coze` 配置文件位于 `/workspace/projects/.coze`：
+
+```toml
+[project]
+requires = ["nodejs-24"]
+project_type = "web"
+entrypoint = "server.js"
+
+[preview]
+preview_enable = "enabled"
+
+[deploy.profile]
+kind = "service"
+flavor = "web"
+
+[deploy.backend]
+enabled = true
+```
+
+## 用户偏好与长期约束
+
+1. **包管理器**: 只使用 `pnpm`，禁止 `npm` 或 `yarn`
+2. **端口约束**: 对外服务固定使用 5000 端口
+3. **禁止操作**: 不杀 9000 端口进程，不暴露非 5000 端口
 - Always read this file before starting a task
 - For sub-packages, also read the package-specific `AGENTS.md`
 - Do not modify this file manually – it is auto-generated

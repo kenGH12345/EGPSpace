@@ -1,8 +1,15 @@
 [project]
 requires = [ "nodejs-24" ]
+sub_id = "e5f45b9e"
+name = "projects"
+project_type = "web"
 template = "nextjs"
 version = "0.0.14"
 appliedPatches = [ ]
+entrypoint = "server.js"
+
+[preview]
+preview_enable = "enabled"
 
 [dev]
 build = [ "bash", "./scripts/prepare.sh" ]
@@ -13,3 +20,13 @@ deps = [ "git" ]
 build = [ "bash", "./scripts/build.sh" ]
 run = [ "bash", "./scripts/start.sh" ]
 deps = [ "git" ]
+
+[deploy.profile]
+kind = "service"
+flavor = "web"
+
+[deploy.backend]
+enabled = true
+
+[subprojects]
+path = ["."]
