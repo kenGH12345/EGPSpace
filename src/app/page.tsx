@@ -104,15 +104,25 @@ export default function HomePage() {
         throw new Error(data.error || '生成失败');
       }
 
-      if (data.success && data.experiment) {
-        setGeneratedExp(data.experiment);
-        // 生成完成后自动跳转到实验页面
-        const experimentId = mapConceptToExperiment(data.experiment);
-        // 使用 sessionStorage 存储配置，避免 URL 长度限制
-        sessionStorage.setItem('eureka_experiment_config', JSON.stringify(data.experiment));
+      if (data.success && data.schema) {
+        const schema = data.schema;
+        // 将 schema 转换为前端展示格式
+        const exp: GeneratedExperiment = {
+          name: schema.meta?.name || inputValue,
+          description: schema.meta?.description || '',
+          subject: schema.meta?.subject || 'physics',
+          icon: schema.meta?.icon || '🔬',
+          gradient: schema.meta?.gradient || 'from-amber-500 to-orange-500',
+          knowledge: schema.teaching?.understanding?.keyConcepts || [],
+        };
+        setGeneratedExp(exp);
+        // 使用 physicsType 直接跳转到对应实验页面
+        const experimentId = schema.meta?.physicsType || mapConceptToExperiment(exp);
+        // 使用 sessionStorage 存储完整 schema，供实验页面使用
+        sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));
         window.location.href = `/experiments/${experimentId}`;
       } else {
-        throw new Error('未能生成有效实验');
+        throw new Error(data.error || '未能生成有效实验');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败，请重试');

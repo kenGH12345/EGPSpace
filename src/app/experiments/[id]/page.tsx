@@ -379,6 +379,7 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   
   // 使用 state 存储 AI 配置，避免 hydration mismatch
   const [aiConfig, setAiConfig] = useState<GeneratedConfig | null>(null);
+  const [aiSchema, setAiSchema] = useState<import('@/lib/experiment-schema').ExperimentSchema | null>(null);
   const [isConfigLoaded, setIsConfigLoaded] = useState(false);
 
   // 客户端挂载后从 sessionStorage 加载配置
@@ -386,8 +387,13 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
     const storedConfig = sessionStorage.getItem('eureka_experiment_config');
     if (storedConfig) {
       try {
-        setAiConfig(JSON.parse(storedConfig));
-        // 清理存储
+        const parsed = JSON.parse(storedConfig);
+        // 检测是否为新格式 ExperimentSchema（有 meta.physicsType 字段）
+        if (parsed?.meta?.physicsType !== undefined) {
+          setAiSchema(parsed);
+        } else {
+          setAiConfig(parsed);
+        }
         sessionStorage.removeItem('eureka_experiment_config');
       } catch (e) {
         console.error('Failed to parse stored config:', e);
@@ -396,16 +402,16 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
     setIsConfigLoaded(true);
   }, []);
 
-  // 使用AI配置或默认配置
-  const displayName = aiConfig?.name || experiment?.name || '实验';
-  const displayIcon = aiConfig?.icon || experiment?.icon || '🔬';
-  const displayGradient = aiConfig?.gradient || experiment?.gradient || 'from-amber-500 to-orange-500';
+  // 使用AI配置或默认配置（优先使用新格式 aiSchema）
+  const displayName = aiSchema?.meta?.name || aiConfig?.name || experiment?.name || '实验';
+  const displayIcon = aiSchema?.meta?.icon || aiConfig?.icon || experiment?.icon || '🔬';
+  const displayGradient = aiSchema?.meta?.gradient || aiConfig?.gradient || experiment?.gradient || 'from-amber-500 to-orange-500';
   // 解析 gradient：支持 #hex-hex 和 from-x to-y 两种格式
   const isHexGradient = displayGradient.startsWith('#');
   const gradientStyle = isHexGradient 
     ? { background: `linear-gradient(135deg, ${displayGradient.replace('#', '').split('-').map(c => '#' + c).join(', ')})` }
     : undefined;
-  const displayKnowledge = aiConfig?.teaching?.understanding?.principles || ['阿基米德原理', '物体的浮沉条件'];
+  const displayKnowledge = aiSchema?.teaching?.understanding?.keyConcepts || aiConfig?.teaching?.understanding?.principles || ['阿基米德原理', '物体的浮沉条件'];
   const displayCoreQuestion = aiConfig?.teaching?.design?.coreQuestion;
   const displayVariables = aiConfig?.teaching?.reasoning;
   const displayErrors = aiConfig?.teaching?.errors;
@@ -432,6 +438,12 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   const hasAIRules = aiConfig?.experiment?.rules;
   
   const renderExperiment = () => {
+    // 优先：如果有新格式 ExperimentSchema，直接转换并渲染
+    if (aiSchema) {
+      const legacyConfig = experimentSchemaToLegacy(aiSchema);
+      return <UniversalPhysicsRenderer config={legacyConfig} />;
+    }
+
     // 如果有 AI 生成的规则，使用通用物理渲染器
     if (hasAIRules && aiConfig) {
       let rules = aiConfig.experiment?.rules;
