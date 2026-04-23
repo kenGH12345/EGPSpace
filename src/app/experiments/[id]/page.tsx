@@ -187,8 +187,8 @@ function BuoyancyExperiment() {
       // 下沉：物体沉到容器底部
       objectY = containerBottom - objectHeight;
     } else {
-      // 悬浮：物体在液面下任意位置静止
-      objectY = liquidLevel - objectHeight;
+      // 悬浮：物体完全浸没，顶部在液面处
+      objectY = liquidLevel;
     }
 
     // 限制物体在合理范围内
