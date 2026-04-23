@@ -305,6 +305,9 @@ export default function CircuitExperimentPage() {
                       <circle cx="240" cy="70" r="4" fill="#333" />
                       <line x1="180" y1="70" x2="240" y2="70" stroke="#333" strokeWidth="2" />
 
+                      {/* 底部导线：电源负极 → 右侧合流点（闭合回路） */}
+                      <line x1="40" y1="70" x2="240" y2="70" stroke="#333" strokeWidth="2" />
+
                       {/* 电流方向箭头 */}
                       {isPowered && (
                         <>
