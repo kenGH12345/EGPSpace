@@ -9,13 +9,14 @@
   .circuit-layout {
     display: flex;
     gap: 12px;
-    align-items: flex-start;
   }
-  .circuit-left {
-    width: 180px;
+  .circuit-sidebar {
+    width: 160px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
   }
-  .circuit-right {
+  .circuit-main {
     flex: 1;
     min-width: 0;
   }
@@ -44,16 +45,19 @@
     font-size: 11px;
   }
   .eureka-card {
-    padding: 12px;
+    padding: 10px;
     margin-bottom: 8px;
+  }
+  .eureka-card:last-child {
+    margin-bottom: 0;
   }
   .eureka-card-title {
-    font-size: 13px;
-    margin-bottom: 6px;
+    font-size: 12px;
+    margin-bottom: 4px;
   }
   .eureka-control {
-    margin-bottom: 8px;
-    padding-bottom: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
     border-bottom: 1px solid var(--eureka-border);
   }
   .eureka-control:last-child {
@@ -61,20 +65,20 @@
     margin-bottom: 0;
   }
   .eureka-control-header {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
   .eureka-formula {
     padding: 10px;
   }
   .eureka-formula-title {
-    font-size: 12px;
-    margin-bottom: 4px;
+    font-size: 11px;
+    margin-bottom: 3px;
   }
   .eureka-formula-expression {
-    font-size: 14px;
+    font-size: 13px;
   }
   .eureka-formula-note {
-    font-size: 10px;
+    font-size: 9px;
   }
 </style>
 </head>
@@ -82,16 +86,16 @@
 <div class="eureka-root">
 
   <div class="circuit-layout">
-    <!-- 左侧：AI 教学助手 -->
-    <div class="circuit-left">
-      <div class="eureka-card" style="margin-bottom: 12px;">
+    <!-- 左侧边栏：AI 教学助手 -->
+    <div class="circuit-sidebar">
+      <div class="eureka-card">
         <h3 class="eureka-card-title">🤖 AI 教学助手</h3>
-        <div style="font-size: 12px; color: var(--eureka-text-muted); line-height: 1.6;">
-          <p style="margin-bottom: 8px;"><strong>串联电路：</strong></p>
+        <div style="font-size: 11px; color: var(--eureka-text-muted); line-height: 1.5;">
+          <p style="margin-bottom: 6px;"><strong>串联电路：</strong></p>
           <p>电流处处相等</p>
           <p>总电压 = 各电压之和</p>
           <p>R<sub>总</sub> = R₁ + R₂</p>
-          <p style="margin-top: 8px; margin-bottom: 8px;"><strong>并联电路：</strong></p>
+          <p style="margin-top: 6px; margin-bottom: 6px;"><strong>并联电路：</strong></p>
           <p>各支路电压相等</p>
           <p>总电流 = 各电流之和</p>
           <p>1/R<sub>总</sub> = 1/R₁ + 1/R₂</p>
@@ -104,8 +108,8 @@
       </div>
     </div>
 
-    <!-- 右侧：实验区域 -->
-    <div class="circuit-right">
+    <!-- 右侧主区域 -->
+    <div class="circuit-main">
       <div class="circuit-stats">
         <div class="eureka-stat">
           <p class="eureka-stat-label">总电阻 R</p>
@@ -122,16 +126,16 @@
       </div>
 
       <div class="eureka-canvas-wrapper circuit-canvas-wrapper">
-        <canvas id="canvas" class="eureka-canvas" width="560" height="220"></canvas>
+        <canvas id="canvas" class="eureka-canvas" width="520" height="200"></canvas>
         <div style="margin-top: 4px; text-align: center;">
           <div class="eureka-segmented" style="display: inline-flex;">
-            <button class="eureka-segmented-item active" data-topology="0" style="padding: 6px 16px; font-size: 12px;">串联</button>
-            <button class="eureka-segmented-item" data-topology="1" style="padding: 6px 16px; font-size: 12px;">并联</button>
+            <button class="eureka-segmented-item active" data-topology="0" style="padding: 5px 14px; font-size: 11px;">串联</button>
+            <button class="eureka-segmented-item" data-topology="1" style="padding: 5px 14px; font-size: 11px;">并联</button>
           </div>
         </div>
       </div>
 
-      <div class="eureka-card" style="margin-top: 12px;">
+      <div class="eureka-card" style="margin-top: 8px;">
         <h3 class="eureka-card-title">参数调节</h3>
 
         <div class="eureka-control">
@@ -172,7 +176,7 @@
   const state = { voltage: 6, r1: 10, r2: 10, topology: 0 }; // 0=series 1=parallel
 
   const canvas = document.getElementById('canvas');
-  const cssW = 560, cssH = 220;
+  const cssW = 520, cssH = 200;
   const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
 
   const ctlU = document.getElementById('ctl-u');
@@ -222,33 +226,33 @@
 
   function drawBattery(x, y) {
     ctx.strokeStyle = '#1F2937';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     // Long line (positive terminal)
     ctx.beginPath();
-    ctx.moveTo(x, y - 20);
-    ctx.lineTo(x, y + 20);
+    ctx.moveTo(x, y - 15);
+    ctx.lineTo(x, y + 15);
     ctx.stroke();
     // Short line (negative terminal)
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(x - 10, y - 12);
-    ctx.lineTo(x - 10, y + 12);
+    ctx.moveTo(x - 8, y - 10);
+    ctx.lineTo(x - 8, y + 10);
     ctx.stroke();
     ctx.fillStyle = '#1F2937';
-    ctx.font = 'bold 14px system-ui';
-    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 28, y + 45);
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 22, y + 35);
     ctx.fillStyle = '#DC2626';
-    ctx.font = 'bold 16px system-ui';
-    ctx.fillText('+', x + 8, y - 24);
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText('+', x + 6, y - 18);
     ctx.fillStyle = '#2563EB';
-    ctx.fillText('−', x - 28, y - 24);
+    ctx.fillText('−', x - 22, y - 18);
   }
 
   function drawResistor(x, y, width, label, voltage, current) {
-    const h = 20;
+    const h = 16;
     // Zigzag resistor symbol
     ctx.strokeStyle = '#1F2937';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x, y + h / 2);
     const segments = 6;
@@ -261,13 +265,13 @@
     ctx.stroke();
 
     ctx.fillStyle = '#1F2937';
-    ctx.font = 'bold 12px system-ui';
-    ctx.fillText(label, x + width / 2 - 18, y - 8);
-    ctx.font = '11px system-ui';
+    ctx.font = 'bold 10px system-ui';
+    ctx.fillText(label, x + width / 2 - 14, y - 4);
+    ctx.font = '9px system-ui';
     ctx.fillStyle = '#DC2626';
-    ctx.fillText('U=' + voltage.toFixed(1) + 'V', x + width / 2 - 20, y + h + 14);
+    ctx.fillText('U=' + voltage.toFixed(1) + 'V', x + width / 2 - 16, y + h + 10);
     ctx.fillStyle = '#2563EB';
-    ctx.fillText('I=' + current.toFixed(2) + 'A', x + width / 2 - 18, y + h + 28);
+    ctx.fillText('I=' + current.toFixed(2) + 'A', x + width / 2 - 14, y + h + 20);
   }
 
   function drawWire(x1, y1, x2, y2) {
@@ -297,18 +301,18 @@
   }
 
   function drawSeries(p) {
-    const left = 40, right = cssW - 40;
-    const top = 50, bottom = cssH - 50;
+    const left = 30, right = cssW - 30;
+    const top = 40, bottom = cssH - 40;
     const midY = (top + bottom) / 2;
-    const rWidth = 80;
+    const rWidth = 70;
     drawBattery(left, midY);
 
     // Top wire: battery+ -> R1 -> R2 -> right
-    drawWire(left, top, left + 30, top);
-    drawResistor(left + 30, top, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-    drawWire(left + 30 + rWidth, top, left + 30 + rWidth + 60, top);
-    drawResistor(left + 30 + rWidth + 60, top, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
-    drawWire(left + 30 + rWidth * 2 + 60, top, right, top);
+    drawWire(left, top, left + 25, top);
+    drawResistor(left + 25, top, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    drawWire(left + 25 + rWidth, top, left + 25 + rWidth + 50, top);
+    drawResistor(left + 25 + rWidth + 50, top, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawWire(left + 25 + rWidth * 2 + 50, top, right, top);
 
     // Right wire down
     drawWire(right, top, right, bottom);
@@ -323,22 +327,22 @@
     drawWire(left, midY - 15, left, top);
 
     // Current flow arrows
-    drawCurrentDots(left + 20, top, left + 35, top, p.I);
-    drawCurrentDots(left + 35 + rWidth + 10, top, left + 35 + rWidth + 40, top, p.I);
-    drawCurrentDots(left + 35 + rWidth * 2 + 50, top, right - 15, top, p.I);
-    drawCurrentDots(right - 15, bottom, left + 20, bottom, p.I);
+    drawCurrentDots(left + 15, top, left + 30, top, p.I);
+    drawCurrentDots(left + 30 + rWidth + 8, top, left + 30 + rWidth + 40, top, p.I);
+    drawCurrentDots(left + 30 + rWidth * 2 + 45, top, right - 10, top, p.I);
+    drawCurrentDots(right - 10, bottom, left + 15, bottom, p.I);
   }
 
   function drawParallel(p) {
     // 标准并联电路：电源在左侧，上下两条平行导线，两个电阻垂直放置在中间
-    const left = 40;
-    const right = cssW - 40;
-    const topRail = 50;
-    const bottomRail = cssH - 50;
+    const left = 30;
+    const right = cssW - 30;
+    const topRail = 40;
+    const bottomRail = cssH - 40;
     const midY = cssH / 2;
-    const rWidth = 120, rHeight = 18;
-    const r1Y = topRail + 8;      // R1 在上导线下方
-    const r2Y = bottomRail - 8 - rHeight;  // R2 在下导线上方
+    const rWidth = 100, rHeight = 16;
+    const r1Y = topRail + 6;
+    const r2Y = bottomRail - 6 - rHeight;
 
     // 电池
     drawBattery(left, midY);
@@ -359,12 +363,12 @@
     ctx.fill();
 
     // 上导线：分支点 -> R1 -> 汇合点
-    drawWire(left, topRail, left + 50, topRail);  // 分支点到 R1 左侧
-    drawWire(left + 50 + rWidth, topRail, right, topRail);  // R1 右侧到右侧
+    drawWire(left, topRail, left + 40, topRail);
+    drawWire(left + 40 + rWidth, topRail, right, topRail);
 
     // 下导线：分支点 -> R2 -> 汇合点
-    drawWire(left, bottomRail, left + 50, bottomRail);  // 分支点到 R2 左侧
-    drawWire(left + 50 + rWidth, bottomRail, right, bottomRail);  // R2 右侧到右侧
+    drawWire(left, bottomRail, left + 40, bottomRail);
+    drawWire(left + 40 + rWidth, bottomRail, right, bottomRail);
 
     // 右侧汇合点（圆点）
     ctx.fillStyle = '#1F2937';
@@ -379,16 +383,16 @@
     drawWire(right, topRail, right, bottomRail);
 
     // R1 - 上支路
-    drawResistor(left + 50, r1Y, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    drawResistor(left + 40, r1Y, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
 
     // R2 - 下支路
-    drawResistor(left + 50, r2Y, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawResistor(left + 40, r2Y, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
 
     // 电流流动动画
-    drawCurrentDots(left + 8, topRail, left + 40, topRail, p.I);  // 分流前
-    drawCurrentDots(left + 50 + rWidth + 5, topRail, right - 8, topRail, p.I1);
-    drawCurrentDots(left + 8, bottomRail, left + 40, bottomRail, p.I);
-    drawCurrentDots(left + 50 + rWidth + 5, bottomRail, right - 8, bottomRail, p.I2);
+    drawCurrentDots(left + 6, topRail, left + 30, topRail, p.I);
+    drawCurrentDots(left + 40 + rWidth + 5, topRail, right - 6, topRail, p.I1);
+    drawCurrentDots(left + 6, bottomRail, left + 30, bottomRail, p.I);
+    drawCurrentDots(left + 40 + rWidth + 5, bottomRail, right - 6, bottomRail, p.I2);
   }
 
   function update(emitParam) {
