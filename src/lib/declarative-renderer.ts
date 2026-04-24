@@ -9,7 +9,8 @@
  * Dynamic property binding via {variableName} syntax
  */
 
-import type { CanvasElement, CanvasLayout, ElementType } from './experiment-schema';
+import type { AmbientAnimation, CanvasElement, CanvasLayout, ElementType } from './experiment-schema';
+import { AmbientAnimator } from './ambient-animations';
 
 // ============ Dynamic Value Resolution ============
 
@@ -49,6 +50,29 @@ export function resolveDynamicString(
   });
 }
 
+/**
+ * Evaluate a dynamic expression that may return a string or number.
+ * Supports simple arithmetic, ternary operators, and variable references.
+ * Used for dynamic fill/stroke colors and text values.
+ */
+export function resolveDynamicExpression(
+  expr: string | undefined,
+  paramValues: Record<string, number>,
+  computedValues?: Record<string, number>
+): string {
+  if (!expr) return '';
+  const allValues = { ...paramValues, ...computedValues };
+  try {
+    const keys = Object.keys(allValues);
+    const vals = keys.map(k => allValues[k]);
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const result = new Function(...keys, `return (${expr});`)(...vals);
+    return String(result ?? '');
+  } catch {
+    return expr;
+  }
+}
+
 // ============ Coordinate Transform ============
 
 function transformX(x: number, layout: CanvasLayout): number {
@@ -86,18 +110,18 @@ function renderRect(
   paramValues: Record<string, number>,
   computedValues: Record<string, number>
 ) {
-  const x = transformX(resolveDynamicValue(el.x, paramValues, computedValues), layout);
-  const y = transformY(resolveDynamicValue(el.y, paramValues, computedValues), layout);
+  const x = transformX(resolveDynamicValue(el.dynamic?.x ?? el.x, paramValues, computedValues), layout);
+  const y = transformY(resolveDynamicValue(el.dynamic?.y ?? el.y, paramValues, computedValues), layout);
   const w = resolveDynamicValue(el.width, paramValues, computedValues);
   const h = resolveDynamicValue(el.height, paramValues, computedValues);
 
-  if (el.fill) {
+  if (el.fill !== undefined || el.dynamic?.fill) {
     ctx.fillStyle = el.dynamic?.fill
-      ? resolveDynamicString(el.dynamic.fill, paramValues, computedValues)
-      : el.fill;
+      ? resolveDynamicExpression(el.dynamic.fill, paramValues, computedValues)
+      : (el.fill ?? '#000');
     ctx.fillRect(x, y, w, h);
   }
-  if (el.stroke) {
+  if (el.stroke && el.stroke !== 'none') {
     ctx.strokeStyle = el.stroke;
     ctx.lineWidth = el.strokeWidth ?? 1;
     ctx.strokeRect(x, y, w, h);
@@ -188,9 +212,13 @@ function renderText(
   const x = transformX(resolveDynamicValue(el.x, paramValues, computedValues), layout);
   const y = transformY(resolveDynamicValue(el.y, paramValues, computedValues), layout);
 
-  ctx.fillStyle = el.fill ?? '#333';
+  ctx.fillStyle = el.dynamic?.fill
+    ? resolveDynamicExpression(el.dynamic.fill, paramValues, computedValues)
+    : (el.fill ?? '#333');
   ctx.font = `${el.fontSize ?? 14}px system-ui`;
-  const text = resolveDynamicString(el.text, paramValues, computedValues);
+  const text = el.dynamic?.text
+    ? resolveDynamicExpression(el.dynamic.text, paramValues, computedValues)
+    : resolveDynamicString(el.text, paramValues, computedValues);
   ctx.fillText(text, x, y);
 }
 
@@ -348,24 +376,37 @@ function renderForceArrow(
   paramValues: Record<string, number>,
   computedValues: Record<string, number>
 ) {
-  const x = transformX(resolveDynamicValue(el.x, paramValues, computedValues), layout);
-  const y = transformY(resolveDynamicValue(el.y, paramValues, computedValues), layout);
-  const angle = resolveDynamicValue(el.angle, paramValues, computedValues) || -90;
-  const magnitude = resolveDynamicValue(el.magnitude, paramValues, computedValues) || 50;
-  const rad = angle * Math.PI / 180;
+  const x1 = transformX(resolveDynamicValue(el.dynamic?.x ?? el.x, paramValues, computedValues), layout);
+  const y1 = transformY(resolveDynamicValue(el.dynamic?.y ?? el.y, paramValues, computedValues), layout);
 
-  const x2 = x + magnitude * Math.cos(rad);
-  const y2 = y + magnitude * Math.sin(rad);
+  let x2: number;
+  let y2: number;
+
+  if (el.x2 !== undefined || el.dynamic?.x2) {
+    // Explicit endpoint mode (used by buoyancy arrows)
+    x2 = transformX(resolveDynamicValue(el.dynamic?.x2 ?? el.x2, paramValues, computedValues), layout);
+    y2 = transformY(resolveDynamicValue(el.dynamic?.y2 ?? el.y2, paramValues, computedValues), layout);
+  } else {
+    // Angle + magnitude mode (legacy)
+    const angle = resolveDynamicValue(el.angle, paramValues, computedValues) || -90;
+    const magnitude = resolveDynamicValue(el.dynamic?.magnitude ?? el.magnitude, paramValues, computedValues) || 50;
+    const rad = angle * Math.PI / 180;
+    x2 = x1 + magnitude * Math.cos(rad);
+    y2 = y1 + magnitude * Math.sin(rad);
+  }
+
+  const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  if (len < 2) return;
 
   ctx.strokeStyle = el.stroke ?? '#3B82F6';
   ctx.lineWidth = el.strokeWidth ?? 3;
   ctx.beginPath();
-  ctx.moveTo(x, y);
+  ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.stroke();
 
-  const headLen = 10;
-  const headAngle = Math.atan2(y2 - y, x2 - x);
+  const headLen = Math.min(10, len * 0.4);
+  const headAngle = Math.atan2(y2 - y1, x2 - x1);
   ctx.beginPath();
   ctx.moveTo(x2, y2);
   ctx.lineTo(x2 - headLen * Math.cos(headAngle - Math.PI / 6), y2 - headLen * Math.sin(headAngle - Math.PI / 6));
@@ -720,7 +761,12 @@ export function renderCanvas(
   elements: CanvasElement[],
   layout: CanvasLayout,
   paramValues: Record<string, number>,
-  computedValues: Record<string, number> = {}
+  computedValues: Record<string, number> = {},
+  options?: {
+    ambientAnimator?: AmbientAnimator;
+    ambientAnimations?: AmbientAnimation[];
+    dynamicsVars?: Record<string, number>;
+  }
 ) {
   ctx.clearRect(0, 0, layout.width, layout.height);
 
@@ -746,5 +792,15 @@ export function renderCanvas(
     }
   }
 
-  renderElements(ctx, elements, layout, paramValues, computedValues);
+  // Merge dynamics position overrides into computedValues before rendering elements
+  const mergedComputed = options?.dynamicsVars
+    ? { ...computedValues, ...options.dynamicsVars }
+    : computedValues;
+
+  // Draw ambient animations BEFORE foreground elements (background layer)
+  if (options?.ambientAnimator && options.ambientAnimations?.length) {
+    options.ambientAnimator.draw(ctx, options.ambientAnimations, mergedComputed);
+  }
+
+  renderElements(ctx, elements, layout, paramValues, mergedComputed);
 }

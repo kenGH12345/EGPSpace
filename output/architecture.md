@@ -1,327 +1,253 @@
-# 组件化渲染引擎架构设计
+# EGPSpace Batch-2 Architecture: Cross-Subject Experiment Template Infrastructure
 
-## 概述
-
-本架构将 EGPSpace 的渲染系统从三重分裂（命令式 drawXxx + CanvasElement 8种 + DrawElement 21种）统一为单一声明式组件系统，实现各学科引擎与渲染的完全解耦。
-
----
-
-## 架构目标
-
-| 目标 | 当前状态 | 目标状态 |
-|------|---------|---------|
-| 新增实验类型 | 需手写 drawXxx() 函数 | 只需组合现有组件 |
-| 类型系统 | 两套并行（8种 + 21种） | 单一统一（21种） |
-| 渲染器覆盖 | 8种基础类型 | 21种全量类型 |
-| 学科支持 | 仅物理（4种） | 物理+化学+生物+数学 |
+> 前置：Triple-Lock 架构已在第一批完成验证（`wf-20260424091211.`）  
+> 当前目标：建立可扩展的跨学科基础设施，使新学科模板能够低摩擦接入
+> 核心约束：不修改 `IframeExperiment.tsx`，向后兼容4个已上线物理模板
 
 ---
 
-## 核心架构：三层组件化渲染
+## 架构概览
 
-```mermaid
-graph TD
-    A[ExperimentSchema] --> B{canvas.elements 是否为空?}
-    B -->|否| C[declarative-renderer.ts]
-    B -->|是| D{canvas.presetTemplate?}
-    D -->|有| E[preset-templates.ts]
-    D -->|无| F[空白画布]
-    E --> C
-    C --> G[Canvas 2D 输出]
+本批次（Batch 2）的核心任务不是"增加模板数量"，而是**将物理专用的共享基础设施抽象为跨学科通用层**。这解决了第一批验证的架构瓶颈：`physics-core.js` 是物理专用的，化学/生物学科无法复用。
 
-    subgraph 类型层
-        H[experiment-schema.ts<br/>CanvasElement 21种]
-    end
-
-    subgraph 渲染层
-        C
-        I[21种 ElementRenderer]
-    end
-
-    subgraph 模板层
-        E
-        J[buoyancy/lever/refraction/circuit<br/>声明式 preset 定义]
-    end
+**分层策略**（两层共享模型）：
 ```
+Layer 1: experiment-core.js    ← 跨学科通用（通信、状态、参数、渲染循环）
+Layer 2: {subject}-utils.js    ← 学科专用（公式、常量、渲染辅助）
+Layer 3: template-specific.js  ← 模板专用（实验逻辑、Canvas/SVG绘制）
+```
+
+**向后兼容策略**：
+- 旧模板继续引用 `physics-core.js`（该文件变为 `experiment-core.js` + `physics-utils.js` 的合并兼容包）
+- 新模板拆分引用 `experiment-core.js` → `{subject}-utils.js` → 模板逻辑
 
 ---
 
 ## 模块设计
 
-### 模块 1：统一类型层（experiment-schema.ts）
+### Module 1: experiment-core.js（通用共享层）
 
-**职责**：定义单一的 `CanvasElement` 类型，覆盖所有 21 种元素
+**职责**：定义与Host的postMessage通信协议，管理模板生命周期，提供跨学科通用工具。
 
-**关键决策**：扩展 `ElementType` 并补充 `CanvasElement` 字段，而非替换现有类型
-
+**导出接口**：
 ```typescript
-// 扩展后的 ElementType（21种）
-export type ElementType =
-  // 基础几何（原有 8 种）
-  | 'rect' | 'circle' | 'line' | 'arrow' | 'text' | 'polygon' | 'arc' | 'image'
-  // 物理专用（新增）
-  | 'spring' | 'wave' | 'pendulum' | 'forceArrow' | 'lightRay'
-  // 化学专用（新增）
-  | 'beaker' | 'molecule' | 'bubble' | 'reaction'
-  // 数学专用（新增）
-  | 'axis' | 'functionPlot' | 'point'
-  // 组合（新增）
-  | 'group';
+interface EurekaCore {
+  // 生命周期
+  setTemplateId(id: string): void;
+  emitReady(supportedParams: ParamMeta[]): void;
+  emitError(message: string, code?: string): void;
 
-// CanvasElement 扩展字段（全部可选，向后兼容）
-export interface CanvasElement {
-  // ... 现有字段保留 ...
-  // 新增：支持 DrawElement 命名约定
-  cx?: number | string;   // circle 中心 x（兼容 x）
-  cy?: number | string;   // circle 中心 y（兼容 y）
-  r?: number | string;    // circle 半径（兼容 radius）
-  x1?: number | string;   // line/arrow 起点 x
-  y1?: number | string;   // line/arrow 起点 y
-  // 物理专用字段
-  length?: number | string;
-  coils?: number;
-  amplitude?: number | string;
-  wavelength?: number | string;
-  angle?: number | string;
-  magnitude?: number | string;
-  anchorX?: number | string;
-  anchorY?: number | string;
-  // 化学专用字段
-  fillLevel?: number | string;
-  liquidColor?: string;
-  moleculeType?: string;
-  count?: number;
-  reactants?: string[];
-  products?: string[];
-  // 数学专用字段
-  xMin?: number;
-  xMax?: number;
-  yMin?: number;
-  yMax?: number;
-  fn?: string;
-  // 组合字段
-  children?: CanvasElement[];
-  transform?: { translateX?: number | string; translateY?: number | string; scale?: number | string; rotate?: number | string };
+  // 参数系统
+  bindParam(name: string, config: ParamConfig): void;
+  getParam(name: string): number;
+  setParam(name: string, value: number): void;
+
+  // 渲染循环
+  startRenderLoop(fn: (dt: number) => void): number;
+  stopRenderLoop(id: number): void;
+
+  // Host命令订阅
+  onHostCommand(callback: (cmd: HostCommand) => void): void;
 }
-```
 
-**为什么这样设计而非创建新类型**：
-- 向后兼容：现有 Schema 数据无需迁移
-- 渐进式：新字段全部可选，不破坏现有代码
-- 单一真相：消除 CanvasElement vs DrawElement 的双重维护
-
----
-
-### 模块 2：全量渲染层（declarative-renderer.ts）
-
-**职责**：将 `CanvasElement[]` 渲染到 Canvas 2D，覆盖全部 21 种类型
-
-**关键决策**：使用 `Record<ElementType, RenderFn>` 映射（O(1) 查找），不使用 switch-case 链
-
-```typescript
-type RenderFn = (
-  ctx: CanvasRenderingContext2D,
-  el: CanvasElement,
-  layout: CanvasLayout,
-  params: Record<string, number>,
-  computed: Record<string, number>
-) => void;
-
-// 新增 13 种渲染器
-const RENDERERS: Record<ElementType, RenderFn> = {
-  // 原有 8 种（保留）
-  rect, circle, line, arrow, text, polygon, arc, image,
-  // 物理专用（新增）
-  spring: renderSpring,
-  wave: renderWave,
-  pendulum: renderPendulum,
-  forceArrow: renderForceArrow,
-  lightRay: renderLightRay,
-  // 化学专用（新增）
-  beaker: renderBeaker,
-  molecule: renderMolecule,
-  bubble: renderBubble,
-  reaction: renderReaction,
-  // 数学专用（新增）
-  axis: renderAxis,
-  functionPlot: renderFunctionPlot,
-  point: renderPoint,
-  // 组合（新增）
-  group: renderGroup,
-};
-```
-
-**各渲染器设计**：
-
-| 渲染器 | 关键参数 | 动态绑定支持 |
-|--------|---------|------------|
-| `renderSpring` | x, y, length, coils, amplitude | length（弹簧伸缩） |
-| `renderWave` | x, y, amplitude, wavelength, phase | amplitude, phase |
-| `renderPendulum` | anchorX, anchorY, length, angle, bobRadius | angle（摆动） |
-| `renderForceArrow` | x, y, angle, magnitude | magnitude, angle |
-| `renderLightRay` | x, y, angle, length | angle（折射角） |
-| `renderBeaker` | x, y, width, height, fillLevel, liquidColor | fillLevel（液面高度） |
-| `renderMolecule` | x, y, moleculeType, scale | x, y（运动） |
-| `renderBubble` | x, y, radius, count, speed | y（上升动画） |
-| `renderAxis` | x, y, xMin, xMax, yMin, yMax | 无 |
-| `renderFunctionPlot` | fn, xMin, xMax | 无 |
-| `renderPoint` | x, y, size | x, y |
-| `renderGroup` | children, transform | transform |
-
----
-
-### 模块 3：声明式 Preset 模板层（preset-templates.ts）
-
-**职责**：将原 `drawBuoyancy()` 等命令式函数转换为声明式 `CanvasElement[]` 定义
-
-**关键决策**：Preset 模板是**纯数据**（`CanvasElement[]`），不包含任何 Canvas 2D 代码
-
-```typescript
-export type PresetTemplateType = 'buoyancy' | 'lever' | 'refraction' | 'circuit';
-
-export function buildPresetElements(
-  type: PresetTemplateType,
-  layout: CanvasLayout,
-  params: Record<string, number>,
-  computed: Record<string, number>
-): CanvasElement[];
-```
-
-**浮力实验 Preset 示例**（声明式等价于原 `drawBuoyancy()`）：
-
-```typescript
-// 液体背景
-{ id: 'liquid', type: 'rect', x: 0, y: '{liquidLevel}', width: '{width}', height: '{liquidHeight}', fill: '#06B6D4', opacity: 0.3 },
-// 液面虚线
-{ id: 'surface', type: 'line', x: 0, y: '{liquidLevel}', x2: '{width}', y2: '{liquidLevel}', stroke: '#0EA5E9', strokeWidth: 2 },
-// 物体
-{ id: 'object', type: 'rect', x: '{objectX}', y: '{objectY}', width: 60, height: 80, fill: '{stateColor}', stroke: '#333', strokeWidth: 2 },
-// 浮力箭头
-{ id: 'buoyantArrow', type: 'forceArrow', x: '{objectCenterX}', y: '{objectY}', angle: -90, magnitude: '{arrowLength}', fill: '#3B82F6', label: 'F浮' },
-// 重力箭头
-{ id: 'gravityArrow', type: 'forceArrow', x: '{objectCenterX}', y: '{objectBottom}', angle: 90, magnitude: '{gravityLength}', fill: '#EF4444', label: 'G' },
-```
-
-**为什么使用 `buildPresetElements()` 而非静态 JSON**：
-- Preset 模板需要根据 `layout.width/height` 动态计算坐标（如 `liquidLevel = height * 0.6`）
-- 静态 JSON 无法表达这种布局依赖，需要函数来生成初始坐标
-- 生成后的 `CanvasElement[]` 中的动态值（如 `{objectY}`）由渲染器在每帧解析
-
----
-
-### 模块 4：DynamicExperiment.tsx 重构
-
-**职责**：移除命令式 `drawXxx()` 函数，渲染路径统一走 `renderCanvas()`
-
-**重构前**：
-```typescript
-// 命令式路径（350行）
-switch (rules.type) {
-  case 'buoyancy': drawBuoyancy(ctx, width, height, params, calculation); break;
-  case 'lever': drawLever(ctx, width, height, params, calculation); break;
-  // ...
+interface ParamConfig {
+  min: number;
+  max: number;
+  step: number;
+  defaultValue: number;
+  unit?: string;
+  onChange?: (value: number) => void;
 }
+
+type HostCommand =
+  | { type: 'set_param'; param: string; value: number }
+  | { type: 'reset' }
+  | { type: 'pause' }
+  | { type: 'resume' };
 ```
 
-**重构后**：
-```typescript
-// 统一声明式路径
-const elements = schema?.canvas?.elements?.length
-  ? schema.canvas.elements
-  : buildPresetElements(rules.type as PresetTemplateType, layout, params, computed);
+**关键设计决策**：
+- **参数系统内置**：旧模板直接在DOM中操作input range，新模板通过 `bindParam()` 注册参数，`experiment-core` 自动管理DOM控件渲染和事件绑定。这使得模板代码可以更专注于物理模拟而非UI样板。
+- **渲染循环托管**：`startRenderLoop()` 内部使用 `requestAnimationFrame` + delta-time计算，支持 `pause/resume` 命令。模板只需提供 `update(dt)` 函数。
 
-renderCanvas(ctx, elements, layout, params, computed);
+### Module 2: physics-utils.js（物理专用层）
+
+**职责**：提供物理学科的公式计算、单位换算、常量定义和物理专用渲染辅助。
+
+**导出内容**：
+```javascript
+// 常量
+export const G = 9.8;               // m/s²
+export const PI = Math.PI;
+
+// 力学公式
+export const buoyancyForce = (rhoFluid, volume, g = G) => rhoFluid * volume * g;
+export const gravityForce = (mass, g = G) => mass * g;
+export const leverTorque = (force, armLength) => force * armLength;
+export const snellsLaw = (n1, theta1, n2) => Math.asin((n1 * Math.sin(theta1)) / n2);
+
+// 运动学公式（第二批新增）
+export const kineticEnergy = (mass, velocity) => 0.5 * mass * velocity * velocity;
+export const potentialEnergy = (mass, height, g = G) => mass * g * height;
+export const waveDisplacement = (amplitude, wavelength, frequency, time, x) =>
+  amplitude * Math.sin(2 * PI * (x / wavelength - frequency * time));
+export const faradayEMF = (dPhi, dt) => -dPhi / dt;  // ε = -dΦ/dt
+
+// 渲染辅助
+export const drawArrow = (ctx, fromX, fromY, toX, toY, color = '#000') => { ... };
+export const drawAxis = (ctx, originX, originY, width, height, options) => { ... };
+export const drawEnergyBar = (ctx, x, y, value, maxValue, label, color) => { ... };
 ```
+
+### Module 3: 第二批物理模板（4个）
+
+| 模板ID | 核心物理概念 | 参数 | 可视化方案 | 技术栈 |
+|--------|-------------|------|-----------|--------|
+| `physics/motion` | 运动学（v-t, s-t图） | 初速度、加速度、时间 | Canvas2D绘制坐标系+运动轨迹+时序动画 | Canvas2D |
+| `physics/energy` | 机械能守恒 | 质量、高度、初速度 | SVG小球+能量分布柱状图（动能/势能/总能量） | SVG + Canvas2D |
+| `physics/waves` | 机械波（简谐波） | 振幅、波长、频率、波速 | Canvas2D绘制正弦波+波的叠加（干涉/衍射） | Canvas2D |
+| `physics/electromagnetism` | 法拉第电磁感应 | 磁通量、线圈匝数、变化率 | SVG磁铁+线圈+感应电流动画（大小/方向） | SVG |
 
 ---
 
-## 数据流图
+## 数据流设计
 
 ```mermaid
 sequenceDiagram
-    participant User as 用户调节参数
-    participant React as React State
-    participant Engine as physics-engine.ts
-    participant Preset as preset-templates.ts
-    participant Renderer as declarative-renderer.ts
-    participant Canvas as Canvas 2D
+    participant User
+    participant Host as Next.js /experiments/[id]
+    participant Router as concept-to-template.ts
+    participant Registry as template-registry.ts
+    participant Iframe as IframeExperiment.tsx
+    participant Template as <experiment>.html
+    participant Core as experiment-core.js
+    participant Utils as physics-utils.js
 
-    User->>React: 调节滑块
-    React->>Engine: computePhysics(params)
-    Engine-->>React: PhysicsResult { results, state }
-    React->>Preset: buildPresetElements(type, layout, params, results)
-    Preset-->>React: CanvasElement[]
-    React->>Renderer: renderCanvas(ctx, elements, layout, params, results)
-    Renderer->>Canvas: 逐元素渲染（21种渲染器）
+    User->>Host: 访问 /experiments/motion
+    Host->>Router: conceptToTemplateId('motion')
+    Router-->>Host: 'physics/motion'
+    Host->>Registry: getTemplate('physics/motion')
+    Registry-->>Host: metadata (auditStatus='approved')
+    Host->>Iframe: render iframe src=/templates/physics/motion.html
+    Iframe->>Template: load HTML
+    Template->>Core: 加载 experiment-core.js
+    Core->>Template: EurekaHost.emitReady(['velocity','acceleration','time'])
+    Template->>Utils: 加载 physics-utils.js
+    Template->>Template: 绑定参数 → 初始化Canvas → 启动渲染循环
+    Template->>Iframe: postMessage {type:'ready', templateId:'physics/motion', protocolVersion:'1.0'}
+    Iframe->>Host: 显示参数面板 + 统计区域
+    User->>Template: 拖动"初速度"滑块
+    Template->>Core: setParam('velocity', 15)
+    Template->>Template: update(dt) → 重新计算位移 → 重绘轨迹
+    Template->>Iframe: postMessage {type:'result_update', results: {displacement: 45}}
+    Iframe->>Host: 更新统计面板数值
 ```
 
 ---
 
-## Architecture Scorecard
+## 向后兼容策略
 
-| ID | 检查项 | 评估 | 说明 |
-|----|--------|------|------|
-| ARCH-001 | 每个技术选择有明确理由 | ✅ PASS | 每个模块设计都有"为什么这样设计"说明 |
-| ARCH-002 | 权衡已说明 | ✅ PASS | 静态JSON vs buildPresetElements()的权衡已说明 |
-| ARCH-004 | 水平扩展策略 | N/A | 纯前端渲染，无状态服务 |
-| ARCH-007 | 无单点故障 | ✅ PASS | 渲染器降级到 renderPlaceholder，不崩溃 |
-| ARCH-008 | 数据持久化 | N/A | 渲染层无持久化需求 |
-| ARCH-009 | 故障模式和恢复 | ✅ PASS | 未知类型降级到 renderPlaceholder |
-| ARCH-010 | 认证授权 | N/A | 纯渲染层，无认证需求 |
-| ARCH-011 | 敏感数据处理 | N/A | 无敏感数据 |
-| ARCH-015 | 覆盖所有 NFR | ✅ PASS | 可扩展性、可维护性、向后兼容性均已设计 |
-| ARCH-016 | 支持所有功能需求 | ✅ PASS | 7条验收标准均有对应架构设计 |
-| ARCH-017 | 无内部矛盾 | ✅ PASS | 三层架构职责清晰，无重叠 |
-| ARCH-018 | 图表与文字一致 | ✅ PASS | Mermaid 图与模块描述一致 |
+### 旧模板（浮力/杠杆/折射/电路）的兼容路径
 
----
+旧模板引用路径：`/templates/_shared/physics-core.js`
 
-## Failure Model
+```javascript
+// physics-core.js (兼容包 —— 保留，仅用于旧模板)
+// 这个文件的内容是：experiment-core.js + physics-utils.js 的合并
+// 旧模板中的 `EurekaHost` 对象通过此文件获得，API签名完全不变
 
-**故障类型 1：未知元素类型**
-- 检测：`RENDERERS[el.type]` 返回 `undefined`
-- 恢复：降级到 `renderPlaceholder`（显示虚线框 + 类型名），不崩溃
+import { EurekaHost, bindParam, getParam, setParam } from './experiment-core.js';
+import * as physics from './physics-utils.js';
 
-**故障类型 2：动态表达式求值失败**
-- 检测：`resolveDynamicValue` 中 `new Function()` 抛出异常
-- 恢复：返回 `0`，元素渲染在默认位置
+window.EurekaHost = EurekaHost;
+Object.assign(window, physics);
+```
 
-**故障类型 3：Preset 模板类型不匹配**
-- 检测：`buildPresetElements` 收到未知 type
-- 恢复：返回空数组 `[]`，画布显示空白
+### 新模板的加载路径
 
----
-
-## Migration Safety Case
-
-**迁移策略：双轨并行 → 渐进切换**
-
-1. **阶段 1（本次实现）**：新增 preset-templates.ts 和扩展渲染器，`DynamicExperiment.tsx` 优先走声明式路径，命令式 `drawXxx()` 作为备用保留
-2. **阶段 2（可选）**：视觉验证通过后，删除命令式 `drawXxx()` 函数
-3. **回滚机制**：若声明式路径出现问题，`DynamicExperiment.tsx` 中的 `if (schema?.canvas?.elements?.length)` 条件可快速回退到命令式路径
+```html
+<!-- 新模板（如 motion.html） -->
+<script src="/templates/_shared/experiment-core.js"></script>
+<script src="/templates/_shared/physics-utils.js"></script>
+<script>
+  // 模板专用代码
+  EurekaHost.setTemplateId('physics/motion');
+  bindParam('velocity', { min: 0, max: 50, step: 1, defaultValue: 0, unit: 'm/s' });
+  bindParam('acceleration', { min: -10, max: 10, step: 0.1, defaultValue: 2, unit: 'm/s²' });
+  // ...
+</script>
+```
 
 ---
 
-## Scenario Coverage
+## 决策记录
 
-| 场景 | 架构支持 | 实现方式 |
-|------|---------|---------|
-| 现有浮力实验 | ✅ | preset-templates.ts 的 buoyancy preset |
-| LLM 生成新化学实验 | ✅ | Schema 中直接使用 beaker/bubble/arrow 组件 |
-| 纯声明式自定义实验 | ✅ | canvas.elements 直接定义，无需 preset |
-| 动态参数绑定 | ✅ | `{variableName}` 语法，渲染器每帧解析 |
-| 化学烧杯液面动态变化 | ✅ | beaker 的 fillLevel 绑定到参数 |
-| 数学函数图像 | ✅ | functionPlot 渲染器 + fn 字段 |
-| 物理摆动动画 | ✅ | pendulum 渲染器 + angle 动态绑定 |
+```json
+{
+  "decisions": [
+    {
+      "id": "D-B2-1",
+      "choice": "将 physics-core.js 拆分为 experiment-core.js + physics-utils.js，旧文件保留为兼容wrapper",
+      "rationale": "向后兼容是硬性约束。旧模板的iframe是独立沙箱，它们加载的 physics-core.js 可以保持为合并包。新模板按最佳实践拆分加载。",
+      "alternatives": ["完全重写共享层（需要修改旧模板）", "直接复制一份改名（代码重复）"],
+      "status": "approved"
+    },
+    {
+      "id": "D-B2-2",
+      "choice": "experiment-core.js 内置参数系统bindParam()，替代模板直接DOM操作",
+      "rationale": "观察到第一批4个模板中，参数滑块的HTML结构和事件监听代码高度重复。提取到通用层可以减少60%的模板样板代码。",
+      "alternatives": ["保留第一批的DOM直接操作方式（模板代码冗长但可预测）"],
+      "status": "approved"
+    },
+    {
+      "id": "D-B2-3",
+      "choice": "第二批物理模板继续使用Canvas2D/SVG，不引入WebGL",
+      "rationale": "运动学、机械能、机械波、电磁感应这4个实验的交互复杂度与第一批相当，Canvas2D/SVG足以胜任。引入WebGL会增加复杂度且无必要。",
+      "alternatives": ["使用Three.js/WebGL（过度设计）"],
+      "status": "approved"
+    },
+    {
+      "id": "D-B2-4",
+      "choice": "不新增任何外部npm依赖",
+      "rationale": "保持与第一批一致的原则：零依赖，使用浏览器原生API。这降低了supply chain风险和部署复杂度。",
+      "alternatives": ["引入D3.js（运动学可视化更便利但需要额外依赖）"],
+      "status": "approved"
+    },
+    {
+      "id": "D-B2-5",
+      "choice": "postMessage协议保持v1.0不变，不在本批次引入协议升级",
+      "rationale": "协议变更需要同时修改Host端（IframeExperiment.tsx），而约束是不修改Host端。所有新增消息类型必须能在v1协议下表达。",
+      "alternatives": ["引入v2协议支持学科扩展字段（风险：需要修改Host）"],
+      "status": "approved"
+    }
+  ]
+}
+```
+
+---
+
+## 安全考量
+
+本批次的安全边界与第一批完全一致：
+- **Triple-Lock 1**: `/api/generate` 系统提示中的 canvas 禁令保持不变
+- **Triple-Lock 2**: `concept-to-template.ts` 新增第二批关键词映射后必须仍通过 `isApprovedTemplate()` 检查
+- **Triple-Lock 3**: `template-registry.ts` 新增的第二批模板初始 `auditStatus` 为 `'pending'`，只有通过审计后才标记 `'approved'`
+- **iframe sandbox**: 新模板继续使用相同的安全策略，`allow-scripts` 但不允许 `allow-same-origin`（与第一批一致）
+
+---
+
+## 性能考量
+
+- **模板体积**: 单文件gzip <50KB（沿用NFR-1）。`experiment-core.js` 约5KB gzip，`physics-utils.js` 约3KB gzip，模板HTML约10-20KB gzip，总计单模板package约20-30KB，符合要求。
+- **加载顺序优化**: 使用 `<script type="module">` + `import`（HTTP/2复用连接），或保持 `<script>` 按序加载（实验模板数量少，差异可忽略）。
+- **渲染性能**: 第二批运动学模板动画帧率目标 ≥30fps，`experiment-core.js` 的 `requestAnimationFrame` + delta-time循环已优化避免卡顿。
 
 ---
 
 ## 思考摘要
 
-| 问题 | 答案 |
-|------|------|
-| 最简架构是什么？ | 三层：类型层（扩展CanvasElement）+ 渲染层（扩展renderer）+ 模板层（preset-templates） |
-| 最大假设是什么？ | Preset 模板能精确还原命令式 drawXxx() 的视觉效果 |
-| 最可能的生产故障？ | 动态表达式求值失败导致元素位置为0，已通过 try-catch 降级处理 |
-| 最简单的替代方案？ | 直接在 DynamicExperiment.tsx 中内联声明式定义，但会导致文件过大 |
-| 为什么选择 preset-templates.ts 独立文件？ | 关注点分离：模板定义与渲染逻辑解耦，便于测试和扩展 |
+1. **核心挑战**: 第一批验证了三重锁架构，但共享层是物理专用的，无法支持跨学科扩展
+2. **关键决策**: 采用"两层共享"模型（通用层 + 学科专用层），旧模板通过兼容wrapper保持零修改
+3. **最大创新**: `experiment-core.js` 内置参数系统 `bindParam()`，将第一批中高度重复的滑块DOM操作代码提取到通用层
+4. **范围控制**: 本批次仅限物理学科内的第二批4个实验 + 跨学科基础设施抽象，不真正新增化学/生物模板（移至第三批）
+5. **向后兼容保证**: 旧模板引用的 `physics-core.js` 保留为兼容包，API签名100%不变

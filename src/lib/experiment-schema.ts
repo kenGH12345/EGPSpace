@@ -101,10 +101,16 @@ export interface CanvasElement {
   dynamic?: {
     x?: string;
     y?: string;
+    x2?: string;
+    y2?: string;
     width?: string;
     height?: string;
     fill?: string;
+    stroke?: string;
+    opacity?: string;
     visible?: string;
+    text?: string;
+    magnitude?: string;
   };
   children?: CanvasElement[];
   // Physics-specific fields
@@ -144,6 +150,29 @@ export interface CanvasConfig {
   layout: CanvasLayout;
   elements: CanvasElement[];
   presetTemplate?: PhysicsEngineType;
+  /**
+   * Ambient (background) animations decoupled from foreground elements.
+   * Examples: water waves on a container, bubbles rising, current particles.
+   * Driven by the rAF loop via AmbientAnimator. Optional — omit for static scenes.
+   */
+  ambientAnimations?: AmbientAnimation[];
+}
+
+export type AmbientAnimationType = 'wave' | 'bubble' | 'particle' | 'ripple';
+
+export interface AmbientAnimation {
+  type: AmbientAnimationType;
+  /** Optional id of a canvas element that anchors/clips this animation (e.g. a water container). */
+  target?: string;
+  /**
+   * Type-specific parameters. Common keys by type:
+   *   wave:    { amplitude, frequency, speed, color, y }
+   *   bubble:  { count, minRadius, maxRadius, speed, color }
+   *   particle:{ count, speed, color, size }
+   *   ripple:  { maxRadius, speed, color }
+   * Values may reference runtime variables via expression strings when the renderer supports it.
+   */
+  params: Record<string, number | string>;
 }
 
 // ============ Physics ============
@@ -166,6 +195,26 @@ export interface PhysicsConfig {
   equations: FormulaDefinition[];
   constraints?: PhysicsConstraint[];
   computedParams?: ComputedParam[];
+  /**
+   * Optional runtime dynamics (spring-damper integration) for smooth transitions
+   * between user input and displayed state. When omitted or disabled=false, the
+   * renderer evaluates computedParams directly (static path) — fully backward compatible.
+   */
+  dynamics?: DynamicsConfig;
+}
+
+export interface DynamicsConfig {
+  enabled: boolean;
+  /** Spring stiffness. Higher = faster convergence. Buoyancy default ≈ 0.06. */
+  stiffness: number;
+  /** Velocity damping per step (0..1). Higher = more overshoot. Buoyancy default ≈ 0.88. */
+  damping: number;
+  /**
+   * Names of runtime variables that participate in the dynamics loop.
+   * Each listed variable will be smoothly interpolated toward its target value each frame.
+   * Variables NOT listed here are evaluated statically (old behavior).
+   */
+  variables: string[];
 }
 
 // ============ Interactions ============
@@ -195,6 +244,11 @@ export interface InteractionConfig {
   sliders?: SliderConfig[];
   drag?: DragConfig[];
   animation?: AnimationConfig[];
+  /**
+   * One-shot onboarding hint shown on the first render. Dismissed on first interaction.
+   * Example: '拖动物体改变浸没深度'. Omit to disable the hint.
+   */
+  firstTimeHint?: string;
 }
 
 // ============ Teaching ============
@@ -296,12 +350,24 @@ export function createDefaultSchema(overrides?: Partial<ExperimentMeta>): Experi
 }
 
 export function createBuoyancyExperiment(): ExperimentSchema {
+  // Canvas geometry constants (keep in sync with renderer preset)
+  const CANVAS_W = 560;
+  const CANVAS_H = 280;
+  const CONTAINER_X = 160;
+  const CONTAINER_Y = 40;
+  const CONTAINER_W = 240;
+  const CONTAINER_H = 200;
+  const WATER_SURFACE_Y = CONTAINER_Y + 50;  // top of liquid inside container
+  const OBJ_SIZE = 50;
+  const OBJ_DEFAULT_X = CONTAINER_X + (CONTAINER_W - OBJ_SIZE) / 2;
+  const OBJ_DEFAULT_Y = WATER_SURFACE_Y - OBJ_SIZE / 2;  // half-submerged at rest
+
   return {
     meta: {
       name: '浮力实验',
       subject: 'physics',
       topic: '浮力',
-      description: '探索物体在液体中的浮沉规律',
+      description: '探索物体在液体中的浮沉规律，理解阿基米德原理',
       icon: '🌊',
       gradient: 'from-cyan-500 to-blue-500',
       physicsType: 'buoyancy',
@@ -313,7 +379,7 @@ export function createBuoyancyExperiment(): ExperimentSchema {
         unit: 'kg/m³',
         defaultValue: 800,
         min: 200,
-        max: 2000,
+        max: 3000,
         step: 10,
         category: 'input',
         description: '物体本身的密度，决定浮沉状态',
@@ -323,11 +389,33 @@ export function createBuoyancyExperiment(): ExperimentSchema {
         label: '液体密度 (ρ液)',
         unit: 'kg/m³',
         defaultValue: 1000,
-        min: 800,
+        min: 700,
         max: 13600,
-        step: 50,
+        step: 100,
         category: 'input',
-        description: '液体密度（水/盐水/汞等）',
+        description: '液体密度（水=1000, 盐水≈1200, 汞=13600）',
+      },
+      {
+        name: 'vol',
+        label: '物体体积 (V)',
+        unit: 'm³',
+        defaultValue: 0.01,
+        min: 0.001,
+        max: 0.05,
+        step: 0.001,
+        category: 'input',
+        description: '物体的体积，影响排开液体的量',
+      },
+      {
+        name: 'g',
+        label: '重力加速度 (g)',
+        unit: 'm/s²',
+        defaultValue: 9.8,
+        min: 1,
+        max: 20,
+        step: 0.1,
+        category: 'input',
+        description: '重力加速度（地球≈9.8，月球≈1.6）',
       },
     ],
     formulas: [
@@ -335,21 +423,139 @@ export function createBuoyancyExperiment(): ExperimentSchema {
         name: '浮力公式',
         expression: 'F = ρ液 × g × V排',
         description: '阿基米德原理：浮力等于排开液体的重力',
-        variables: ['rho_liquid', 'g', 'V_displaced'],
+        variables: ['rho_liquid', 'g', 'vol'],
         resultVariable: 'buoyantForce',
       },
       {
         name: '重力公式',
         expression: 'G = ρ物 × g × V物',
         description: '物体所受重力',
-        variables: ['rho_object', 'g', 'V_object'],
+        variables: ['rho_object', 'g', 'vol'],
         resultVariable: 'gravity',
       },
     ],
     canvas: {
-      layout: { ...DEFAULT_CANVAS_LAYOUT },
-      elements: [],
+      layout: { width: CANVAS_W, height: CANVAS_H, background: '#f0f9ff' },
+      elements: [
+        // Water container (glass beaker outline)
+        {
+          id: 'waterContainer',
+          type: 'rect',
+          label: '容器',
+          x: CONTAINER_X,
+          y: CONTAINER_Y,
+          width: CONTAINER_W,
+          height: CONTAINER_H,
+          fill: 'rgba(200,235,255,0.3)',
+          stroke: '#60a5fa',
+          strokeWidth: 2,
+        },
+        // Liquid fill (height driven by container, color by liquid type)
+        {
+          id: 'liquidFill',
+          type: 'rect',
+          label: '液体',
+          x: CONTAINER_X + 2,
+          y: WATER_SURFACE_Y,
+          width: CONTAINER_W - 4,
+          height: CONTAINER_H - (WATER_SURFACE_Y - CONTAINER_Y) - 2,
+          fill: 'rgba(96,165,250,0.25)',
+          stroke: 'none',
+          strokeWidth: 0,
+        },
+        // Object block (position driven by dynamics)
+        {
+          id: 'objectBlock',
+          type: 'rect',
+          label: '物体',
+          x: OBJ_DEFAULT_X,
+          y: OBJ_DEFAULT_Y,
+          width: OBJ_SIZE,
+          height: OBJ_SIZE,
+          fill: '#f97316',
+          stroke: '#ea580c',
+          strokeWidth: 2,
+          dynamic: {
+            y: 'objY',
+            fill: 'objColor',
+          },
+        },
+        // Gravity force arrow (downward, magnitude proportional to gravity)
+        {
+          id: 'gravityArrow',
+          type: 'forceArrow',
+          label: 'G',
+          x: OBJ_DEFAULT_X + OBJ_SIZE / 2,
+          y: OBJ_DEFAULT_Y + OBJ_SIZE,
+          x2: OBJ_DEFAULT_X + OBJ_SIZE / 2,
+          y2: OBJ_DEFAULT_Y + OBJ_SIZE + 40,
+          stroke: '#ef4444',
+          strokeWidth: 2,
+          dynamic: {
+            y: 'objY + 50',
+            y2: 'objY + 50 + gravity * 2',
+          },
+        },
+        // Buoyant force arrow (upward, magnitude proportional to buoyantForce)
+        {
+          id: 'buoyantArrow',
+          type: 'forceArrow',
+          label: 'F浮',
+          x: OBJ_DEFAULT_X + OBJ_SIZE / 2,
+          y: OBJ_DEFAULT_Y,
+          x2: OBJ_DEFAULT_X + OBJ_SIZE / 2,
+          y2: OBJ_DEFAULT_Y - 40,
+          stroke: '#22c55e',
+          strokeWidth: 2,
+          dynamic: {
+            y: 'objY',
+            y2: 'objY - buoyantForce * 2',
+          },
+        },
+        // Status label
+        {
+          id: 'statusLabel',
+          type: 'text',
+          label: '状态',
+          x: CONTAINER_X + CONTAINER_W + 10,
+          y: CONTAINER_Y + 20,
+          text: '浮沉状态',
+          fontSize: 13,
+          fill: '#374151',
+          dynamic: {
+            fill: 'floatState === "上浮" ? "#22c55e" : floatState === "下沉" ? "#ef4444" : "#f59e0b"',
+          },
+        },
+      ],
       presetTemplate: 'buoyancy',
+      ambientAnimations: [
+        {
+          type: 'wave',
+          target: 'waterContainer',
+          params: {
+            amplitude: 2,
+            frequency: 0.04,
+            y: WATER_SURFACE_Y,
+            x: CONTAINER_X + 2,
+            width: CONTAINER_W - 4,
+            color: 'rgba(96,165,250,0.7)',
+          },
+        },
+        {
+          type: 'bubble',
+          target: 'liquidFill',
+          params: {
+            count: 6,
+            minRadius: 2,
+            maxRadius: 5,
+            x: CONTAINER_X + 10,
+            y: WATER_SURFACE_Y + 20,
+            width: CONTAINER_W - 20,
+            height: CONTAINER_H - (WATER_SURFACE_Y - CONTAINER_Y) - 30,
+            color: 'rgba(186,230,253,0.7)',
+          },
+        },
+      ],
     },
     physics: {
       engine: 'buoyancy',
@@ -358,33 +564,44 @@ export function createBuoyancyExperiment(): ExperimentSchema {
           name: '浮力',
           expression: 'F = ρ液 × g × V排',
           description: '阿基米德原理',
-          variables: ['rho_liquid', 'g', 'V_displaced'],
+          variables: ['rho_liquid', 'g', 'vol'],
           resultVariable: 'buoyantForce',
         },
       ],
       computedParams: [
-        {
-          name: 'immersionRatio',
-          formula: 'min(1, ρ物 / ρ液)',
-          dependsOn: ['rho_object', 'rho_liquid'],
-        },
-        {
-          name: 'buoyantForce',
-          formula: 'ρ液 × g × V物 × immersionRatio',
-          dependsOn: ['rho_liquid', 'g', 'V_object', 'immersionRatio'],
-        },
-        {
-          name: 'gravity',
-          formula: 'ρ物 × g × V物',
-          dependsOn: ['rho_object', 'g', 'V_object'],
-        },
+        { name: 'mass',          formula: 'rho_object * vol',                                  dependsOn: ['rho_object', 'vol'] },
+        { name: 'gravity',       formula: 'mass * g',                                          dependsOn: ['mass', 'g'] },
+        { name: 'objSize',       formula: 'Math.cbrt(vol) * 100',                              dependsOn: ['vol'] },
+        { name: 'immersionRatio',formula: 'Math.min(1, rho_object / rho_liquid)',               dependsOn: ['rho_object', 'rho_liquid'] },
+        { name: 'subFraction',   formula: 'immersionRatio',                                    dependsOn: ['immersionRatio'] },
+        { name: 'vDisplaced',    formula: 'vol * immersionRatio',                              dependsOn: ['vol', 'immersionRatio'] },
+        { name: 'buoyantForce',  formula: 'rho_liquid * g * vDisplaced',                       dependsOn: ['rho_liquid', 'g', 'vDisplaced'] },
+        { name: 'netForce',      formula: 'buoyantForce - gravity',                            dependsOn: ['buoyantForce', 'gravity'] },
+        { name: 'floatState',    formula: 'netForce > 0.01 ? "上浮" : netForce < -0.01 ? "下沉" : "悬浮"', dependsOn: ['netForce'] },
+        { name: 'objColor',      formula: 'rho_object < rho_liquid ? "#f97316" : rho_object > rho_liquid ? "#6366f1" : "#a855f7"', dependsOn: ['rho_object', 'rho_liquid'] },
       ],
+      dynamics: {
+        enabled: true,
+        stiffness: 0.06,
+        damping: 0.88,
+        variables: ['objY'],
+      },
     },
     interactions: {
       sliders: [
-        { param: 'rho_object', label: '物体密度', min: 200, max: 2000, step: 10, unit: 'kg/m³' },
-        { param: 'rho_liquid', label: '液体密度', min: 800, max: 13600, step: 50, unit: 'kg/m³' },
+        { param: 'rho_object', label: '物体密度', min: 200,  max: 3000,  step: 10,    unit: 'kg/m³' },
+        { param: 'rho_liquid', label: '液体密度', min: 700,  max: 13600, step: 100,   unit: 'kg/m³' },
+        { param: 'vol',        label: '物体体积', min: 0.001,max: 0.05,  step: 0.001, unit: 'm³' },
+        { param: 'g',          label: '重力加速度',min: 1,   max: 20,    step: 0.1,   unit: 'm/s²' },
       ],
+      drag: [
+        {
+          elementId: 'objectBlock',
+          constrainTo: 'vertical',
+          paramMapping: { dy: 'objY' },
+        },
+      ],
+      firstTimeHint: '拖动物体改变浸没深度',
     },
     teaching: {
       understanding: {
@@ -439,7 +656,82 @@ export function createLeverExperiment(): ExperimentSchema {
     formulas: [
       { name: '杠杆平衡条件', expression: 'F1 × L1 = F2 × L2', description: '力矩平衡：动力×动力臂 = 阻力×阻力臂', variables: ['leftMass', 'leftArm', 'rightMass', 'rightArm'], resultVariable: 'torqueBalance' },
     ],
-    canvas: { layout: { ...DEFAULT_CANVAS_LAYOUT }, elements: [], presetTemplate: 'lever' },
+    canvas: {
+      layout: { ...DEFAULT_CANVAS_LAYOUT },
+      elements: [
+        // Lever beam (horizontal bar)
+        {
+          id: 'leverBeam',
+          type: 'rect' as const,
+          label: '杠杆',
+          x: 80,
+          y: 130,
+          width: 400,
+          height: 8,
+          fill: '#78716c',
+          stroke: '#57534e',
+          strokeWidth: 1,
+          dynamic: { y: '130 + leverAngle * 0.5' },
+        },
+        // Fulcrum (triangle)
+        {
+          id: 'fulcrum',
+          type: 'polygon' as const,
+          label: '支点',
+          x: 280,
+          y: 138,
+          points: [
+            { x: 280, y: 138 },
+            { x: 265, y: 165 },
+            { x: 295, y: 165 },
+          ],
+          fill: '#a8a29e',
+          stroke: '#78716c',
+          strokeWidth: 1,
+        },
+        // Left weight
+        {
+          id: 'leftWeight',
+          type: 'rect' as const,
+          label: '左砝码',
+          x: '80 + (50 - leftArm * 4)',
+          y: 100,
+          width: 30,
+          height: 30,
+          fill: '#f97316',
+          stroke: '#ea580c',
+          strokeWidth: 1,
+        },
+        // Right weight
+        {
+          id: 'rightWeight',
+          type: 'rect' as const,
+          label: '右砝码',
+          x: '280 + rightArm * 4 - 15',
+          y: 100,
+          width: 30,
+          height: 30,
+          fill: '#6366f1',
+          stroke: '#4f46e5',
+          strokeWidth: 1,
+        },
+        // Balance status label
+        {
+          id: 'balanceLabel',
+          type: 'text' as const,
+          label: '平衡状态',
+          x: 220,
+          y: 200,
+          text: '平衡状态',
+          fontSize: 14,
+          fill: '#374151',
+          dynamic: {
+            fill: 'isBalanced ? "#22c55e" : "#ef4444"',
+          },
+        },
+      ],
+      presetTemplate: 'lever' as const,
+    },
     physics: {
       engine: 'lever',
       equations: [
@@ -492,7 +784,96 @@ export function createRefractionExperiment(): ExperimentSchema {
     formulas: [
       { name: '斯涅尔定律', expression: 'n1 × sin(θ1) = n2 × sin(θ2)', description: '折射定律', variables: ['n1', 'incidentAngle', 'n2'], resultVariable: 'refractionAngle' },
     ],
-    canvas: { layout: { ...DEFAULT_CANVAS_LAYOUT }, elements: [], presetTemplate: 'refraction' },
+    canvas: {
+      layout: { ...DEFAULT_CANVAS_LAYOUT },
+      elements: [
+        // Interface line (boundary between two media)
+        {
+          id: 'interface',
+          type: 'line' as const,
+          label: '分界面',
+          x: 80,
+          y: 140,
+          x2: 480,
+          y2: 140,
+          stroke: '#94a3b8',
+          strokeWidth: 1.5,
+        },
+        // Normal line (dashed, vertical)
+        {
+          id: 'normalLine',
+          type: 'line' as const,
+          label: '法线',
+          x: 280,
+          y: 60,
+          x2: 280,
+          y2: 220,
+          stroke: '#cbd5e1',
+          strokeWidth: 1,
+        },
+        // Incident ray
+        {
+          id: 'incidentRay',
+          type: 'lightRay' as const,
+          label: '入射光',
+          x: 280,
+          y: 140,
+          angle: '-90 - incidentAngle',
+          length: 100,
+          stroke: '#fbbf24',
+          strokeWidth: 2.5,
+        },
+        // Refracted ray
+        {
+          id: 'refractedRay',
+          type: 'lightRay' as const,
+          label: '折射光',
+          x: 280,
+          y: 140,
+          angle: '90 + refractionAngle',
+          length: 100,
+          stroke: '#34d399',
+          strokeWidth: 2.5,
+        },
+        // Angle labels
+        {
+          id: 'incidentLabel',
+          type: 'text' as const,
+          label: '入射角',
+          x: 190,
+          y: 125,
+          text: 'θ₁',
+          fontSize: 13,
+          fill: '#fbbf24',
+        },
+        {
+          id: 'refractedLabel',
+          type: 'text' as const,
+          label: '折射角',
+          x: 190,
+          y: 165,
+          text: 'θ₂',
+          fontSize: 13,
+          fill: '#34d399',
+        },
+      ],
+      presetTemplate: 'refraction' as const,
+      ambientAnimations: [
+        {
+          type: 'particle' as const,
+          params: {
+            count: 5,
+            vx: 1.2,
+            vy: 0.8,
+            size: 2,
+            startX: 180,
+            startY: 100,
+            spread: 10,
+            color: 'rgba(251,191,36,0.9)',
+          },
+        },
+      ],
+    },
     physics: {
       engine: 'refraction',
       equations: [
@@ -544,7 +925,119 @@ export function createCircuitExperiment(): ExperimentSchema {
       { name: '欧姆定律', expression: 'I = U / R', description: '电流等于电压除以电阻', variables: ['voltage', 'resistance'], resultVariable: 'current' },
       { name: '功率公式', expression: 'P = U × I', description: '电功率等于电压乘电流', variables: ['voltage', 'current'], resultVariable: 'power' },
     ],
-    canvas: { layout: { ...DEFAULT_CANVAS_LAYOUT }, elements: [], presetTemplate: 'circuit' },
+    canvas: {
+      layout: { ...DEFAULT_CANVAS_LAYOUT },
+      elements: [
+        // Battery (left side)
+        {
+          id: 'battery',
+          type: 'rect' as const,
+          label: '电池',
+          x: 80,
+          y: 110,
+          width: 40,
+          height: 60,
+          fill: '#fef3c7',
+          stroke: '#f59e0b',
+          strokeWidth: 2,
+        },
+        {
+          id: 'batteryLabel',
+          type: 'text' as const,
+          label: '电压',
+          x: 85,
+          y: 148,
+          text: 'U',
+          fontSize: 14,
+          fill: '#92400e',
+        },
+        // Resistor (right side)
+        {
+          id: 'resistor',
+          type: 'rect' as const,
+          label: '电阻',
+          x: 380,
+          y: 120,
+          width: 60,
+          height: 40,
+          fill: '#ede9fe',
+          stroke: '#7c3aed',
+          strokeWidth: 2,
+        },
+        {
+          id: 'resistorLabel',
+          type: 'text' as const,
+          label: '电阻值',
+          x: 390,
+          y: 145,
+          text: 'R',
+          fontSize: 14,
+          fill: '#4c1d95',
+        },
+        // Wires (top and bottom)
+        {
+          id: 'wireTop',
+          type: 'line' as const,
+          label: '上导线',
+          x: 120,
+          y: 110,
+          x2: 380,
+          y2: 110,
+          stroke: '#374151',
+          strokeWidth: 2,
+        },
+        {
+          id: 'wireBottom',
+          type: 'line' as const,
+          label: '下导线',
+          x: 120,
+          y: 170,
+          x2: 380,
+          y2: 170,
+          stroke: '#374151',
+          strokeWidth: 2,
+        },
+        // Current direction arrow
+        {
+          id: 'currentArrow',
+          type: 'arrow' as const,
+          label: 'I',
+          x: 220,
+          y: 110,
+          x2: 270,
+          y2: 110,
+          stroke: '#22c55e',
+          strokeWidth: 2,
+        },
+        // Current value label
+        {
+          id: 'currentLabel',
+          type: 'text' as const,
+          label: '电流',
+          x: 200,
+          y: 100,
+          text: 'I = {current} A',
+          fontSize: 12,
+          fill: '#166534',
+        },
+      ],
+      presetTemplate: 'circuit' as const,
+      ambientAnimations: [
+        {
+          type: 'particle' as const,
+          params: {
+            count: 8,
+            vx: 1.5,
+            vy: 0,
+            size: 3,
+            startX: 120,
+            startY: 110,
+            spread: 4,
+            color: 'rgba(34,197,94,0.9)',
+          },
+        },
+      ],
+    },
     physics: {
       engine: 'circuit',
       equations: [

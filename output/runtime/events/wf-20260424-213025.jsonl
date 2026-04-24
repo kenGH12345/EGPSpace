@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424-213025","createdAt":"2026-04-24T13:30:25.997Z"}
+{"seq":1,"ts":"2026-04-24T13:30:25.997Z","sessionId":"wf-20260424-213025","kind":"stage_started","stage":"DEVELOP","taskId":null,"attempt":null,"payload":{"stageInput":"experiment-core.js, physics-utils.js, template-registry.ts, concept-to-template.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>电路串并联</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .circuit-canvas-wrapper {
+    background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%);
+  }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">总电阻 R</p>
+      <p class="eureka-stat-value primary" id="stat-r">20 Ω</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">总电流 I</p>
+      <p class="eureka-stat-value success" id="stat-i">0.300 A</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">总功率 P</p>
+      <p class="eureka-stat-value warning" id="stat-p">1.80 W</p>
+    </div>
+  </div>
+
+  <div class="eureka-canvas-wrapper circuit-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="680" height="340"></canvas>
+    <div style="margin-top: 8px;">
+      <div class="eureka-segmented">
+        <button class="eureka-segmented-item active" data-topology="0">串联</button>
+        <button class="eureka-segmented-item" data-topology="1">并联</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">电源电压 U</span>
+        <span class="eureka-control-value"><span id="v-u">6.0</span> V</span>
+      </div>
+      <input id="ctl-u" class="eureka-slider" type="range" min="1" max="24" step="0.1" value="6">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">电阻 R₁</span>
+        <span class="eureka-control-value"><span id="v-r1">10</span> Ω</span>
+      </div>
+      <input id="ctl-r1" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">电阻 R₂</span>
+        <span class="eureka-control-value"><span id="v-r2">10</span> Ω</span>
+      </div>
+      <input id="ctl-r2" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
+    </div>
+  </div>
+
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">欧姆定律与串并联公式</p>
+    <div class="eureka-formula-expression">I = U / R　　R<sub>串</sub> = R₁+R₂　　1/R<sub>并</sub> = 1/R₁ + 1/R₂</div>
+    <p class="eureka-formula-note">串联分压不分流，并联分流不分压</p>
+  </div>
+</div>
+
+<script src="/templates/_shared/physics-core.js"></script>
+<script>
+(function () {
+  'use strict';
+  const TEMPLATE_ID = 'physics/circuit';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  const state = { voltage: 6, r1: 10, r2: 10, topology: 0 }; // 0=series 1=parallel
+
+  const canvas = document.getElementById('canvas');
+  const cssW = 680, cssH = 340;
+  const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
+
+  const ctlU = document.getElementById('ctl-u');
+  const ctlR1 = document.getElementById('ctl-r1');
+  const ctlR2 = document.getElementById('ctl-r2');
+  const vU = document.getElementById('v-u');
+  const vR1 = document.getElementById('v-r1');
+  const vR2 = document.getElementById('v-r2');
+  const statR = document.getElementById('stat-r');
+  const statI = document.getElementById('stat-i');
+  const statP = document.getElementById('stat-p');
+
+  function compute() {
+    let Rtotal, I, I1, I2, U1, U2;
+    if (state.topology === 0) {
+      // Series: Rtotal = R1+R2, I same through both, U1+U2=U
+      Rtotal = state.r1 + state.r2;
+      I = state.voltage / Rtotal;
+      I1 = I;
+      I2 = I;
+      U1 = I * state.r1;
+      U2 = I * state.r2;
+    } else {
+      // Parallel: 1/Rtotal = 1/R1 + 1/R2, U same across both
+      Rtotal = 1 / (1 / state.r1 + 1 / state.r2);
+      I = state.voltage / Rtotal;
+      U1 = state.voltage;
+      U2 = state.voltage;
+      I1 = state.voltage / state.r1;
+      I2 = state.voltage / state.r2;
+    }
+    const P = state.voltage * I;
+    return { Rtotal, I, I1, I2, U1, U2, P };
+  }
+
+  let animOffset = 0;
+
+  function render(p) {
+    EurekaCanvas.clear(ctx, cssW, cssH);
+
+    if (state.topology === 0) {
+      drawSeries(p);
+    } else {
+      drawParallel(p);
+    }
+  }
+
+  function drawBattery(x, y) {
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 2;
+    // Long line (positive terminal)
+    ctx.beginPath();
+    ctx.moveTo(x, y - 20);
+    ctx.lineTo(x, y + 20);
+    ctx.stroke();
+    // Short line (negative terminal)
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(x - 10, y - 12);
+    ctx.lineTo(x - 10, y + 12);
+    ctx.stroke();
+    ctx.fillStyle = '#1F2937';
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 24, y + 40);
+    ctx.fillText('+', x + 6, y - 24);
+    ctx.fillText('−', x - 24, y - 24);
+  }
+
+  function drawResistor(x, y, width, label, voltage, current) {
+    const h = 24;
+    // Zigzag resistor symbol
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    const segments = 6;
+    for (let i = 0; i <= segments; i++) {
+      const sx = x + (width * i) / segments;
+      const sy = y + (i % 2 === 0 ? -h / 2 : h / 2);
+      ctx.lineTo(sx, sy);
+    }
+    ctx.lineTo(x + width, y);
+    ctx.stroke();
+
+    ctx.fillStyle = '#1F2937';
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText(label, x + width / 2 - 12, y - 18);
+    ctx.font = '11px system-ui';
+    ctx.fillStyle = '#1D4ED8';
+    ctx.fillText('U=' + voltage.toFixed(2) + 'V', x + width / 2 - 22, y + 30);
+    ctx.fillStyle = '#047857';
+    ctx.fillText('I=' + current.toFixed(3) + 'A', x + width / 2 - 24, y + 44);
+  }
+
+  function drawWire(x1, y1, x2, y2) {
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  function drawCurrentDots(x1, y1, x2, y2, current) {
+    // Animated dots moving along the wire, speed ∝ current
+    const speed = 0.6 + Math.min(3, current * 4);
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    const nx = dx / len, ny = dy / len;
+    const spacing = 20;
+    ctx.fillStyle = '#F59E0B';
+    for (let t = (animOffset * speed) % spacing; t < len; t += spacing) {
+      const px = x1 + nx * t;
+      const py = y1 + ny * t;
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawSeries(p) {
+    const left = 80, right = cssW - 80;
+    const top = 80, bottom = cssH - 60;
+    drawBattery(left, (top + bottom) / 2);
+
+    // Top wire with R1 and R2
+    drawWire(left, top, left + 120, top);
+    drawResistor(left + 120, top, 120, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    drawWire(left + 240, top, left + 360, top);
+    drawResistor(left + 360, top, 120, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawWire(left + 480, top, right, top);
+    drawWire(right, top, right, bottom);
+    drawWire(right, bottom, left, bottom);
+    drawWire(left, bottom, left, (top + bottom) / 2 + 20);
+    drawWire(left, (top + bottom) / 2 - 20, left, top);
+
+    // Current flow (single loop)
+    drawCurrentDots(left, top, left + 120, top, p.I);
+    drawCurrentDots(left + 240, top, left + 360, top, p.I);
+    drawCurrentDots(left + 480, top, right, top, p.I);
+    drawCurrentDots(right, bottom, left, bottom, p.I);
+  }
+
+  function drawParallel(p) {
+    const left = 80, right = cssW - 80;
+    const top = 60, mid = cssH / 2, bottom = cssH - 40;
+    drawBattery(left, mid);
+
+    // Main vertical rail on right
+    const junctionX = right - 120;
+    // Top branch: R1
+    drawWire(left, mid - 20, left, top);
+    drawWire(left, top, junctionX, top);
+    drawResistor(junctionX - 180, top, 120, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+
+    drawWire(junctionX, top, right, top);
+    drawWire(right, top, right, bottom);
+    drawWire(right, bottom, junctionX, bottom);
+    // Bottom branch: R2
+    drawResistor(junctionX - 180, bottom, 120, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawWire(left, bottom, junctionX - 180, bottom);
+    drawWire(left, bottom, left, mid + 20);
+    drawWire(junctionX - 180 - 60, top, junctionX - 180 - 60, bottom); // left rail between branches
+
+    // Current dots
+    drawCurrentDots(left, top, junctionX - 180 - 60, top, p.I);
+    drawCurrentDots(junctionX - 180 - 60, top, junctionX - 180, top, p.I1);
+    drawCurrentDots(junctionX - 180 - 60, bottom, junctionX - 180, bottom, p.I2);
+  }
+
+  function update(emitParam) {
+    const p = compute();
+    vU.textContent = state.voltage.toFixed(1);
+    vR1.textContent = state.r1;
+    vR2.textContent = state.r2;
+    statR.textContent = p.Rtotal.toFixed(2) + ' Ω';
+    statI.textContent = p.I.toFixed(3) + ' A';
+    statP.textContent = p.P.toFixed(2) + ' W';
+
+    EurekaHost.emitResultUpdate({
+      totalResistance: Number(p.Rtotal.toFixed(3)),
+      totalCurrent: Number(p.I.toFixed(4)),
+      totalPower: Number(p.P.toFixed(3)),
+      topology: state.topology === 0 ? 'series' : 'parallel',
+      current1: Number(p.I1.toFixed(4)),
+      current2: Number(p.I2.toFixed(4)),
+      voltage1: Number(p.U1.toFixed(3)),
+      voltage2: Number(p.U2.toFixed(3)),
+    });
+
+    if (emitParam) EurekaHost.emitParamChange(emitParam.param, emitParam.value);
+  }
+
+  function animate() {
+    animOffset += 0.5;
+    const p = compute();
+    render(p);
+    requestAnimationFrame(animate);
+  }
+
+  function wire(el, key, param) {
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      state[key] = v;
+      update({ param, value: v });
+    });
+  }
+  wire(ctlU, 'voltage', 'voltage');
+  wire(ctlR1, 'r1', 'r1');
+  wire(ctlR2, 'r2', 'r2');
+
+  // Topology switcher
+  document.querySelectorAll('.eureka-segmented-item').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.eureka-segmented-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.topology = parseInt(btn.dataset.topology, 10);
+      update({ param: 'topology', value: state.topology });
+      EurekaHost.emitInteraction('mode-switch', { topology: state.topology === 0 ? 'series' : 'parallel' });
+    });
+  });
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param' && typeof cmd.param === 'string' && typeof cmd.value === 'number') {
+      applyParam(cmd.param, cmd.value); update();
+    } else if (cmd.type === 'set_params' && cmd.params) {
+      for (const k in cmd.params) {
+        if (Object.prototype.hasOwnProperty.call(cmd.params, k)) applyParam(k, cmd.params[k]);
+      }
+      update();
+    } else if (cmd.type === 'reset') {
+      state.voltage = 6; state.r1 = 10; state.r2 = 10; state.topology = 0;
+      ctlU.value = 6; ctlR1.value = 10; ctlR2.value = 10;
+      update();
+    }
+  });
+
+  function applyParam(name, value) {
+    switch (name) {
+      case 'voltage':  state.voltage = EurekaFormat.clamp(value, 1, 24); ctlU.value = state.voltage; break;
+      case 'r1':       state.r1 = EurekaFormat.clamp(value, 0.5, 100); ctlR1.value = state.r1; break;
+      case 'r2':       state.r2 = EurekaFormat.clamp(value, 0.5, 100); ctlR2.value = state.r2; break;
+      case 'topology': state.topology = value === 1 ? 1 : 0;
+        document.querySelectorAll('.eureka-segmented-item').forEach(b => {
+          b.classList.toggle('active', parseInt(b.dataset.topology, 10) === state.topology);
+        });
+        break;
+    }
+  }
+
+  update();
+  animate();
+  setTimeout(() => { try { EurekaHints.show(canvas, '👆 切换「串联/并联」观察电流变化', 5000); } catch {} }, 600);
+  EurekaHost.emitReady(['voltage', 'r1', 'r2', 'topology']);
+})();
+</script>
+</body>
+</html>

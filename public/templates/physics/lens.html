@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>凸透镜成像 — 光学</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .lens-wrap { background: #0B1220; border-radius: 12px; position: relative; }
+  .lens-stats { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin: 12px 0; }
+  .lens-stat { text-align: center; min-width: 100px; }
+  .lens-stat-label { font-size: 11px; color: #94A3B8; }
+  .lens-stat-value { font-size: 18px; font-weight: 700; color: #F1F5F9; }
+  .lens-stat-unit { font-size: 11px; color: #64748B; }
+  .lens-prop { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+  .lens-prop-tag { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .lens-prop-tag.real { background: #064E3B; color: #34D399; }
+  .lens-prop-tag.virtual { background: #7C2D12; color: #FB923C; }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+  <div class="lens-stats">
+    <div class="lens-stat">
+      <p class="lens-stat-label">焦距 f</p>
+      <p><span class="lens-stat-value" id="stat-f">15</span><span class="lens-stat-unit"> cm</span></p>
+    </div>
+    <div class="lens-stat">
+      <p class="lens-stat-label">物距 u</p>
+      <p><span class="lens-stat-value" id="stat-u">40</span><span class="lens-stat-unit"> cm</span></p>
+    </div>
+    <div class="lens-stat">
+      <p class="lens-stat-label">像距 v</p>
+      <p><span class="lens-stat-value" id="stat-v">24.0</span><span class="lens-stat-unit"> cm</span></p>
+    </div>
+    <div class="lens-stat">
+      <p class="lens-stat-label">放大率 M</p>
+      <p><span class="lens-stat-value" id="stat-m">0.60</span></p>
+    </div>
+  </div>
+  <div class="lens-prop" id="image-props">
+    <span class="lens-prop-tag real" id="tag-real">实像</span>
+    <span class="lens-prop-tag real" id="tag-size">缩小</span>
+    <span class="lens-prop-tag real" id="tag-orient">倒立</span>
+  </div>
+
+  <div class="eureka-canvas-wrapper lens-wrap">
+    <svg id="lens-svg" width="100%" height="340" viewBox="0 0 720 340">
+      <defs>
+        <pattern id="grid2" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1E293B" stroke-width="0.5"/>
+        </pattern>
+        <marker id="arr-obj" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto">
+          <path d="M8,0 L0,4 L8,8 z" fill="#FBBF24"/>
+        </marker>
+        <marker id="arr-img" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#38BDF8"/>
+        </marker>
+      </defs>
+      <rect width="720" height="340" fill="url(#grid2)"/>
+
+      <!-- Optical axis -->
+      <line x1="20" y1="220" x2="700" y2="220" stroke="#475569" stroke-width="1.5"/>
+
+      <!-- Lens -->
+      <path id="lens-shape" d="M 360 100 Q 345 220 360 340 Q 375 220 360 100 Z" fill="rgba(56,189,248,0.15)" stroke="#38BDF8" stroke-width="2"/>
+      <text x="365" y="90" fill="#38BDF8" font-size="12">凸透镜</text>
+
+      <!-- Focal points -->
+      <circle id="f1" cx="300" cy="220" r="4" fill="#F87171"/>
+      <circle id="f2" cx="420" cy="220" r="4" fill="#F87171"/>
+      <text x="292" y="240" fill="#F87171" font-size="11">F</text>
+      <text x="418" y="240" fill="#F87171" font-size="11">F'</text>
+
+      <!-- 2F points -->
+      <circle id="f1-2" cx="240" cy="220" r="3" fill="#94A3B8"/>
+      <circle id="f2-2" cx="480" cy="220" r="3" fill="#94A3B8"/>
+      <text x="228" y="240" fill="#94A3B8" font-size="10">2F</text>
+      <text x="474" y="240" fill="#94A3B8" font-size="10">2F'</text>
+
+      <!-- Object arrow -->
+      <line id="obj-line" x1="0" y1="220" x2="0" y2="120" stroke="#FBBF24" stroke-width="3" marker-end="url(#arr-obj)"/>
+      <text id="obj-label" x="0" y="110" fill="#FBBF24" font-size="12">物体</text>
+
+      <!-- Image arrow -->
+      <line id="img-line" x1="0" y1="220" x2="0" y2="0" stroke="#38BDF8" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arr-img)"/>
+      <text id="img-label" x="0" y="0" fill="#38BDF8" font-size="12">像</text>
+
+      <!-- Ray 1: parallel to axis, through F' -->
+      <line id="ray1a" x1="0" y1="120" x2="360" y2="120" stroke="#FBBF24" stroke-width="1.5" opacity="0.7"/>
+      <line id="ray1b" x1="360" y1="120" x2="600" y2="220" stroke="#FBBF24" stroke-width="1.5" opacity="0.7"/>
+
+      <!-- Ray 2: through center, straight -->
+      <line id="ray2" x1="0" y1="120" x2="600" y2="0" stroke="#34D399" stroke-width="1.5" opacity="0.7"/>
+
+      <!-- Ray 3: through F, parallel -->
+      <line id="ray3a" x1="0" y1="120" x2="300" y2="220" stroke="#A78BFA" stroke-width="1.5" opacity="0.7"/>
+      <line id="ray3b" x1="300" y1="220" x2="600" y2="220" stroke="#A78BFA" stroke-width="1.5" opacity="0.7"/>
+    </svg>
+  </div>
+
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+    <div id="params-root"></div>
+  </div>
+
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">透镜成像公式</p>
+    <div class="eureka-formula-expression">1/f = 1/u + 1/v &nbsp;&nbsp; 放大率 M = |v/u|</div>
+  </div>
+</div>
+
+<script src="/templates/_shared/experiment-core.js"></script>
+<script src="/templates/_shared/physics-utils.js"></script>
+<script>
+(function () {
+  'use strict';
+  const TEMPLATE_ID = 'physics/lens';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  bindParam('focalLength', {
+    min: 5, max: 40, step: 1, defaultValue: 15,
+    label: '焦距 f', unit: 'cm',
+    container: document.getElementById('params-root'),
+  });
+  bindParam('objectDistance', {
+    min: 10, max: 100, step: 1, defaultValue: 40,
+    label: '物距 u', unit: 'cm',
+    container: document.getElementById('params-root'),
+  });
+
+  const SCALE = 4; // px per cm in diagram
+  const CX = 360;  // lens center x
+  const AXIS_Y = 220;
+  const OBJ_H = 80; // object height in px
+
+  const elF1 = document.getElementById('f1');
+  const elF2 = document.getElementById('f2');
+  const elF1_2 = document.getElementById('f1-2');
+  const elF2_2 = document.getElementById('f2-2');
+  const elObj = document.getElementById('obj-line');
+  const elObjLabel = document.getElementById('obj-label');
+  const elImg = document.getElementById('img-line');
+  const elImgLabel = document.getElementById('img-label');
+  const elRay1a = document.getElementById('ray1a');
+  const elRay1b = document.getElementById('ray1b');
+  const elRay2 = document.getElementById('ray2');
+  const elRay3a = document.getElementById('ray3a');
+  const elRay3b = document.getElementById('ray3b');
+
+  const statF = document.getElementById('stat-f');
+  const statU = document.getElementById('stat-u');
+  const statV = document.getElementById('stat-v');
+  const statM = document.getElementById('stat-m');
+  const tagReal = document.getElementById('tag-real');
+  const tagSize = document.getElementById('tag-size');
+  const tagOrient = document.getElementById('tag-orient');
+
+  function compute(f, u) {
+    // Gaussian lens formula: 1/f = 1/u + 1/v
+    // v = fu / (u - f)
+    if (Math.abs(u - f) < 0.001) return { v: Infinity, m: Infinity, real: true, upright: false };
+    const v = (f * u) / (u - f);
+    const m = Math.abs(v / u);
+    return {
+      v: v,
+      m: m,
+      real: v > 0,
+      upright: v < 0, // upright when virtual (v < 0)
+      enlarged: m > 1,
+    };
+  }
+
+  function updateDiagram(f, u) {
+    // Update focal point positions (f from lens center)
+    const fPx = f * SCALE;
+    elF1.setAttribute('cx', CX - fPx);
+    elF2.setAttribute('cx', CX + fPx);
+    elF1_2.setAttribute('cx', CX - 2 * fPx);
+    elF2_2.setAttribute('cx', CX + 2 * fPx);
+
+    // Object position (on the left)
+    const objX = CX - u * SCALE;
+    const objTop = AXIS_Y - OBJ_H;
+    elObj.setAttribute('x1', objX);
+    elObj.setAttribute('x2', objX);
+    elObj.setAttribute('y2', objTop);
+    elObjLabel.setAttribute('x', objX - 10);
+    elObjLabel.setAttribute('y', objTop - 8);
+
+    // Compute image
+    const res = compute(f, u);
+
+    if (!isFinite(res.v)) {
+      // At focal point — no image (rays parallel)
+      elImg.setAttribute('x1', CX + 300);
+      elImg.setAttribute('x2', CX + 300);
+      elImg.setAttribute('y2', AXIS_Y);
+      elImgLabel.setAttribute('x', CX + 290);
+      elImgLabel.setAttribute('y', AXIS_Y + 20);
+      elImgLabel.textContent = '像在无穷远';
+    } else if (res.real) {
+      // Real image on opposite side
+      const imgX = CX + res.v * SCALE;
+      const imgH = OBJ_H * res.m;
+      const imgTop = AXIS_Y + imgH; // inverted (below axis for real image)
+      elImg.setAttribute('x1', imgX);
+      elImg.setAttribute('x2', imgX);
+      elImg.setAttribute('y2', imgTop);
+      elImg.setAttribute('stroke-dasharray', 'none');
+      elImgLabel.setAttribute('x', imgX - 8);
+      elImgLabel.setAttribute('y', imgTop + 20);
+      elImgLabel.textContent = '像';
+
+      // Rays converge at image point
+      elRay1a.setAttribute('x1', objX); elRay1a.setAttribute('y1', objTop);
+      elRay1a.setAttribute('x2', CX); elRay1a.setAttribute('y2', objTop);
+      elRay1b.setAttribute('x1', CX); elRay1b.setAttribute('y1', objTop);
+      elRay1b.setAttribute('x2', imgX); elRay1b.setAttribute('y2', imgTop);
+
+      elRay2.setAttribute('x1', objX); elRay2.setAttribute('y1', objTop);
+      elRay2.setAttribute('x2', imgX); elRay2.setAttribute('y2', imgTop);
+
+      elRay3a.setAttribute('x1', objX); elRay3a.setAttribute('y1', objTop);
+      elRay3a.setAttribute('x2', parseFloat(elF1.getAttribute('cx'))); elRay3a.setAttribute('y2', AXIS_Y);
+      elRay3b.setAttribute('x1', parseFloat(elF1.getAttribute('cx'))); elRay3b.setAttribute('y1', AXIS_Y);
+      elRay3b.setAttribute('x2', imgX); elRay3b.setAttribute('y2', imgTop);
+    } else {
+      // Virtual image on same side
+      const imgX = CX + res.v * SCALE; // v is negative, so imgX < CX
+      const imgH = OBJ_H * res.m;
+      const imgTop = AXIS_Y - imgH; // upright (above axis)
+      elImg.setAttribute('x1', imgX);
+      elImg.setAttribute('x2', imgX);
+      elImg.setAttribute('y2', imgTop);
+      elImg.setAttribute('stroke-dasharray', '6 4');
+      elImgLabel.setAttribute('x', imgX - 8);
+      elImgLabel.setAttribute('y', imgTop - 8);
+      elImgLabel.textContent = '虚像';
+
+      // Rays appear to diverge from virtual image
+      elRay1a.setAttribute('x1', objX); elRay1a.setAttribute('y1', objTop);
+      elRay1a.setAttribute('x2', CX); elRay1a.setAttribute('y2', objTop);
+      elRay1b.setAttribute('x1', CX); elRay1b.setAttribute('y1', objTop);
+      elRay1b.setAttribute('x2', CX + 200); elRay1b.setAttribute('y2', objTop);
+
+      elRay2.setAttribute('x1', objX); elRay2.setAttribute('y1', objTop);
+      elRay2.setAttribute('x2', CX + 200); elRay2.setAttribute('y2', AXIS_Y - 80);
+
+      elRay3a.setAttribute('x1', objX); elRay3a.setAttribute('y1', objTop);
+      elRay3a.setAttribute('x2', parseFloat(elF1.getAttribute('cx'))); elRay3a.setAttribute('y2', AXIS_Y);
+      elRay3b.setAttribute('x1', parseFloat(elF1.getAttribute('cx'))); elRay3b.setAttribute('y1', AXIS_Y);
+      elRay3b.setAttribute('x2', CX + 200); elRay3b.setAttribute('y2', AXIS_Y);
+    }
+  }
+
+  function render() {
+    const f = getParam('focalLength');
+    const u = getParam('objectDistance');
+    const res = compute(f, u);
+
+    updateDiagram(f, u);
+
+    statF.textContent = f.toFixed(0);
+    statU.textContent = u.toFixed(0);
+    statV.textContent = isFinite(res.v) ? Math.abs(res.v).toFixed(1) : '∞';
+    statM.textContent = isFinite(res.m) ? res.m.toFixed(2) : '∞';
+
+    tagReal.textContent = res.real ? '实像' : '虚像';
+    tagReal.className = 'lens-prop-tag ' + (res.real ? 'real' : 'virtual');
+    tagSize.textContent = res.enlarged ? '放大' : '缩小';
+    tagSize.className = 'lens-prop-tag ' + (res.real ? 'real' : 'virtual');
+    tagOrient.textContent = res.upright ? '正立' : '倒立';
+    tagOrient.className = 'lens-prop-tag ' + (res.real ? 'real' : 'virtual');
+
+    EurekaHost.emitResultUpdate({
+      focalLength: f,
+      objectDistance: u,
+      imageDistance: isFinite(res.v) ? Number(res.v.toFixed(2)) : null,
+      magnification: isFinite(res.m) ? Number(res.m.toFixed(3)) : null,
+      real: res.real,
+      upright: res.upright,
+      enlarged: res.enlarged,
+      parameters: { focalLength: f, objectDistance: u },
+    });
+  }
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param') {
+      try { setParam(cmd.param, cmd.value); }
+      catch (e) { EurekaHost.emitError('Unknown param: ' + cmd.param); }
+    } else if (cmd.type === 'reset') {
+      setParam('focalLength', 15, false);
+      setParam('objectDistance', 40, false);
+    }
+  });
+
+  render();
+  setInterval(render, 100);
+
+  EurekaHost.emitReady({
+    supportedParams: [
+      { name:'focalLength', label:'焦距', unit:'cm', type:'number', min:5, max:40 },
+      { name:'objectDistance', label:'物距', unit:'cm', type:'number', min:10, max:100 },
+    ],
+    protocolVersion: '1.0'
+  });
+})();
+</script>
+</body>
+</html>

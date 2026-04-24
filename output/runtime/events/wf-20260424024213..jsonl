@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424024213.","createdAt":"2026-04-24T02:42:20.319Z"}
+{"seq":1,"ts":"2026-04-24T02:42:20.319Z","sessionId":"wf-20260424024213.","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"experiment-schema.ts,declarative-renderer.ts,preset-templates.ts,DynamicExperiment.tsx,physics-engine.ts,physics-knowledge.ts,schema-validator.ts,schema-enricher.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

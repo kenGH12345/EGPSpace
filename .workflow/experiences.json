@@ -1256,5 +1256,73 @@
     "createdAt": "2026-04-23T07:18:19.960Z",
     "updatedAt": "2026-04-23T07:18:19.960Z",
     "expiresAt": "2027-04-23T07:18:19.960Z"
+  },
+  {
+    "id": "EXP-1777026432744-GO33VJD",
+    "type": "positive",
+    "category": "stable_pattern",
+    "title": "Triple-Lock Architecture for LLM-to-Template Rendering Security",
+    "content": "Pattern: When rendering LLM outputs as interactive HTML templates, use three independent defense layers: (1) System prompt with explicit ban instructions to prevent prohibited outputs, (2) Concept-to-template routing layer that maps natural language to whitelisted template IDs, (3) Registry whitelist that rejects any unknown template IDs at runtime. This ensures defense-in-depth even if the LLM ignores instructions. Implementation: Add a '## 🚫 Strictly Prohibited' section in system prompt, implement conceptToTemplateId() keyword mapping with 16→4 coverage, maintain getTemplate() whitelist registry with auditStatus='approved' gate. Combine with iframe sandbox + postMessage triple-validation (origin + source + schema) for complete XSS mitigation. Zero new dependencies needed.",
+    "taskId": null,
+    "skill": "code-development",
+    "tags": [
+      "security",
+      "triple-lock",
+      "llm",
+      "iframe",
+      "postmessage"
+    ],
+    "codeExample": null,
+    "sourceFile": null,
+    "namespace": null,
+    "moduleId": null,
+    "hitCount": 0,
+    "evolutionCount": 0,
+    "createdAt": "2026-04-24T10:27:12.744Z",
+    "updatedAt": "2026-04-24T10:27:12.744Z",
+    "expiresAt": "2027-04-24T10:27:12.744Z"
+  },
+  {
+    "id": "EXP-1777026450852-I652IWP",
+    "type": "negative",
+    "category": "pitfall",
+    "title": "Bridge workflow-stage does not support FINISHED — causes workflow stall",
+    "content": "Pitfall: When calling workflow-stage --stage FINISHED, the bridge rejects with 'Invalid stage. Valid: ANALYSE, ARCHITECT, PLAN, DEVELOP, TEST, REVIEW, DEPLOY'. FINISHED is a logical review/summary phase, not a supported bridge stage. This causes unnecessary detour trying to figure out how to close the session. Workaround: Manually output completion summary and then run lifecycle commands (task-history, session-score, experience-record, experience-transfer) directly in terminal. Do not attempt to bridge FINISHED.",
+    "taskId": null,
+    "skill": "workflow",
+    "tags": [
+      "bridge",
+      "pitfall",
+      "finished-stage",
+      "orchestrator"
+    ],
+    "codeExample": null,
+    "sourceFile": null,
+    "namespace": null,
+    "moduleId": null,
+    "hitCount": 0,
+    "evolutionCount": 0,
+    "createdAt": "2026-04-24T10:27:30.852Z",
+    "updatedAt": "2026-04-24T10:27:30.852Z",
+    "expiresAt": "2026-07-23T10:27:30.852Z"
+  },
+  {
+    "id": "EXP-1777034662563-J1DN169",
+    "type": "positive",
+    "category": "stable_pattern",
+    "title": "Templates auto-generate UI via bindParam() declarative metadata",
+    "content": "When building interactive science visualization templates, use a bindParam(paramMeta) pattern that auto-generates DOM slider controls from parameter definitions. This eliminates manual HTML input boilerplate, ensures consistent labeling/units, and enforces safe numeric boundaries via clamp(). Pattern: declare {name, label, unit, min, max, defaultValue, step}, call bindParam(), get back (read(), update()) tuple.",
+    "taskId": null,
+    "skill": "code-development",
+    "tags": [],
+    "codeExample": null,
+    "sourceFile": null,
+    "namespace": null,
+    "moduleId": null,
+    "hitCount": 0,
+    "evolutionCount": 0,
+    "createdAt": "2026-04-24T12:44:22.563Z",
+    "updatedAt": "2026-04-24T12:44:22.563Z",
+    "expiresAt": "2027-04-24T12:44:22.563Z"
   }
 ]

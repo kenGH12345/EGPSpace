@@ -6,6 +6,8 @@ import type { ExperimentSchema, PhysicsEngineType, ParamDefinition, FormulaDefin
 import { validateSchema, createDefaultSchema } from '@/lib/experiment-schema';
 import { enrichSchema } from '@/lib/schema-enricher';
 import { validateWithKnowledge } from '@/lib/schema-validator';
+import { conceptToTemplateId } from '@/lib/concept-to-template';
+import { getTemplate } from '@/lib/template-registry';
 
 const client = new LLMClient();
 
@@ -38,9 +40,41 @@ function loadSubjectKnowledge(subject: string): string {
 }
 
 /**
+ * Teaching guidelines per stage (derived from EurekaFinder behavior observation).
+ * Each stage adjusts language complexity, formula depth, and example style.
+ */
+const STAGE_GUIDELINES: Record<string, { label: string; ageRange: string; guideline: string }> = {
+  preschool: {
+    label: '学前',
+    ageRange: '3-6岁',
+    guideline: '用拟人化语言，避免数学符号和公式，每句话不超过15字，多用"就像...一样"类比。',
+  },
+  primary: {
+    label: '小学',
+    ageRange: '6-12岁',
+    guideline: '从生活现象引入，使用简单公式，优先举例，避免复杂推导，语言活泼有趣。',
+  },
+  junior: {
+    label: '初中',
+    ageRange: '12-15岁',
+    guideline: '使用正规术语并附白话解释，给出公式和例题，适当引入推导过程。',
+  },
+  senior: {
+    label: '高中',
+    ageRange: '15-18岁',
+    guideline: '严谨定义，完整推导，多角度理解，可引入微积分思想，注重逻辑严密性。',
+  },
+  adult: {
+    label: '成人',
+    ageRange: '18岁以上',
+    guideline: '直入核心，跨学科类比，高信息密度，可引用前沿研究，假设读者有高中物理基础。',
+  },
+};
+
+/**
  * 构建跨学科 System Prompt
  */
-function buildSystemPrompt(subject?: string): string {
+function buildSystemPrompt(subject?: string, stage?: string): string {
   // 加载主 Skill 文件
   const skillPath = join(SKILL_DIR, 'SKILL.md');
   let skillContent = '';
@@ -51,7 +85,13 @@ function buildSystemPrompt(subject?: string): string {
   // 加载学科知识库
   const subjectKnowledge = subject ? loadSubjectKnowledge(subject) : '';
   
-  return `你是「Eureka」实验教学平台的 AI 实验设计专家。
+  // Stage-aware teaching guideline
+  const stageInfo = stage ? STAGE_GUIDELINES[stage] : null;
+  const stageSection = stageInfo
+    ? `\n## 目标学段：${stageInfo.label}（${stageInfo.ageRange}）\n\n讲解风格要求：${stageInfo.guideline}\n\n请确保实验描述、teaching 字段的语言难度和例子选择符合此学段特征。\n`
+    : '';
+
+  return `你是「Eureka」实验教学平台的 AI 实验设计专家。${stageSection}
 
 ## 核心设计理念
 
@@ -168,18 +208,30 @@ ${subjectKnowledge ? `## 学科知识库参考\n${subjectKnowledge}` : ''}
 4. 你只需生成 meta + params + formulas + teaching + scenes，canvas/physics/interactions 由系统自动补充
 5. 参数范围要科学合理，符合物理规律
 
+## 🚫 严格禁止（Triple-Lock Security）
+
+以下内容由审核通过的 HTML 模板负责，**绝对禁止** LLM 生成：
+- ❌ 不要输出 canvas 字段或任何 canvas 相关的 elements、shapes、points、坐标数据
+- ❌ 不要输出 interactions 字段的 hit-testing 逻辑、事件处理代码
+- ❌ 不要输出图形绘制指令（如 draw/line/arc/rect 等）
+- ❌ 不要输出任何 HTML / CSS / JavaScript 代码片段
+- ❌ 不要输出自定义 UI 样式或动画定义
+
+✅ 你只负责：概念讲解、参数设计、公式推导、教学设计、教学场景
+✅ 画面交给系统根据 physicsType 选择对应的预置 HTML 模板（已通过物理学专家审核）
+
 只返回 JSON，不要其他内容！`;
 }
-
 /**
  * 识别学科
  */
 function identifySubject(concept: string): string {
   const subjectKeywords: Record<string, string[]> = {
-    '物理': ['力', '能', '热', '光', '电', '磁', '运动', '速度', '加速度', '质量', '密度', '浮力', '折射', '反射', '电路', '杠杆', '摆', '波', '振动'],
-    '化学': ['反应', '酸', '碱', '盐', '元素', '分子', '原子', '离子', '氧化', '还原', '燃烧', '中和', '滴定', 'PH', '催化'],
-    '生物': ['细胞', '光合', '呼吸', '遗传', '变异', 'DNA', 'RNA', '蛋白质', '酶', '激素', '生态', '种群', '进化', '消化', '循环'],
-    '地理': ['地球', '气候', '地形', '地貌', '板块', '运动', '经纬度', '天气', '降水', '温度', '季风', '洋流', '人口', '城市'],
+    '物理': ['力', '能', '热', '光', '电', '磁', '运动', '速度', '加速度', '质量', '密度', '浮力', '折射', '反射', '电路', '杠杆', '摆', '波', '振动', '压强', '功率', '动能', '势能', '摩擦'],
+    '化学': ['反应', '酸', '碱', '盐', '元素', '分子', '原子', '离子', '氧化', '还原', '燃烧', '中和', '滴定', 'PH', '催化', '溶液', '浓度', '摩尔', '化合', '分解', '置换'],
+    '生物': ['细胞', '光合', '呼吸', '遗传', '变异', 'DNA', 'RNA', '蛋白质', '酶', '激素', '生态', '种群', '进化', '消化', '循环', '神经', '免疫', '基因', '染色体', '有丝分裂'],
+    '地理': ['地球', '气候', '地形', '地貌', '板块', '运动', '经纬度', '天气', '降水', '温度', '季风', '洋流', '人口', '城市', '地震', '火山', '大气', '水循环'],
+    '数学': ['函数', '方程', '不等式', '导数', '积分', '概率', '统计', '向量', '矩阵', '几何', '三角', '数列', '极限', '微分', '面积', '体积', '坐标', '图像', '抛物线', '圆', '椭圆', '双曲线'],
   };
   
   for (const [subject, keywords] of Object.entries(subjectKeywords)) {
@@ -193,7 +245,7 @@ function identifySubject(concept: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { concept } = await request.json();
+    const { concept, stage } = await request.json();
 
     if (!concept || typeof concept !== 'string') {
       return NextResponse.json(
@@ -205,12 +257,12 @@ export async function POST(request: NextRequest) {
     // 自动识别学科
     const subject = identifySubject(concept);
     
-    // 构建 prompt
-    const systemPrompt = buildSystemPrompt(subject);
+    // 构建 prompt（含学段感知）
+    const systemPrompt = buildSystemPrompt(subject, stage);
 
     const messages: Message[] = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `请为「${concept}」设计一个交互实验。\n\n学科：${subject}\n\n请按照 STEP 框架，先理解概念，再设计实验。` }
+      { role: 'user', content: `请为「${concept}」设计一个交互实验。\n\n学科：${subject}${stage ? `\n目标学段：${STAGE_GUIDELINES[stage]?.label ?? stage}` : ''}\n\n请按照 STEP 框架，先理解概念，再设计实验。` }
     ];
 
     const response = await client.invoke(messages, {
@@ -246,12 +298,17 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // 转换为 ExperimentSchema 格式并补全
+    // Transform to Schema
     let schema: ExperimentSchema;
-    
+
     let validationReport = null;
 
     if (rawJson) {
+      // 🔒 Triple-Lock defensive sanitization: strip any canvas/interactions/code
+      //    fields that LLM may have emitted despite the prompt ban.
+      //    This ensures only whitelisted templates can render visuals.
+      sanitizeLLMOutput(rawJson);
+
       const partial = transformToSchema(rawJson, subject);
       schema = enrichSchema(partial);
       
@@ -281,11 +338,23 @@ export async function POST(request: NextRequest) {
       schema = createFallbackSchema(concept, subject);
     }
 
+    // 🔒 Triple-Lock template routing (Lock 2 + Lock 3):
+    //    Resolve concept → templateId → whitelist check.
+    //    Frontend will prefer iframe template over Canvas rendering when available.
+    const candidateId =
+      conceptToTemplateId(concept) ||
+      conceptToTemplateId(schema.meta?.topic || '') ||
+      conceptToTemplateId(schema.meta?.name || '');
+    const templateId = candidateId && getTemplate(candidateId) ? candidateId : null;
+
     return NextResponse.json({
       success: true,
       concept,
       subject,
       schema,
+      /** Approved template ID (may be null if no matching template). Frontend
+       *  must still validate via getTemplate() — client-side whitelist is authoritative. */
+      templateId,
       validationReport,
     });
   } catch (error) {
@@ -298,6 +367,56 @@ export async function POST(request: NextRequest) {
 }
 
 // Transform LLM output (old or new format) to ExperimentSchema partial
+/**
+ * 🔒 Triple-Lock defensive sanitizer.
+ *
+ * Strips any fields the LLM may have emitted despite the Prompt ban
+ * (Lock 1). This protects against prompt-injection and model drift by ensuring
+ * no LLM-generated drawing/interaction/code reaches the renderer.
+ *
+ * Mutates `raw` in place, removing:
+ *   - canvas / canvasConfig / interactions / graphics / shapes / elements
+ *   - code / html / css / javascript / script
+ *   - recursively from `experiment.*` if present (legacy format)
+ */
+function sanitizeLLMOutput(raw: Record<string, unknown>): void {
+  const FORBIDDEN_TOP = ['canvas', 'canvasConfig', 'interactions', 'graphics', 'shapes', 'elements', 'code', 'html', 'css', 'javascript', 'script', 'ui'];
+  const removed: string[] = [];
+
+  for (const key of FORBIDDEN_TOP) {
+    if (key in raw) {
+      delete raw[key];
+      removed.push(key);
+    }
+  }
+
+  // Legacy format: experiment.{canvas|rules.code|...}
+  if (raw.experiment && typeof raw.experiment === 'object') {
+    const exp = raw.experiment as Record<string, unknown>;
+    for (const key of FORBIDDEN_TOP) {
+      if (key in exp) {
+        delete exp[key];
+        removed.push(`experiment.${key}`);
+      }
+    }
+    if (exp.rules && typeof exp.rules === 'object') {
+      const rules = exp.rules as Record<string, unknown>;
+      if ('code' in rules) {
+        delete rules.code;
+        removed.push('experiment.rules.code');
+      }
+      if ('draw' in rules) {
+        delete rules.draw;
+        removed.push('experiment.rules.draw');
+      }
+    }
+  }
+
+  if (removed.length > 0) {
+    console.log('[Generate] 🔒 Sanitized forbidden LLM fields:', removed);
+  }
+}
+
 function transformToSchema(raw: Record<string, unknown>, subject: string): Partial<ExperimentSchema> {
   // Detect old format: has top-level "experiment" key
   if (raw.experiment && typeof raw.experiment === 'object') {
@@ -372,16 +491,53 @@ function mapSubjectToEnum(subject: string): SubjectDomain {
 }
 
 function createFallbackSchema(concept: string, subject: string): ExperimentSchema {
-  const partial: Partial<ExperimentSchema> = {
-    meta: {
-      name: `${concept}探究实验`,
-      subject: mapSubjectToEnum(subject),
-      topic: concept,
-      description: `探索${concept}的基本规律`,
-      icon: '🔬',
-      gradient: 'from-blue-500 to-purple-500',
-      physicsType: 'generic',
+  const subjectEnum = mapSubjectToEnum(subject);
+
+  // Subject-specific fallback configurations
+  const subjectDefaults: Record<string, {
+    icon: string;
+    gradient: string;
+    physicsType: PhysicsEngineType;
+    params: ParamDefinition[];
+    formulas: FormulaDefinition[];
+  }> = {
+    '化学': {
+      icon: '⚗️',
+      gradient: 'from-green-500 to-emerald-500',
+      physicsType: 'acid_base',
+      params: [
+        { name: 'concentration', label: '浓度', unit: 'mol/L', defaultValue: 0.1, min: 0.001, max: 10, step: 0.001, category: 'input', description: '溶液浓度' },
+        { name: 'volume', label: '体积', unit: 'mL', defaultValue: 100, min: 1, max: 1000, step: 1, category: 'input', description: '溶液体积' },
+      ],
+      formulas: [{ name: '物质的量', expression: 'n = c × V', description: '物质的量等于浓度乘体积', variables: ['concentration', 'volume'], resultVariable: 'moles' }],
     },
+    '生物': {
+      icon: '🌿',
+      gradient: 'from-lime-500 to-green-500',
+      physicsType: 'photosynthesis',
+      params: [
+        { name: 'lightIntensity', label: '光照强度', unit: 'lux', defaultValue: 1000, min: 0, max: 10000, step: 100, category: 'input', description: '光照强度影响光合速率' },
+        { name: 'co2Concentration', label: 'CO₂浓度', unit: '%', defaultValue: 0.04, min: 0.01, max: 5, step: 0.01, category: 'input', description: '二氧化碳浓度' },
+      ],
+      formulas: [{ name: '光合速率', expression: 'P = k × I × CO₂', description: '光合速率与光照强度和CO₂浓度正相关', variables: ['lightIntensity', 'co2Concentration'], resultVariable: 'photosynthesisRate' }],
+    },
+    '数学': {
+      icon: '📐',
+      gradient: 'from-violet-500 to-purple-500',
+      physicsType: 'function_graph',
+      params: [
+        { name: 'a', label: '系数 a', unit: '', defaultValue: 1, min: -10, max: 10, step: 0.1, category: 'input', description: '函数系数 a' },
+        { name: 'b', label: '系数 b', unit: '', defaultValue: 0, min: -10, max: 10, step: 0.1, category: 'input', description: '函数系数 b' },
+        { name: 'x', label: '自变量 x', unit: '', defaultValue: 1, min: -10, max: 10, step: 0.1, category: 'input', description: '自变量 x 的值' },
+      ],
+      formulas: [{ name: '函数值', expression: 'y = a × x + b', description: '线性函数', variables: ['a', 'x', 'b'], resultVariable: 'y' }],
+    },
+  };
+
+  const defaults = subjectDefaults[subject] ?? {
+    icon: '🔬',
+    gradient: 'from-blue-500 to-purple-500',
+    physicsType: 'generic' as PhysicsEngineType,
     params: [{
       name: 'parameter',
       label: '实验参数',
@@ -390,7 +546,7 @@ function createFallbackSchema(concept: string, subject: string): ExperimentSchem
       min: 0,
       max: 100,
       step: 1,
-      category: 'input',
+      category: 'input' as const,
       description: '可调节的实验参数',
     }],
     formulas: [{
@@ -400,6 +556,20 @@ function createFallbackSchema(concept: string, subject: string): ExperimentSchem
       variables: ['parameter'],
       resultVariable: 'result',
     }],
+  };
+
+  const partial: Partial<ExperimentSchema> = {
+    meta: {
+      name: `${concept}探究实验`,
+      subject: subjectEnum,
+      topic: concept,
+      description: `探索${concept}的基本规律`,
+      icon: defaults.icon,
+      gradient: defaults.gradient,
+      physicsType: defaults.physicsType,
+    },
+    params: defaults.params,
+    formulas: defaults.formulas,
     teaching: {
       understanding: {
         objective: `理解${concept}的基本概念`,

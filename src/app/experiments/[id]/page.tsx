@@ -2,7 +2,12 @@
 
 import React, { useState, useRef, useEffect, use } from 'react';
 import Link from 'next/link';
-import { UniversalPhysicsRenderer, createBuoyancyRules, PhysicsRules, ExperimentConfig, experimentSchemaToLegacy } from '@/components/DynamicExperiment';
+import { UniversalPhysicsRenderer, PhysicsRules, ExperimentConfig, experimentSchemaToLegacy } from '@/components/DynamicExperiment';
+import { ExperimentChatPanel } from '@/components/ExperimentChatPanel';
+import { IframeExperiment } from '@/components/IframeExperiment';
+import { conceptToTemplateId } from '@/lib/concept-to-template';
+import { getTemplate } from '@/lib/template-registry';
+import { enrichSchema } from '@/lib/schema-enricher';
 
 // AI生成的实验配置类型
 interface GeneratedConfig {
@@ -59,6 +64,8 @@ const experiments: Record<string, {
   color: string;
   subject: string;
   component: 'buoyancy' | 'lever' | 'refraction' | 'circuit' | 'acid-base';
+  /** Triple-lock: approved HTML template ID. If set and approved, iframe is used. */
+  templateId?: string;
 }> = {
   buoyancy: {
     name: '浮力原理',
@@ -67,6 +74,7 @@ const experiments: Record<string, {
     color: 'blue',
     subject: '物理',
     component: 'buoyancy',
+    templateId: 'physics/buoyancy',
   },
   'lever': {
     name: '杠杆原理',
@@ -75,6 +83,7 @@ const experiments: Record<string, {
     color: 'amber',
     subject: '物理',
     component: 'lever',
+    templateId: 'physics/lever',
   },
   'refraction': {
     name: '光的折射',
@@ -83,6 +92,7 @@ const experiments: Record<string, {
     color: 'cyan',
     subject: '物理',
     component: 'refraction',
+    templateId: 'physics/refraction',
   },
   'circuit': {
     name: '电路串并联',
@@ -91,6 +101,7 @@ const experiments: Record<string, {
     color: 'emerald',
     subject: '物理',
     component: 'circuit',
+    templateId: 'physics/circuit',
   },
   'acid-base': {
     name: '酸碱滴定',
@@ -432,6 +443,11 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
       .then(data => {
         if (data.success && data.schema) {
           const schema = data.schema;
+          // Triple-Lock: if backend resolved a whitelisted templateId, remember it
+          // on the schema so downstream renderer can prefer iframe over Canvas.
+          if (typeof data.templateId === 'string' && data.templateId) {
+            schema._templateId = data.templateId;
+          }
           if (schema?.meta?.physicsType !== undefined) {
             setAiSchema(schema);
           } else {
@@ -515,8 +531,42 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
 
   // 如果有 AI 生成的实验规则，使用通用渲染器
   const hasAIRules = aiConfig?.experiment?.rules;
-  
+
+  // Triple-Lock routing: resolve the best approved HTML template for this experiment.
+  // Priority:
+  //   1. AI-generated schema topic → conceptToTemplateId → whitelist
+  //   2. AI-generated legacy config name → conceptToTemplateId → whitelist
+  //   3. Preset experiment's pre-declared templateId (buoyancy/lever/refraction/circuit)
+  // If any of them resolve to an approved template, iframe takes precedence over Canvas.
+  const resolvedTemplateId: string | null = (() => {
+    // 0. Prefer backend-resolved templateId (already whitelist-verified)
+    const backendTid = (aiSchema as (import('@/lib/experiment-schema').ExperimentSchema & { _templateId?: string }) | null)?._templateId;
+    if (backendTid && getTemplate(backendTid)) return backendTid;
+
+    // Try AI concept routing first
+    const aiConcept =
+      aiSchema?.meta?.topic ||
+      aiSchema?.meta?.name ||
+      (aiConfig as GeneratedConfig | null)?.topic ||
+      aiConfig?.name ||
+      null;
+    if (aiConcept) {
+      const tid = conceptToTemplateId(aiConcept);
+      if (tid) return tid;
+    }
+    // Fall back to preset experiment's declared templateId
+    if (experiment?.templateId && getTemplate(experiment.templateId)) {
+      return experiment.templateId;
+    }
+    return null;
+  })();
+
   const renderExperiment = () => {
+    // PRIMARY PATH (Triple-Lock approved template) — deterministic, audited, safe
+    if (resolvedTemplateId) {
+      return <IframeExperiment templateId={resolvedTemplateId} height={560} />;
+    }
+
     // 优先：如果有新格式 ExperimentSchema，直接转换并渲染
     if (aiSchema) {
       const legacyConfig = experimentSchemaToLegacy(aiSchema);
@@ -525,7 +575,7 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
 
     // 如果有 AI 生成的规则，使用通用物理渲染器
     if (hasAIRules && aiConfig) {
-      let rules = aiConfig.experiment?.rules;
+      const rules = aiConfig.experiment?.rules;
       
       // 使用统一Schema补全系统替代手动规则补全
       if (rules && !('calculate' in rules)) {
@@ -563,7 +613,6 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
           }] : [],
         };
         
-        const { enrichSchema } = require('@/lib/schema-enricher') as typeof import('@/lib/schema-enricher');
         const fullSchema = enrichSchema(partial);
         const correctConfig = experimentSchemaToLegacy(fullSchema);
         return <UniversalPhysicsRenderer config={correctConfig} />;
@@ -730,10 +779,53 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
 
           {/* 右侧实验区 */}
           <div className="lg:col-span-2">
-            {renderExperiment()}
+            <ExperimentWithChat
+              experimentName={displayName}
+              experimentTopic={aiConfig?.topic ?? experiment?.subject}
+            >
+              {renderExperiment()}
+            </ExperimentWithChat>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Wrapper that adds AI teaching assistant button to any experiment
+function ExperimentWithChat({
+  children,
+  experimentName,
+  experimentTopic,
+}: {
+  children: React.ReactNode;
+  experimentName: string;
+  experimentTopic?: string;
+}) {
+  const [chatOpen, setChatOpen] = useState(false);
+
+  return (
+    <div className="space-y-4">
+      {children}
+      {/* AI Teaching Assistant toggle */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setChatOpen(v => !v)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-sm"
+        >
+          <span>🤖</span>
+          {chatOpen ? '关闭助手' : 'AI 教学助手'}
+        </button>
+      </div>
+      {chatOpen && (
+        <div className="h-[480px]">
+          <ExperimentChatPanel
+            experimentName={experimentName}
+            experimentTopic={experimentTopic}
+            onClose={() => setChatOpen(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }

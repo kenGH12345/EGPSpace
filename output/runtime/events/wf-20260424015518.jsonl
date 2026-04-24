@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424015518","createdAt":"2026-04-24T01:55:20.417Z"}
+{"seq":1,"ts":"2026-04-24T01:55:20.417Z","sessionId":"wf-20260424015518","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":""},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

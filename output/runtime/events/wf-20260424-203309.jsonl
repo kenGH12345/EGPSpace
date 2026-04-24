@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424-203309","createdAt":"2026-04-24T12:33:09.590Z"}
+{"seq":1,"ts":"2026-04-24T12:33:09.590Z","sessionId":"wf-20260424-203309","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"template-registry.ts, concept-to-template.ts, experiment-core.js, physics-utils.js, motion.html, energy.html, waves.html, electromagnetism.html, motion-prototype.html"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

@@ -1,630 +1,181 @@
-# Code Changes: Phase 2/3 Migration + Jest Testing Framework
+# DEVELOP Stage Output — Triple-Lock Architecture Implementation
 
-## Summary
-- T-A: Created `jest.config.js` with ts-jest + @/ path alias support
-- T-A: Added `test`, `test:watch`, `test:coverage` scripts to `package.json`
-- T-B: Created `src/lib/__tests__/experiment-schema.test.ts` (15 test cases)
-- T-B: Created `src/lib/__tests__/physics-engine.test.ts` (14 test cases)
-- T-B: Created `src/lib/__tests__/schema-enricher.test.ts` (12 test cases)
-- T-C: Rewrote `src/lib/experiment-methodology.ts` — removed old ExperimentSchema, re-exports unified Schema, updated generateFromRule to return unified format
-- T-D: Added `presetExperimentSchemas` and `getExperimentSchemaByType` exports to `src/lib/experiments.ts`
-- T-E: Confirmed DynamicExperiment.tsx backward-compat layer is correct (no changes needed)
-- T-F: Fixed `src/app/demo/page.tsx` TypeScript errors (old Schema field access)
+> Session: `wf-20260424091211.`
+> Stage: 5/7 DEVELOP
+> Upstream: `output/execution-plan.md` (13 tasks / 4 Slices)
+> Date: 2026-04-24
 
-## Test Results
-- 127 tests passing across 6 test suites
-- TypeScript compilation: 0 errors
+---
 
-## Files Created
-- `jest.config.js`
-- `src/lib/__tests__/experiment-schema.test.ts`
-- `src/lib/__tests__/physics-engine.test.ts`
-- `src/lib/__tests__/schema-enricher.test.ts`
+## 🧠 思考摘要 / Development Reasoning
 
-## Files Modified
-- `package.json` — added test scripts
-- `src/lib/experiment-methodology.ts` — removed old ExperimentSchema, re-exports unified
-- `src/lib/experiments.ts` — added unified Schema exports
-- `src/app/demo/page.tsx` — fixed TypeScript errors (meta.domain → meta.topic, old Schema format)
+| Q | A |
+|---|---|
+| Q1: 本轮实现目标? | 完成 Slice-0 + Slice-1 + Slice-2（除 T-7 集成测试外的所有 CODE 工作） |
+| Q2: 最小变更原则如何贯彻? | 所有新功能通过**新增文件**实现；对现有文件的修改限于必需的集成点（3 个文件：page.tsx、route.ts、template-registry.ts） |
+| Q3: 关键决策点? | (1) registry 与 routing 分离两个文件，符合 SRP；(2) postMessage schema 独立成库，便于单元测试；(3) 改造 API 时保留旧响应字段（schema）作为降级路径，仅**追加** templateId 字段 |
+| Q4: 最大风险点及缓解? | T-2 postMessage 安全（origin+schema+source iframe 三重校验）；T-6 API 改造（保留兼容字段，灰度安全） |
+| Q5: 未实现的部分? | T-7 集成测试（作为 TEST 阶段任务）；`src/components/__tests__/IframeExperiment.test.tsx` 单元测试（留到 TEST 阶段补齐） |
 
-# EGPSpace工作流系统代码实现
+---
 
-## 实现概览
+## ✅ 任务完成情况
 
-基于执行计划的任务T-001（工作流引擎核心框架），实现了以下核心功能：
+| Task | 描述 | 状态 | 交付物 |
+|------|------|------|--------|
+| T-0 | 合规门（.gitignore + eslint） | ✅ 已存在（前序工作） | .gitignore, eslint.config.mjs |
+| T-1 | 模板注册表 + 概念路由 | ✅ 完成 | template-registry.ts, concept-to-template.ts |
+| T-1.5 | 共享样式 + postMessage 协议 | ✅ 完成 | ui-core.css, physics-core.js, experiment-message-schema.ts |
+| T-2 | IframeExperiment 组件 🔥 | ✅ 完成 | IframeExperiment.tsx |
+| T-3 | 浮力 HTML 模板 🎯 | ✅ 完成 | buoyancy.html (470+ 行) |
+| T-3.5 | 浮力审核 | ✅ 完成 | physics-buoyancy.md |
+| T-4 | 杠杆 HTML 模板 | ✅ 完成 | lever.html |
+| T-4.5 | 杠杆审核 | ✅ 完成 | physics-lever.md |
+| T-5a | 折射 HTML 模板 | ✅ 完成 | refraction.html |
+| T-5a.5 | 折射审核 | ✅ 完成 | physics-refraction.md |
+| T-5b | 电路 HTML 模板 | ✅ 完成 | circuit.html |
+| T-5b.5 | 电路审核 | ✅ 完成 | physics-circuit.md |
+| T-5c | 实验页面集成 | ✅ 完成 | page.tsx 改造 |
+| T-6 | API 三重锁改造 🔥 | ✅ 完成 | route.ts 改造（Prompt 禁令+路由+净化） |
+| T-7 | 集成测试 | ⏳ 留给 TEST 阶段 | — |
 
-- **工作流类型定义**：完整的TypeScript类型系统
-- **工作流引擎**：状态机驱动的执行引擎
-- **JSON Schema验证**：工作流定义验证
-- **数据存储接口**：抽象的数据持久化层
+---
 
-## 代码变更详情
+## 📝 Modified/Created Files
 
-```json
-{
-  "filesChanged": [
-    {
-      "path": "src/workflow/types.ts",
-      "type": "create",
-      "description": "工作流核心类型定义"
-    },
-    {
-      "path": "src/workflow/engine.ts", 
-      "type": "create",
-      "description": "工作流执行引擎"
-    },
-    {
-      "path": "src/workflow/validator.ts",
-      "type": "create", 
-      "description": "工作流定义验证器"
-    },
-    {
-      "path": "src/workflow/storage.ts",
-      "type": "create",
-      "description": "数据存储接口定义"
-    },
-    {
-      "path": "src/workflow/index.ts",
-      "type": "create",
-      "description": "模块导出入口"
-    }
-  ],
-  "summary": "实现了EGPSpace工作流系统的核心引擎框架，包括类型定义、状态机执行引擎、JSON Schema验证和数据存储接口。支持工作流定义、执行状态管理和实时状态同步功能。",
-  "implementedReqs": [
-    "支持工作流定义的JSON解析和验证",
-    "实现步骤状态管理和转换逻辑", 
-    "支持条件分支和循环控制",
-    "提供执行状态查询接口"
-  ]
-}
+### 新增文件（14 个）
+
+| # | 路径 | 规模 | 用途 |
+|---|------|------|------|
+| 1 | `src/lib/template-registry.ts` | ~200 行 | **Lock 3**：模板白名单注册表 + getTemplate/listApprovedTemplates API |
+| 2 | `src/lib/concept-to-template.ts` | ~100 行 | **Lock 2**：概念关键字到模板 ID 的路由映射 |
+| 3 | `src/lib/experiment-message-schema.ts` | ~180 行 | postMessage 通信契约 + validateIncomingMessage 白名单 |
+| 4 | `src/components/IframeExperiment.tsx` | ~220 行 | iframe 容器 + origin/source/schema 三重校验 + skeleton UI + 错误边界 |
+| 5 | `public/templates/_shared/ui-core.css` | ~230 行 | 所有模板共享 CSS 变量 + UI 组件样式 |
+| 6 | `public/templates/_shared/physics-core.js` | ~200 行 | EurekaHost/EurekaCanvas/EurekaHints/EurekaFormat 运行时库 |
+| 7 | `public/templates/physics/buoyancy.html` | ~470 行 | 浮力实验模板（物理计算+Canvas+拖拽+波动/气泡动画） |
+| 8 | `public/templates/physics/lever.html` | ~220 行 | 杠杆实验模板（力矩平衡+倾斜动画） |
+| 9 | `public/templates/physics/refraction.html` | ~270 行 | 折射实验模板（斯涅尔定律+全反射判断） |
+| 10 | `public/templates/physics/circuit.html` | ~320 行 | 电路实验模板（串联/并联切换+电流流动动画） |
+| 11 | `docs/audits/physics-buoyancy.md` | ~80 行 | 浮力审核报告（8 组边界值测试） |
+| 12 | `docs/audits/physics-lever.md` | ~40 行 | 杠杆审核报告 |
+| 13 | `docs/audits/physics-refraction.md` | ~45 行 | 折射审核报告（8 组边界值测试） |
+| 14 | `docs/audits/physics-circuit.md` | ~50 行 | 电路审核报告（7 组边界值测试） |
+
+### 修改文件（2 个）
+
+| # | 路径 | 修改点 |
+|---|------|--------|
+| 1 | `src/app/experiments/[id]/page.tsx` | (a) 追加 3 个 import（IframeExperiment, conceptToTemplateId, getTemplate, enrichSchema）；(b) experiments 映射新增 templateId 字段；(c) renderExperiment 新增 resolvedTemplateId 逻辑，优先 iframe；(d) AI fetch 成功时记录 templateId 到 schema 上；(e) 移除未使用的 createBuoyancyRules import；(f) 将 let rules 改为 const rules（lint 修复）；(g) require() 改为顶部静态 import（lint 修复） |
+| 2 | `src/app/api/generate/route.ts` | (a) 追加 conceptToTemplateId/getTemplate 导入；(b) System Prompt 新增**🚫 严格禁止**章节（Lock 1）；(c) 新增 sanitizeLLMOutput 函数（防御性净化）；(d) POST 响应新增 templateId 字段（Lock 2+3）|
+
+---
+
+## 🔒 三重锁架构落地验证
+
+### Lock 1: Prompt 禁令（LLM 层）
+- 位置：`src/app/api/generate/route.ts` buildSystemPrompt 函数
+- 禁令内容：明确列出不允许输出的字段（canvas/interactions/html/css/js/shapes/elements）
+- 防御加固：服务端 `sanitizeLLMOutput()` 函数即使 LLM 越权也会删除相关字段
+
+### Lock 2: 路由分发（概念→模板）
+- 位置：`src/lib/concept-to-template.ts` 中的 `CONCEPT_MAPPINGS` 数组
+- 策略：多关键字匹配（中/英），最具体的先匹配
+- 集成点：
+  - 后端 `/api/generate` 路由时调用
+  - 前端 `page.tsx` 的 `resolvedTemplateId` 计算时调用
+  - 前端优先使用后端返回的 templateId（避免重复计算）
+
+### Lock 3: 白名单校验（审核状态）
+- 位置：`src/lib/template-registry.ts` 的 `getTemplate()` 函数
+- 规则：只返回 `auditStatus === 'approved'` 的模板
+- 已审核模板：`physics/buoyancy`、`physics/lever`、`physics/refraction`、`physics/circuit`（4 个）
+- 审核文档：`docs/audits/physics-*.md`（4 份）
+
+### 消息安全三重校验（IframeExperiment）
+1. `event.origin === window.location.origin`（阻止跨 origin 攻击）
+2. `event.source === iframe.contentWindow`（确保消息来自本 iframe）
+3. `validateIncomingMessage()` 白名单 type + shape（阻止未知命令）
+4. `templateId` 必须与当前 iframe 一致（阻止 iframe 伪冒）
+5. iframe `sandbox="allow-scripts allow-same-origin"` + `referrerPolicy="no-referrer"`
+
+---
+
+## 🎯 Code 自检清单（Self-Review）
+
+| ID | 检查项 | 结果 | 备注 |
+|----|--------|------|------|
+| SYNTAX-001 | 所有文件语法正确 | ✅ PASS | `npx tsc --noEmit` 零错误 |
+| SEC-002 | 无硬编码 secret | ✅ PASS | 无任何凭据 |
+| SEC-003 | 用户输入已校验 | ✅ PASS | templateId 必过白名单；postMessage 经多重过滤 |
+| ERR-001 | async 操作有错误处理 | ✅ PASS | IframeExperiment 有 load-timeout fallback + error 状态 |
+| REQ-001 | 所有验收准则反映在 diff 中 | ✅ PASS | T-0 至 T-6 的 AC 均已实现 |
+| EDGE-001 | null/undefined 输入处理 | ✅ PASS | getTemplate/conceptToTemplateId 接受 null 返回 null |
+| EDGE-002 | 空集合处理 | ✅ PASS | listApprovedTemplates 空结果返回 [] |
+| EXPORT-001 | 导出符号与消费者匹配 | ✅ PASS | 验证过 page.tsx/route.ts 消费 |
+| STYLE-002 | 无冗余注释 | ✅ PASS | 仅在公共 API 和非显而易见处保留解释性注释 |
+
+---
+
+## 🔥 Adversarial Code Review（攻击性自审）
+
+### 1. Attack Surface: postMessage 攻击路径
+**攻击场景**：恶意第三方脚本试图伪造 `postMessage` 向 host 发送假的 `result_update` 消息以污染数据。
+**防御**：
+- `event.origin === window.location.origin` 阻断任何跨域来源
+- `event.source === iframe.contentWindow` 确保只有本 iframe 的消息被接受
+- `validateIncomingMessage()` 白名单 type 拒绝未知消息
+- `templateId` 强制匹配阻止 iframe 间冒充
+
+### 2. Regression Risk
+- **AI 生成实验流程**：保留了旧的 schema + Canvas 渲染作为降级路径。如果 concept 没匹配到 templateId，仍然走 UniversalPhysicsRenderer。**无回归**。
+- **预设实验**：页面先查 `experiment.templateId`，命中则走 iframe，否则走原先的 `BuoyancyExperiment`/`*Placeholder`。**无回归**。
+
+### 3. Edge Case Stress
+- `getTemplate(null)` → null（安全）
+- `getTemplate('unknown/id')` → null（安全）
+- `getTemplate('physics/buoyancy')` 在审核前返回 null，审核后返回元数据（正确）
+- `conceptToTemplateId('')` → null（安全）
+- iframe 加载 8s 超时 → 显示友好错误（已实现）
+- 模板报 error → host 显示错误覆盖层（已实现）
+
+### 4. Dependency Chain
+本轮新增依赖：**0 个 npm 包**。所有功能基于现有栈（React、Next.js）+ 浏览器原生 API。无外部依赖风险。
+
+---
+
+## 📋 Verification Commands
+
+```bash
+# TypeScript 编译
+npx tsc --noEmit
+# 结果：✅ 零错误
+
+# ESLint 检查（6 个新/改文件）
+npx eslint src/lib/template-registry.ts src/lib/concept-to-template.ts \
+  src/lib/experiment-message-schema.ts src/components/IframeExperiment.tsx \
+  src/app/experiments/[id]/page.tsx src/app/api/generate/route.ts
+# 结果：✅ 0 errors, 4 warnings（均为原遗留代码的未使用变量）
+
+# Template 白名单审核状态
+# - physics/buoyancy:   approved ✓
+# - physics/lever:      approved ✓
+# - physics/refraction: approved ✓
+# - physics/circuit:    approved ✓
 ```
 
-## 具体代码实现
+---
 
-### 1. 工作流类型定义 (src/workflow/types.ts)
+## 🚀 如何手动验证
 
-```diff
-+// src/workflow/types.ts
-+export interface WorkflowDefinition {
-+  id: string;
-+  name: string;
-+  version: string;
-+  description?: string;
-+  steps: WorkflowStep[];
-+  metadata?: Record<string, any>;
-+}
-+
-+export interface WorkflowStep {
-+  id: string;
-+  name: string;
-+  type: 'action' | 'condition' | 'loop' | 'parallel';
-+  component: string;
-+  parameters?: Record<string, any>;
-+  next?: string | string[];
-+  conditions?: StepCondition[];
-+  maxIterations?: number;
-+}
-+
-+export interface StepCondition {
-+  condition: string;
-+  nextStep: string;
-+}
-+
-+export interface WorkflowExecution {
-+  id: string;
-+  workflowId: string;
-+  status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
-+  currentStep?: string;
-+  stepHistory: StepExecution[];
-+  variables: Record<string, any>;
-+  createdAt: Date;
-+  updatedAt: Date;
-+  startedAt?: Date;
-+  completedAt?: Date;
-+}
-+
-+export interface StepExecution {
-+  stepId: string;
-+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
-+  startedAt?: Date;
-+  completedAt?: Date;
-+  result?: any;
-+  error?: string;
-+}
-+
-+export interface WorkflowEvent {
-+  type: 'step_started' | 'step_completed' | 'workflow_started' | 'workflow_completed' | 'error';
-+  executionId: string;
-+  stepId?: string;
-+  timestamp: Date;
-+  data?: any;
-+}
-+
-+export interface WorkflowError extends Error {
-+  code: WorkflowErrorCode;
-+  stepId?: string;
-+  executionId?: string;
-+}
-+
-+export enum WorkflowErrorCode {
-+  INVALID_DEFINITION = 'INVALID_DEFINITION',
-+  STEP_NOT_FOUND = 'STEP_NOT_FOUND',
-+  EXECUTION_NOT_FOUND = 'EXECUTION_NOT_FOUND',
-+  COMPONENT_NOT_FOUND = 'COMPONENT_NOT_FOUND',
-+  VALIDATION_FAILED = 'VALIDATION_FAILED',
-+  TIMEOUT = 'TIMEOUT'
-+}
-```
+1. 启动 dev server：`npm run dev`
+2. 访问 `http://localhost:3000/experiments/buoyancy` — 应看到 iframe 加载的浮力实验
+3. 打开浏览器 DevTools Console — 应看到 postMessage 通信日志（无 warning）
+4. 移动参数滑块 — 应触发 param_change 消息，实验画面实时响应
+5. 访问 `http://localhost:3000/experiments/lever` / `refraction` / `circuit` — 均走 iframe 路径
+6. 访问 `http://localhost:3000/experiments/acid-base`（无模板）— 降级到 Placeholder 组件
+7. 访问 `http://localhost:3000/experiments/combustion`（AI 生成）— 触发 /api/generate，无模板则降级 Canvas
 
-### 2. 工作流引擎 (src/workflow/engine.ts)
+---
 
-```diff
-+// src/workflow/engine.ts
-+import { WorkflowDefinition, WorkflowExecution, WorkflowStep, StepExecution, WorkflowEvent, WorkflowError, WorkflowErrorCode } from './types';
-+
-+export class WorkflowEngine {
-+  private executions: Map<string, WorkflowExecution> = new Map();
-+  private eventListeners: Map<string, Function[]> = new Map();
-+
-+  constructor(private storage?: WorkflowStorage) {}
-+
-+  async createExecution(workflow: WorkflowDefinition, initialVariables?: Record<string, any>): Promise<WorkflowExecution> {
-+    const execution: WorkflowExecution = {
-+      id: this.generateId(),
-+      workflowId: workflow.id,
-+      status: 'pending',
-+      stepHistory: [],
-+      variables: initialVariables || {},
-+      createdAt: new Date(),
-+      updatedAt: new Date()
-+    };
-+
-+    this.executions.set(execution.id, execution);
-+    
-+    if (this.storage) {
-+      await this.storage.saveExecution(execution);
-+    }
-+
-+    this.emitEvent({
-+      type: 'workflow_started',
-+      executionId: execution.id,
-+      timestamp: new Date()
-+    });
-+
-+    return execution;
-+  }
-+
-+  async startExecution(executionId: string): Promise<WorkflowExecution> {
-+    const execution = this.executions.get(executionId);
-+    if (!execution) {
-+      throw this.createError(WorkflowErrorCode.EXECUTION_NOT_FOUND, `Execution ${executionId} not found`);
-+    }
-+
-+    execution.status = 'running';
-+    execution.startedAt = new Date();
-+    execution.updatedAt = new Date();
-+
-+    const workflow = await this.getWorkflowDefinition(execution.workflowId);
-+    const firstStep = workflow.steps[0];
-+    
-+    if (firstStep) {
-+      execution.currentStep = firstStep.id;
-+      await this.executeStep(execution, firstStep);
-+    }
-+
-+    if (this.storage) {
-+      await this.storage.saveExecution(execution);
-+    }
-+
-+    return execution;
-+  }
-+
-+  private async executeStep(execution: WorkflowExecution, step: WorkflowStep): Promise<void> {
-+    const stepExecution: StepExecution = {
-+      stepId: step.id,
-+      status: 'running',
-+      startedAt: new Date()
-+    };
-+
-+    execution.stepHistory.push(stepExecution);
-+    execution.updatedAt = new Date();
-+
-+    this.emitEvent({
-+      type: 'step_started',
-+      executionId: execution.id,
-+      stepId: step.id,
-+      timestamp: new Date()
-+    });
-+
-+    try {
-+      // 执行步骤逻辑
-+      const result = await this.executeStepLogic(step, execution.variables);
-+      
-+      stepExecution.status = 'completed';
-+      stepExecution.completedAt = new Date();
-+      stepExecution.result = result;
-+
-+      // 确定下一步
-+      const nextStepId = this.determineNextStep(step, result, execution.variables);
-+      execution.currentStep = nextStepId;
-+
-+      if (nextStepId) {
-+        const workflow = await this.getWorkflowDefinition(execution.workflowId);
-+        const nextStep = workflow.steps.find(s => s.id === nextStepId);
-+        
-+        if (nextStep) {
-+          await this.executeStep(execution, nextStep);
-+        } else {
-+          // 没有下一步，工作流完成
-+          execution.status = 'completed';
-+          execution.completedAt = new Date();
-+        }
-+      } else {
-+        // 没有下一步，工作流完成
-+        execution.status = 'completed';
-+        execution.completedAt = new Date();
-+      }
-+
-+      this.emitEvent({
-+        type: 'step_completed',
-+        executionId: execution.id,
-+        stepId: step.id,
-+        timestamp: new Date(),
-+        data: result
-+      });
-+
-+    } catch (error) {
-+      stepExecution.status = 'failed';
-+      stepExecution.completedAt = new Date();
-+      stepExecution.error = error instanceof Error ? error.message : String(error);
-+      
-+      execution.status = 'failed';
-+      execution.completedAt = new Date();
-+
-+      this.emitEvent({
-+        type: 'error',
-+        executionId: execution.id,
-+        stepId: step.id,
-+        timestamp: new Date(),
-+        data: { error: stepExecution.error }
-+      });
-+    }
-+
-+    if (this.storage) {
-+      await this.storage.saveExecution(execution);
-+    }
-+  }
-+
-+  private async executeStepLogic(step: WorkflowStep, variables: Record<string, any>): Promise<any> {
-+    // 这里应该调用实际的组件执行逻辑
-+    // 目前返回模拟结果
-+    return { 
-+      stepId: step.id,
-+      variables: { ...variables, [`step_${step.id}_result`]: 'completed' }
-+    };
-+  }
-+
-+  private determineNextStep(step: WorkflowStep, result: any, variables: Record<string, any>): string | null {
-+    if (step.type === 'condition' && step.conditions) {
-+      // 条件分支逻辑
-+      for (const condition of step.conditions) {
-+        if (this.evaluateCondition(condition.condition, variables)) {
-+          return condition.nextStep;
-+        }
-+      }
-+    }
-+    
-+    return typeof step.next === 'string' ? step.next : null;
-+  }
-+
-+  private evaluateCondition(condition: string, variables: Record<string, any>): boolean {
-+    // 简单的条件评估逻辑
-+    // 实际实现应该使用安全的表达式评估器
-+    try {
-+      const expr = condition.replace(/\$\{([^}]+)\}/g, (_, key) => {
-+        return JSON.stringify(variables[key] || '');
-+      });
-+      
-+      // 使用Function构造函数进行安全评估
-+      return new Function(`return ${expr}`)();
-+    } catch {
-+      return false;
-+    }
-+  }
-+
-+  async getExecution(executionId: string): Promise<WorkflowExecution | null> {
-+    const execution = this.executions.get(executionId);
-+    if (execution && this.storage) {
-+      return await this.storage.getExecution(executionId);
-+    }
-+    return execution || null;
-+  }
-+
-+  onEvent(eventType: string, listener: (event: WorkflowEvent) => void): void {
-+    if (!this.eventListeners.has(eventType)) {
-+      this.eventListeners.set(eventType, []);
-+    }
-+    this.eventListeners.get(eventType)!.push(listener);
-+  }
-+
-+  private emitEvent(event: WorkflowEvent): void {
-+    const listeners = this.eventListeners.get(event.type) || [];
-+    listeners.forEach(listener => listener(event));
-+  }
-+
-+  private async getWorkflowDefinition(workflowId: string): Promise<WorkflowDefinition> {
-+    // 从存储或缓存获取工作流定义
-+    if (this.storage) {
-+      return await this.storage.getWorkflowDefinition(workflowId);
-+    }
-+    
-+    // 模拟返回
-+    return {
-+      id: workflowId,
-+      name: 'Test Workflow',
-+      version: '1.0.0',
-+      steps: []
-+    };
-+  }
-+
-+  private generateId(): string {
-+    return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-+  }
-+
-+  private createError(code: WorkflowErrorCode, message: string): WorkflowError {
-+    const error = new Error(message) as WorkflowError;
-+    error.code = code;
-+    return error;
-+  }
-+}
-```
-
-### 3. 工作流验证器 (src/workflow/validator.ts)
-
-```diff
-+// src/workflow/validator.ts
-+import { WorkflowDefinition, WorkflowStep, WorkflowError, WorkflowErrorCode } from './types';
-+
-+export class WorkflowValidator {
-+  static validateDefinition(definition: WorkflowDefinition): void {
-+    const errors: string[] = [];
-+
-+    // 基本验证
-+    if (!definition.id) {
-+      errors.push('Workflow ID is required');
-+    }
-+    
-+    if (!definition.name) {
-+      errors.push('Workflow name is required');
-+    }
-+    
-+    if (!definition.version) {
-+      errors.push('Workflow version is required');
-+    }
-+    
-+    if (!definition.steps || definition.steps.length === 0) {
-+      errors.push('Workflow must have at least one step');
-+    }
-+
-+    // 步骤验证
-+    definition.steps.forEach((step, index) => {
-+      const stepErrors = this.validateStep(step, index, definition.steps);
-+      errors.push(...stepErrors);
-+    });
-+
-+    // 循环检测
-+    const cycleErrors = this.detectCycles(definition.steps);
-+    errors.push(...cycleErrors);
-+
-+    if (errors.length > 0) {
-+      const error = new Error(`Workflow validation failed: ${errors.join(', ')}`) as WorkflowError;
-+      error.code = WorkflowErrorCode.VALIDATION_FAILED;
-+      throw error;
-+    }
-+  }
-+
-+  private static validateStep(step: WorkflowStep, index: number, allSteps: WorkflowStep[]): string[] {
-+    const errors: string[] = [];
-+
-+    if (!step.id) {
-+      errors.push(`Step ${index + 1}: ID is required`);
-+    }
-+    
-+    if (!step.name) {
-+      errors.push(`Step ${index + 1}: Name is required`);
-+    }
-+    
-+    if (!step.type) {
-+      errors.push(`Step ${index + 1}: Type is required`);
-+    }
-+    
-+    if (!step.component) {
-+      errors.push(`Step ${index + 1}: Component is required`);
-+    }
-+
-+    // 验证下一步引用
-+    if (step.next) {
-+      if (typeof step.next === 'string') {
-+        if (!allSteps.some(s => s.id === step.next)) {
-+          errors.push(`Step ${step.id}: Next step '${step.next}' not found`);
-+        }
-+      } else if (Array.isArray(step.next)) {
-+        step.next.forEach(nextId => {
-+          if (!allSteps.some(s => s.id === nextId)) {
-+            errors.push(`Step ${step.id}: Next step '${nextId}' not found`);
-+          }
-+        });
-+      }
-+    }
-+
-+    // 条件步骤验证
-+    if (step.type === 'condition' && (!step.conditions || step.conditions.length === 0)) {
-+      errors.push(`Step ${step.id}: Condition steps must have at least one condition`);
-+    }
-+
-+    return errors;
-+  }
-+
-+  private static detectCycles(steps: WorkflowStep[]): string[] {
-+    const errors: string[] = [];
-+    const visited: Set<string> = new Set();
-+    const visiting: Set<string> = new Set();
-+
-+    const dfs = (stepId: string, path: string[]): boolean => {
-+      if (visiting.has(stepId)) {
-+        errors.push(`Cycle detected: ${[...path, stepId].join(' -> ')}`);
-+        return true;
-+      }
-+      
-+      if (visited.has(stepId)) {
-+        return false;
-+      }
-+
-+      visiting.add(stepId);
-+      path.push(stepId);
-+
-+      const step = steps.find(s => s.id === stepId);
-+      if (step && step.next) {
-+        const nextSteps = typeof step.next === 'string' ? [step.next] : step.next;
-+        
-+        for (const nextId of nextSteps) {
-+          if (dfs(nextId, path)) {
-+            return true;
-+          }
-+        }
-+      }
-+
-+      visiting.delete(stepId);
-+      path.pop();
-+      visited.add(stepId);
-+      
-+      return false;
-+    };
-+
-+    steps.forEach(step => {
-+      if (!visited.has(step.id)) {
-+        dfs(step.id, []);
-+      }
-+    });
-+
-+    return errors;
-+  }
-+}
-```
-
-### 4. 数据存储接口 (src/workflow/storage.ts)
-
-```diff
-+// src/workflow/storage.ts
-+import { WorkflowDefinition, WorkflowExecution } from './types';
-+
-+export interface WorkflowStorage {
-+  saveWorkflowDefinition(definition: WorkflowDefinition): Promise<void>;
-+  getWorkflowDefinition(id: string): Promise<WorkflowDefinition | null>;
-+  saveExecution(execution: WorkflowExecution): Promise<void>;
-+  getExecution(id: string): Promise<WorkflowExecution | null>;
-+  listExecutions(workflowId?: string, status?: string): Promise<WorkflowExecution[]>;
-+}
-+
-+export class InMemoryStorage implements WorkflowStorage {
-+  private definitions: Map<string, WorkflowDefinition> = new Map();
-+  private executions: Map<string, WorkflowExecution> = new Map();
-+
-+  async saveWorkflowDefinition(definition: WorkflowDefinition): Promise<void> {
-+    this.definitions.set(definition.id, definition);
-+  }
-+
-+  async getWorkflowDefinition(id: string): Promise<WorkflowDefinition | null> {
-+    return this.definitions.get(id) || null;
-+  }
-+
-+  async saveExecution(execution: WorkflowExecution): Promise<void> {
-+    this.executions.set(execution.id, execution);
-+  }
-+
-+  async getExecution(id: string): Promise<WorkflowExecution | null> {
-+    return this.executions.get(id) || null;
-+  }
-+
-+  async listExecutions(workflowId?: string, status?: string): Promise<WorkflowExecution[]> {
-+    let executions = Array.from(this.executions.values());
-+    
-+    if (workflowId) {
-+      executions = executions.filter(e => e.workflowId === workflowId);
-+    }
-+    
-+    if (status) {
-+      executions = executions.filter(e => e.status === status);
-+    }
-+    
-+    return executions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-+  }
-+}
-```
-
-### 5. 模块导出入口 (src/workflow/index.ts)
-
-```diff
-+// src/workflow/index.ts
-+export * from './types';
-+export * from './engine';
-+export * from './validator';
-+export * from './storage';
-```
-
-## 实现总结
-
-### 核心功能完成情况
-✅ **工作流引擎核心框架**：实现了完整的状态机执行引擎  
-✅ **类型安全系统**：完整的TypeScript类型定义  
-✅ **验证机制**：工作流定义验证和循环检测  
-✅ **事件系统**：实时状态更新和事件监听  
-✅ **存储抽象**：可扩展的数据持久化接口
-
-### 技术特点
-- **模块化设计**：清晰的职责分离
-- **错误处理**：完整的错误类型和恢复机制  
-- **可扩展性**：支持插件式组件集成
-- **实时通信**：事件驱动的状态同步
-
-### 下一步工作
-基于此核心框架，可以继续实现：
-- 实验组件适配器（T-003）
-- 工作流设计器界面（T-004）
-- 实时通信机制（T-005）
-
-该实现为EGPSpace工作流系统提供了坚实的技术基础。
-
-## 验证层实现 — Code Diff Summary
-
-### 新建文件
-
-#### src/lib/physics-knowledge.ts (新建, ~170行)
-- `PARAM_RANGE_RULES`: 4种物理类型的参数范围规则（buoyancy/lever/refraction/circuit）
-- `FORMULA_KNOWLEDGE`: 标准公式知识库（阿基米德原理/杠杆平衡/斯涅尔定律/欧姆定律）
-- `DIMENSION_RULES`: 21条量纲映射规则
-- `getParamRules`, `getFormulaKnowledge`, `getDimensionRule`, `findParamRule` 查询函数
-
-#### src/lib/schema-validator.ts (新建, ~240行)
-- `checkParamRanges`: 参数范围检查，支持auto-clamp，CRITICAL/ERROR/WARNING分级
-- `checkPhenomenon`: 现象合理性检查（浮力/折射/电路/杠杆各自的物理约束）
-- `checkFormulas`: 公式关键变量验证，失败时自动替换为标准公式
-- `checkDimensions`: 量纲一致性检查（力/质量混淆，角度单位等）
-- `validateWithKnowledge`: 主入口，运行4个检查器，CRITICAL时触发fallback
-- fail-safe: 整体try/catch，验证层出错时返回原始Schema
-
-#### src/lib/__tests__/schema-validator.test.ts (新建, ~200行)
-- 23个测试用例，覆盖所有4个检查器和主入口
-- 测试类型：正常/边界/错误/autoFixed/fail-safe/fallback
-
-### 修改文件
-
-#### src/app/api/generate/route.ts (修改)
-- 新增 `import { validateWithKnowledge }` 
-- 在 `enrichSchema` 之后插入 `validateWithKnowledge(schema, concept)`
-- 响应体新增 `validationReport` 字段（validationPassed/fallbackUsed/criticalCount/checks）
-- JSON解析失败时（createFallbackSchema路径）跳过验证层
-
-### 测试结果
-- TypeScript: 0 errors
-- Jest: 23/23 passed
+**DEVELOP 阶段已完成。等待进入 TEST 阶段进行完整的 lint / test / cve / entropy 检查。**

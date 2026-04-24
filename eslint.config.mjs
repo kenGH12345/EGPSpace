@@ -41,6 +41,17 @@ const eslintConfig = defineConfig([
       '@typescript-eslint/no-unsafe-function-type': 'off',
     },
   },
+  {
+    // Prevent accidental import of external reference materials into production code.
+    // output/eureka-* files are behavior-observation artifacts only — NOT for code reuse.
+    // See docs/external-reference-policy.md for the full policy.
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: ['**/output/eureka*', '../output/eureka*', '../../output/eureka*'],
+      }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

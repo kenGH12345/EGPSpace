@@ -1,1 +1,1 @@
-[2026-04-23T16:05:38.520Z] [INIT] Workflow bridge started with args: triage --requirement llm生成实验会提示实验未找到，同时没有预置的实验也会提示这样，没有预置的实验都应该走llm生成实验模式 --project-root c:\workspace\EGPSpace
+[2026-04-24T13:29:26.751Z] [INIT] Workflow bridge started with args: triage --requirement 补充更多的物理知识点模板，覆盖初中物理剩余核心知识点（光学、热学、声学、电学基础等），使用新版 experiment-core.js + physics-utils.js API，每个模板包含完整交互实验、中文标签、Canvas/SVG 可视化、公式断言和审计文档。保持向后兼容，严格遵循 triple-lock 协议 --project-root .

@@ -98,3 +98,8 @@ Desktop.ini
 .turbo
 
 .coze-logs
+
+# External reference materials (behavior observation only, NOT for code reuse)
+# See docs/external-reference-policy.md for usage policy
+output/eureka-*.js
+output/eureka-*.html

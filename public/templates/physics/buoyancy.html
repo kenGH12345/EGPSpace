@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>浮力原理</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .buoyancy-canvas-wrapper {
+    position: relative;
+    background: linear-gradient(180deg, #FEF9F3 0%, #FFEEDC 100%);
+  }
+  .buoyancy-label-overlay {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .buoyancy-label-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .buoyancy-label-row .k { color: #6B7280; }
+  .buoyancy-label-row .v { font-weight: 600; color: #1F2937; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <!-- Summary stats -->
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">浮力 F浮</p>
+      <p class="eureka-stat-value primary" id="stat-buoyancy">0.0 N</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">重力 G</p>
+      <p class="eureka-stat-value danger" id="stat-gravity">0.0 N</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">状态</p>
+      <p class="eureka-stat-value" id="stat-status">悬浮</p>
+    </div>
+  </div>
+
+  <!-- Canvas visualization -->
+  <div class="eureka-canvas-wrapper buoyancy-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="680" height="380"></canvas>
+    <div class="buoyancy-label-overlay">
+      <div class="buoyancy-label-row"><span class="k">ρ物</span><span class="v" id="overlay-rho-obj">800</span></div>
+      <div class="buoyancy-label-row"><span class="k">ρ液</span><span class="v" id="overlay-rho-liq">1000</span></div>
+      <div class="buoyancy-label-row"><span class="k">V</span><span class="v" id="overlay-volume">0.010</span></div>
+      <div class="buoyancy-label-row"><span class="k">m</span><span class="v" id="overlay-mass">8.0</span></div>
+      <div class="buoyancy-label-row"><span class="k">浸没</span><span class="v" id="overlay-immersion">80%</span></div>
+      <div class="buoyancy-label-row"><span class="k">V排</span><span class="v" id="overlay-v-sub">0.0080</span></div>
+      <div class="buoyancy-label-row"><span class="k">合力</span><span class="v" id="overlay-net">0.0</span></div>
+    </div>
+    <span class="eureka-badge" id="status-badge">计算中…</span>
+  </div>
+
+  <!-- Parameter controls -->
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">物体密度 ρ物</span>
+        <span class="eureka-control-value"><span id="v-rho-obj">800</span> kg/m³</span>
+      </div>
+      <input id="ctl-rho-obj" class="eureka-slider" type="range" min="200" max="3000" step="50" value="800">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">液体密度 ρ液</span>
+        <span class="eureka-control-value"><span id="v-rho-liq">1000</span> kg/m³</span>
+      </div>
+      <input id="ctl-rho-liq" class="eureka-slider" type="range" min="800" max="13600" step="100" value="1000">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">物体体积 V</span>
+        <span class="eureka-control-value"><span id="v-volume">0.010</span> m³</span>
+      </div>
+      <input id="ctl-volume" class="eureka-slider" type="range" min="0.001" max="0.05" step="0.001" value="0.010">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">重力加速度 g</span>
+        <span class="eureka-control-value"><span id="v-gravity">9.8</span> m/s²</span>
+      </div>
+      <input id="ctl-gravity" class="eureka-slider" type="range" min="1" max="20" step="0.1" value="9.8">
+    </div>
+  </div>
+
+  <!-- Formula card -->
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">阿基米德原理</p>
+    <div class="eureka-formula-expression">F<sub>浮</sub> = ρ<sub>液</sub> × g × V<sub>排</sub></div>
+    <p class="eureka-formula-note">浮力 = 液体密度 × 重力加速度 × 排开液体体积</p>
+  </div>
+</div>
+
+<script src="/templates/_shared/physics-core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const TEMPLATE_ID = 'physics/buoyancy';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  // State
+  const state = {
+    rhoObj: 800,       // kg/m³
+    rhoLiq: 1000,      // kg/m³
+    volume: 0.010,     // m³
+    gravity: 9.8,      // m/s²
+    userImmersion: null, // null = use physics default; 0..1 when user drags
+  };
+
+  // DOM refs
+  const canvas = document.getElementById('canvas');
+  const cssW = 680, cssH = 380;
+  const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
+
+  const ctlRhoObj = document.getElementById('ctl-rho-obj');
+  const ctlRhoLiq = document.getElementById('ctl-rho-liq');
+  const ctlVolume = document.getElementById('ctl-volume');
+  const ctlGravity = document.getElementById('ctl-gravity');
+
+  const vRhoObj = document.getElementById('v-rho-obj');
+  const vRhoLiq = document.getElementById('v-rho-liq');
+  const vVolume = document.getElementById('v-volume');
+  const vGravity = document.getElementById('v-gravity');
+
+  const statBuoyancy = document.getElementById('stat-buoyancy');
+  const statGravity  = document.getElementById('stat-gravity');
+  const statStatus   = document.getElementById('stat-status');
+  const statusBadge  = document.getElementById('status-badge');
+
+  const ovRhoObj = document.getElementById('overlay-rho-obj');
+  const ovRhoLiq = document.getElementById('overlay-rho-liq');
+  const ovVolume = document.getElementById('overlay-volume');
+  const ovMass   = document.getElementById('overlay-mass');
+  const ovImm    = document.getElementById('overlay-immersion');
+  const ovVSub   = document.getElementById('overlay-v-sub');
+  const ovNet    = document.getElementById('overlay-net');
+
+  // -------------------- Physics --------------------
+
+  function computePhysics() {
+    const mass = state.volume * state.rhoObj; // kg
+    const weight = mass * state.gravity;      // N (= G)
+
+    // Determine immersion ratio r ∈ [0, 1]
+    // If user is dragging, respect their position.
+    // Otherwise:
+    //   rhoObj < rhoLiq → r = rhoObj / rhoLiq (floating equilibrium)
+    //   rhoObj >= rhoLiq → r = 1 (fully submerged, sinking)
+    let r;
+    if (state.userImmersion !== null) {
+      r = state.userImmersion;
+    } else if (state.rhoObj < state.rhoLiq) {
+      r = state.rhoObj / state.rhoLiq;
+    } else {
+      r = 1.0;
+    }
+    r = EurekaFormat.clamp(r, 0, 1);
+
+    const vSub = state.volume * r;
+    const buoyancy = state.rhoLiq * state.gravity * vSub;
+    const netForce = buoyancy - weight;
+
+    // Status
+    let statusText, statusClass;
+    if (Math.abs(state.rhoObj - state.rhoLiq) / state.rhoLiq < 0.005) {
+      statusText = '○ 悬浮';
+      statusClass = 'info';
+    } else if (state.rhoObj < state.rhoLiq) {
+      statusText = '↑ 漂浮';
+      statusClass = 'success';
+    } else {
+      statusText = '↓ 下沉';
+      statusClass = 'danger';
+    }
+
+    return { mass, weight, r, vSub, buoyancy, netForce, statusText, statusClass };
+  }
+
+  // -------------------- Rendering --------------------
+
+  function render(physics) {
+    EurekaCanvas.clear(ctx, cssW, cssH);
+
+    // Container
+    const cx = cssW / 2;
+    const liquidTop = 120;
+    const liquidBottom = cssH - 30;
+    const containerWidth = 360;
+    const containerLeft = cx - containerWidth / 2;
+
+    // Container walls
+    ctx.strokeStyle = '#9CA3AF';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(containerLeft, liquidTop - 20);
+    ctx.lineTo(containerLeft, liquidBottom);
+    ctx.lineTo(containerLeft + containerWidth, liquidBottom);
+    ctx.lineTo(containerLeft + containerWidth, liquidTop - 20);
+    ctx.stroke();
+
+    // Liquid fill — color varies with density
+    let liquidColor;
+    if (state.rhoLiq > 10000) liquidColor = 'rgba(99, 102, 241, 0.55)';   // mercury-ish
+    else if (state.rhoLiq > 2000) liquidColor = 'rgba(30, 64, 175, 0.55)'; // dense
+    else if (state.rhoLiq > 1050) liquidColor = 'rgba(8, 145, 178, 0.55)'; // salty
+    else if (state.rhoLiq > 950)  liquidColor = 'rgba(6, 182, 212, 0.45)'; // water
+    else liquidColor = 'rgba(245, 158, 11, 0.35)';                          // oil
+    ctx.fillStyle = liquidColor;
+    ctx.fillRect(containerLeft + 2, liquidTop, containerWidth - 4, liquidBottom - liquidTop);
+
+    // Water surface wave
+    drawWaveSurface(containerLeft + 2, liquidTop, containerWidth - 4);
+
+    // Object
+    const objHeight = 90;
+    const objWidth = 110;
+    const objX = cx - objWidth / 2;
+    // Object top = liquidTop - objHeight * (1 - r)
+    const objY = liquidTop - objHeight * (1 - physics.r);
+    drawObject(objX, objY, objWidth, objHeight);
+
+    // Bubbles if submerged deeply
+    if (physics.r > 0.2) drawBubbles(containerLeft, liquidTop, containerWidth);
+
+    // Force arrows
+    const arrowStartX = objX + objWidth / 2;
+    // Buoyancy (up, from object center upward)
+    const buoyancyLength = EurekaFormat.clamp(physics.buoyancy * 0.8, 10, 100);
+    EurekaCanvas.drawArrow(
+      ctx,
+      arrowStartX, objY + objHeight / 2,
+      arrowStartX, objY + objHeight / 2 - buoyancyLength,
+      '#3B82F6',
+      'F浮 ' + EurekaFormat.num(physics.buoyancy, 1) + 'N'
+    );
+    // Gravity (down)
+    const gravityLength = EurekaFormat.clamp(physics.weight * 0.8, 10, 100);
+    EurekaCanvas.drawArrow(
+      ctx,
+      arrowStartX + 24, objY + objHeight / 2,
+      arrowStartX + 24, objY + objHeight / 2 + gravityLength,
+      '#EF4444',
+      'G ' + EurekaFormat.num(physics.weight, 1) + 'N'
+    );
+
+    // Store for interaction
+    canvas._objBox = { x: objX, y: objY, w: objWidth, h: objHeight, containerTop: liquidTop, liquidBottom };
+  }
+
+  let waveOffset = 0;
+
+  function drawWaveSurface(x, y, w) {
+    ctx.strokeStyle = 'rgba(14, 165, 233, 0.7)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const segments = 30;
+    for (let i = 0; i <= segments; i++) {
+      const px = x + (w * i) / segments;
+      const py = y + Math.sin((i / segments) * Math.PI * 4 + waveOffset) * 2.5;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  const bubbles = [];
+  function drawBubbles(left, top, width) {
+    // Spawn new bubbles occasionally
+    if (Math.random() < 0.05 && bubbles.length < 8) {
+      bubbles.push({
+        x: left + 30 + Math.random() * (width - 60),
+        y: cssH - 40,
+        r: 2 + Math.random() * 3,
+        vy: 0.5 + Math.random() * 0.8,
+      });
+    }
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      const b = bubbles[i];
+      b.y -= b.vy;
+      if (b.y < top) { bubbles.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawObject(x, y, w, h) {
+    // Color reflects density relationship
+    let fill;
+    if (state.rhoObj < state.rhoLiq) fill = '#10B981';
+    else if (Math.abs(state.rhoObj - state.rhoLiq) / state.rhoLiq < 0.005) fill = '#3B82F6';
+    else fill = '#EF4444';
+
+    ctx.fillStyle = fill;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+  }
+
+  // -------------------- Update pipeline --------------------
+
+  function updateAll(emitParamChange) {
+    const p = computePhysics();
+
+    // Stat cards
+    statBuoyancy.textContent = EurekaFormat.num(p.buoyancy, 1) + ' N';
+    statGravity.textContent  = EurekaFormat.num(p.weight, 1) + ' N';
+    statStatus.textContent   = p.statusText;
+    statStatus.className = 'eureka-stat-value ' + p.statusClass;
+    statusBadge.textContent = p.statusText + ' · 合力 ' + EurekaFormat.num(p.netForce, 1) + ' N';
+    statusBadge.className = 'eureka-badge ' + p.statusClass;
+
+    // Overlay
+    ovRhoObj.textContent = state.rhoObj;
+    ovRhoLiq.textContent = state.rhoLiq;
+    ovVolume.textContent = EurekaFormat.num(state.volume, 3);
+    ovMass.textContent   = EurekaFormat.num(p.mass, 2);
+    ovImm.textContent    = Math.round(p.r * 100) + '%';
+    ovVSub.textContent   = EurekaFormat.num(p.vSub, 4);
+    ovNet.textContent    = EurekaFormat.num(p.netForce, 2) + ' N';
+
+    // Slider value labels
+    vRhoObj.textContent = state.rhoObj;
+    vRhoLiq.textContent = state.rhoLiq;
+    vVolume.textContent = EurekaFormat.num(state.volume, 3);
+    vGravity.textContent = EurekaFormat.num(state.gravity, 1);
+
+    render(p);
+
+    // Emit results to host
+    EurekaHost.emitResultUpdate({
+      buoyancy: Number(p.buoyancy.toFixed(3)),
+      gravity: Number(p.weight.toFixed(3)),
+      netForce: Number(p.netForce.toFixed(3)),
+      immersionRatio: Number(p.r.toFixed(3)),
+      status: p.statusText,
+    });
+
+    if (emitParamChange) {
+      EurekaHost.emitParamChange(emitParamChange.param, emitParamChange.value);
+    }
+  }
+
+  // Animation loop for waves & bubbles
+  function animate() {
+    waveOffset += 0.04;
+    const p = computePhysics();
+    render(p);
+    requestAnimationFrame(animate);
+  }
+
+  // -------------------- User input --------------------
+
+  function wireSlider(el, stateKey, decimals, param) {
+    el.addEventListener('input', () => {
+      const val = parseFloat(el.value);
+      state[stateKey] = val;
+      // User explicit change → reset userImmersion so physics defaults resume
+      if (stateKey === 'rhoObj' || stateKey === 'rhoLiq' || stateKey === 'volume') {
+        state.userImmersion = null;
+      }
+      updateAll({ param, value: val });
+    });
+  }
+
+  wireSlider(ctlRhoObj, 'rhoObj', 0, 'objectDensity');
+  wireSlider(ctlRhoLiq, 'rhoLiq', 0, 'liquidDensity');
+  wireSlider(ctlVolume, 'volume', 3, 'volume');
+  wireSlider(ctlGravity, 'gravity', 1, 'gravity');
+
+  // Drag object vertically to change immersion
+  let dragging = false;
+  canvas.addEventListener('pointerdown', (e) => {
+    const box = canvas._objBox;
+    if (!box) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (cssW / rect.width);
+    const y = (e.clientY - rect.top) * (cssH / rect.height);
+    if (x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h) {
+      dragging = true;
+      canvas.setPointerCapture(e.pointerId);
+      EurekaHost.emitInteraction('drag-start', {});
+    }
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const box = canvas._objBox;
+    const rect = canvas.getBoundingClientRect();
+    const y = (e.clientY - rect.top) * (cssH / rect.height);
+    // Compute immersion ratio from pointer y (relative to liquid surface + object height)
+    const objHeight = box.h;
+    // When pointer is at liquidTop + objHeight, r = 1 (fully submerged)
+    // When pointer is at liquidTop, r = 0
+    const topOfObj = y - objHeight / 2;
+    const rawR = (box.containerTop - topOfObj) / objHeight;
+    // rawR ≈ 0 means object resting at surface (r=0), rawR ≈ -1 means fully under (r=1)
+    const r = EurekaFormat.clamp(-rawR, 0, 1);
+    state.userImmersion = r;
+    updateAll();
+  });
+
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch {}
+    EurekaHost.emitInteraction('drag-end', {});
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
+  // -------------------- Host command handler --------------------
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param' && typeof cmd.param === 'string' && typeof cmd.value === 'number') {
+      applyParam(cmd.param, cmd.value);
+      updateAll();
+    } else if (cmd.type === 'set_params' && cmd.params && typeof cmd.params === 'object') {
+      for (const k in cmd.params) {
+        if (Object.prototype.hasOwnProperty.call(cmd.params, k)) {
+          applyParam(k, cmd.params[k]);
+        }
+      }
+      updateAll();
+    } else if (cmd.type === 'reset') {
+      state.rhoObj = 800; state.rhoLiq = 1000; state.volume = 0.010; state.gravity = 9.8;
+      state.userImmersion = null;
+      ctlRhoObj.value = 800; ctlRhoLiq.value = 1000; ctlVolume.value = 0.010; ctlGravity.value = 9.8;
+      updateAll();
+    }
+  });
+
+  function applyParam(name, value) {
+    switch (name) {
+      case 'objectDensity': state.rhoObj = EurekaFormat.clamp(value, 200, 3000); ctlRhoObj.value = state.rhoObj; break;
+      case 'liquidDensity': state.rhoLiq = EurekaFormat.clamp(value, 800, 13600); ctlRhoLiq.value = state.rhoLiq; break;
+      case 'volume':        state.volume = EurekaFormat.clamp(value, 0.001, 0.05); ctlVolume.value = state.volume; break;
+      case 'gravity':       state.gravity = EurekaFormat.clamp(value, 1, 20); ctlGravity.value = state.gravity; break;
+    }
+  }
+
+  // -------------------- Boot --------------------
+
+  updateAll();
+  animate();
+
+  // First-run hint
+  setTimeout(() => {
+    try { EurekaHints.show(canvas, '👆 拖动绿色物体改变浸没深度', 5000); } catch {}
+  }, 600);
+
+  EurekaHost.emitReady(['objectDensity', 'liquidDensity', 'volume', 'gravity']);
+})();
+</script>
+</body>
+</html>

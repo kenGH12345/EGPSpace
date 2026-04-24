@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424031346.","createdAt":"2026-04-24T03:14:12.709Z"}
+{"seq":1,"ts":"2026-04-24T03:14:12.709Z","sessionId":"wf-20260424031346.","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"6 core source files + 3 output artifacts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

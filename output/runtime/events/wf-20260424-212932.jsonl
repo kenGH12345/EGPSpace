@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424-212932","createdAt":"2026-04-24T13:29:32.288Z"}
+{"seq":1,"ts":"2026-04-24T13:29:32.288Z","sessionId":"wf-20260424-212932","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"experiment-core.js, physics-utils.js, template-registry.ts, concept-to-template.ts, existing physics templates"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

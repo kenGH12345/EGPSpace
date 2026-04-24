@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机械能守恒 — 单摆</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .energy-svg-wrap {
+    display: flex; justify-content: center; align-items: center; padding: 24px;
+    background: linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%);
+  }
+  .energy-svg-wrap svg { max-width: 100%; }
+  .energy-bar-wrap {
+    position: relative;
+    padding: 16px 24px;
+    background: #F8FAFC;
+  }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">动能 Ek</p>
+      <p class="eureka-stat-value primary" id="stat-ek">0.0 J</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">势能 Ep</p>
+      <p class="eureka-stat-value danger" id="stat-ep">0.0 J</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">总能量 E</p>
+      <p class="eureka-stat-value success" id="stat-et">0.0 J</p>
+    </div>
+  </div>
+
+  <div class="eureka-canvas-wrapper energy-svg-wrap" id="svg-root"></div>
+
+  <div class="eureka-canvas-wrapper energy-bar-wrap">
+    <canvas id="energy-canvas" class="eureka-canvas" width="680" height="180"></canvas>
+  </div>
+
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+    <div id="params-root"></div>
+  </div>
+
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">机械能守恒 (单摆)</p>
+    <div class="eureka-formula-expression">
+      Ek + Ep = E = mgh₀ &nbsp;&nbsp;&nbsp; Ek = ½mv² &nbsp;&nbsp;&nbsp; Ep = mgh
+    </div>
+  </div>
+</div>
+
+<script src="/templates/_shared/experiment-core.js"></script>
+<script src="/templates/_shared/physics-utils.js"></script>
+<script>
+(function () {
+  'use strict';
+  const TEMPLATE_ID = 'physics/energy';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  bindParam('mass', {
+    min: 0.1, max: 5, step: 0.1, defaultValue: 1,
+    label: '摆球质量 m', unit: 'kg',
+    container: document.getElementById('params-root'),
+  });
+  bindParam('length', {
+    min: 0.3, max: 2.0, step: 0.05, defaultValue: 1.0,
+    label: '摆线长 L', unit: 'm',
+    container: document.getElementById('params-root'),
+  });
+  bindParam('angle', {
+    min: 5, max: 60, step: 1, defaultValue: 30,
+    label: '释放角 θ₀', unit: '°',
+    container: document.getElementById('params-root'),
+  });
+  bindParam('g', {
+    min: 1, max: 20, step: 0.1, defaultValue: 9.8,
+    label: '重力加速度 g', unit: 'm/s²',
+    container: document.getElementById('params-root'),
+  });
+
+  const svgRoot = document.getElementById('svg-root');
+  const canvas = document.getElementById('energy-canvas');
+  const ctx = EurekaCanvas2D.setupHiDPI(canvas, 680, 180);
+
+  const statEk = document.getElementById('stat-ek');
+  const statEp = document.getElementById('stat-ep');
+  const statEt = document.getElementById('stat-et');
+
+  let simAngle = 0, simVel = 0;
+
+  function getP() {
+    return {
+      m: getParam('mass'),
+      L: getParam('length'),
+      theta0: getParam('angle') * (Math.PI / 180),
+      g: getParam('g'),
+    };
+  }
+
+  function buildSVG(m, L, theta, theta0) {
+    const w = 420, h = 260;
+    const cx = w / 2, cy = 20;
+    const px = cx + Math.sin(theta) * (L * 150);
+    const py = cy + Math.cos(theta) * (L * 150);
+
+    const deg = (theta0 * 180 / Math.PI).toFixed(0);
+    const maxR = L * 150;
+
+    const svg = `
+<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <defs>
+    <radialGradient id="ballGrad" cx="0.3" cy="0.3"><stop offset="0" stop-color="#FCA5A5"><stop offset="1" stop-color="#EF4444"></radialGradient>
+    <linearGradient id="rail" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#E5E7EB"><stop offset="1" stop-color="#F3F4F6">
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="${w}" height="${h}" fill="none" />
+
+  <!-- Dashed arc showing release angle -->
+  <path d="M ${cx - maxR * Math.sin(theta0)} ${cy + maxR * Math.cos(theta0)}
+             A ${maxR} ${maxR} 0 0 1 ${cx + maxR * Math.sin(theta0)} ${cy + maxR * Math.cos(theta0)}"
+        fill="none" stroke="#D1D5DB" stroke-dasharray="4,4" stroke-width="1.5" />
+
+  <!-- Pendulum rod -->
+  <line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" stroke="#6B7280" stroke-width="2.5" />
+
+  <!-- Ball shadow -->
+  <ellipse cx="${px}" cy="${h - 8}" rx="14" ry="4" fill="rgba(0,0,0,0.12)" />
+
+  <!-- Pendulum ball -->
+  <circle cx="${px}" cy="${py}" r="12" fill="url(#ballGrad)" stroke="#B91C1C" stroke-width="1.5" />
+
+  <!-- Pivot point -->
+  <circle cx="${cx}" cy="${cy}" r="5" fill="#4B5563" />
+  <circle cx="${cx}" cy="${cy}" r="2" fill="#1F2937" />
+
+  <!-- Ground line -->
+  <line x1="20" y1="${h - 8}" x2="${w - 20}" y2="${h - 8}" stroke="#9CA3AF" stroke-width="1.5" />
+
+  <!-- Angle labels -->
+  <text x="${cx - 18}" y="${cy + 22}" fill="#6B7280" font-size="11" font-family="system-ui,sans-serif">θ₀=${deg}°</text>
+
+  <!-- Velocity vector arrow (horizontal) -->
+  ${Math.abs(simVel) > 0.1 ? `<line x1="${px}" y1="${py}" x2="${px + simVel * 15}" y2="${py}" stroke="#3B82F6" stroke-width="2.5" marker-end="url(#arrowBlue)" />` : ''}
+
+  <!-- Height label -->
+  ${py < 240 ? `<line x1="${px}" y1="${py}" x2="${px + 40}" y2="${py}" stroke="#9CA3AF" stroke-dasharray="3,3" stroke-width="1" />` : ''}
+</svg>`;
+    svgRoot.innerHTML = svg;
+  }
+
+  function drawBars(Ek, Ep, E, maxE) {
+    EurekaCanvas2D.clear(ctx, 680, 180, '#F8FAFC');
+    const barW = 32, gap = 100, startX = (680 - 3 * barW - 2 * gap) / 2;
+    const barH = 120, baseY = 155;
+
+    EurekaCanvas2D.drawEnergyBar(ctx, startX, baseY, Ek, maxE, {
+      barWidth: barW, barMaxHeight: barH, color: '#3B82F6', label: '动能 Ek',
+    });
+    EurekaCanvas2D.drawEnergyBar(ctx, startX + gap + barW, baseY, Ep, maxE, {
+      barWidth: barW, barMaxHeight: barH, color: '#EF4444', label: '势能 Ep',
+    });
+    EurekaCanvas2D.drawEnergyBar(ctx, startX + 2 * (gap + barW), baseY, E, maxE, {
+      barWidth: barW, barMaxHeight: barH, color: '#10B981', label: '总能量 E',
+    });
+
+    ctx.fillStyle = '#374151';
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('能量分布 (J)', 340, 24);
+  }
+
+  function update(dt) {
+    const p = getP();
+    const omega = Math.sqrt(p.g / p.L);
+    simAngle = p.theta0 * Math.cos(omega * Date.now() / 1000);
+    simVel = -p.theta0 * omega * Math.sin(omega * Date.now() / 1000);
+
+    const h = p.L * (1 - Math.cos(simAngle));
+    const Ek = EurekaPhysics.kineticEnergy(p.m, simVel * p.L);
+    const Ep = EurekaPhysics.potentialEnergy(p.m, h, p.g);
+    const E = Ek + Ep;
+    const maxE = EurekaPhysics.potentialEnergy(p.m, p.L * (1 - Math.cos(p.theta0)), p.g) || 1;
+
+    buildSVG(p.m, p.L, simAngle, p.theta0);
+    drawBars(Ek, Ep, E, maxE);
+
+    statEk.textContent = Ek.toFixed(1) + ' J';
+    statEp.textContent = Ep.toFixed(1) + ' J';
+    statEt.textContent = E.toFixed(1) + ' J';
+
+    EurekaHost.emitResultUpdate({
+      kineticEnergy: Number(Ek.toFixed(3)),
+      potentialEnergy: Number(Ep.toFixed(3)),
+      totalEnergy: Number(E.toFixed(3)),
+      angleDeg: Number((simAngle * 180 / Math.PI).toFixed(1)),
+      parameters: { mass: p.m, length: p.L, theta0: p.theta0, g: p.g },
+    });
+  }
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param') {
+      try { setParam(cmd.param, cmd.value); } catch (e) { EurekaHost.emitError('Unknown param: ' + cmd.param); }
+    } else if (cmd.type === 'set_params' && cmd.params) {
+      for (const k in cmd.params) { try { setParam(k, cmd.params[k]); } catch (e) { EurekaHost.emitError('Param update failed: ' + e.message); } }
+    } else if (cmd.type === 'reset') {
+      setParam('mass', 1, false);
+      setParam('length', 1, false);
+      setParam('angle', 30, false);
+      setParam('g', 9.8, false);
+    }
+  });
+
+  const p0 = getP();
+  buildSVG(p0.m, p0.L, p0.theta0, p0.theta0);
+  const h0 = p0.L * (1 - Math.cos(p0.theta0));
+  const maxE = EurekaPhysics.potentialEnergy(p0.m, h0, p0.g) || 1;
+  drawBars(0, maxE, maxE, maxE);
+  statEk.textContent = '0.0 J';
+  statEp.textContent = maxE.toFixed(1) + ' J';
+  statEt.textContent = maxE.toFixed(1) + ' J';
+
+  startRenderLoop(update);
+  EurekaHost.emitReady(['mass', 'length', 'angle', 'g']);
+})();
+</script>
+</body>
+</html>

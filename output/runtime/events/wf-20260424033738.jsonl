@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424033738","createdAt":"2026-04-24T03:45:41.263Z"}
+{"seq":1,"ts":"2026-04-24T03:45:41.263Z","sessionId":"wf-20260424033738","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"8 source files analyzed"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

@@ -6,6 +6,9 @@ import type { ExperimentSchema } from '@/lib/experiment-schema';
 import { computePhysics } from '@/lib/physics-engine';
 import { renderCanvas } from '@/lib/declarative-renderer';
 import { buildPresetElements } from '@/lib/preset-templates';
+import { AmbientAnimator } from '@/lib/ambient-animations';
+import { createDynamicsState, stepDynamics } from '@/lib/experiment-dynamics';
+import type { DynamicsState } from '@/lib/experiment-dynamics';
 
 // Convert ExperimentSchema to legacy ExperimentConfig for backward compatibility
 export function experimentSchemaToLegacy(schema: ExperimentSchema): ExperimentConfig {
@@ -124,6 +127,16 @@ function isExperimentSchema(config: ExperimentConfig | ExperimentSchema): config
   return 'meta' in config && 'physicsType' in (config as ExperimentSchema).meta;
 }
 
+// ── First-time hint component ────────────────────────────────────────────────
+function FirstTimeHint({ hint, visible }: { hint: string; visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full pointer-events-none select-none z-10 whitespace-nowrap">
+      👆 {hint}
+    </div>
+  );
+}
+
 // 通用物理渲染器
 export function UniversalPhysicsRenderer({ config }: { config: ExperimentConfig | ExperimentSchema }) {
   // Normalize to legacy format for unified rendering
@@ -143,14 +156,99 @@ export function UniversalPhysicsRenderer({ config }: { config: ExperimentConfig 
   });
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Dynamics & ambient animation refs (stable across renders)
+  const dynamicsStateRef = useRef<DynamicsState | null>(null);
+  const ambientAnimatorRef = useRef<AmbientAnimator>(new AmbientAnimator());
+  const rafIdRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
+
+  // First-time hint
+  const hint = schema?.interactions?.firstTimeHint;
+  const [hintVisible, setHintVisible] = useState(Boolean(hint));
+  const dismissHint = useCallback(() => setHintVisible(false), []);
+
   // 获取物理规则
   const rules = legacyConfig.experiment?.rules;
   
   // 计算结果
   const calculation = rules?.calculate(params);
 
-  // 绘制可视化
+  // ── Dynamics rAF loop (only when dynamics.enabled) ──────────────────────
+  const dynamicsEnabled = Boolean(schema?.physics?.dynamics?.enabled);
+
   useEffect(() => {
+    if (!dynamicsEnabled || !schema || !canvasRef.current || !rules) return;
+
+    const dynamicsConfig = schema.physics.dynamics!;
+    const layout = schema.canvas.layout;
+    const ambientAnimations = schema.canvas.ambientAnimations ?? [];
+    const ambientAnimator = ambientAnimatorRef.current;
+
+    // Initialize dynamics state from current computed values
+    if (!dynamicsStateRef.current) {
+      const computed = rules.calculate(params);
+      const initPositions: Record<string, number> = {};
+      for (const varName of dynamicsConfig.variables) {
+        initPositions[varName] = computed.results[varName] ?? 0;
+      }
+      dynamicsStateRef.current = createDynamicsState(initPositions);
+    }
+
+    const loop = (timestamp: number) => {
+      const dt = lastTimeRef.current ? Math.min((timestamp - lastTimeRef.current) / 1000, 0.05) : 1 / 60;
+      lastTimeRef.current = timestamp;
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Compute physics targets from current params
+      const computed = rules.calculate(params);
+      const targets: Record<string, number> = {};
+      for (const varName of dynamicsConfig.variables) {
+        targets[varName] = computed.results[varName] ?? 0;
+      }
+
+      // Step dynamics
+      dynamicsStateRef.current = stepDynamics(
+        dynamicsStateRef.current!,
+        targets,
+        dynamicsConfig,
+        dt,
+      );
+
+      // Step ambient animations
+      ambientAnimator.step(dt);
+
+      // Render
+      const mergedComputed: Record<string, number> = {
+        ...(computed.results ?? {}),
+      };
+      const elements = schema.canvas.elements.length
+        ? schema.canvas.elements
+        : buildPresetElements(rules.type, layout, params, mergedComputed);
+
+      renderCanvas(ctx, elements, layout, params, mergedComputed, {
+        ambientAnimator,
+        ambientAnimations,
+        dynamicsVars: dynamicsStateRef.current.position,
+      });
+
+      rafIdRef.current = requestAnimationFrame(loop);
+    };
+
+    rafIdRef.current = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(rafIdRef.current);
+      lastTimeRef.current = 0;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dynamicsEnabled, schema, rules]);
+
+  // ── Static render path (no dynamics) ────────────────────────────────────
+  useEffect(() => {
+    if (dynamicsEnabled) return; // handled by rAF loop above
     if (!canvasRef.current || !calculation || !rules) return;
     
     const canvas = canvasRef.current;
@@ -173,12 +271,14 @@ export function UniversalPhysicsRenderer({ config }: { config: ExperimentConfig 
       : buildPresetElements(rules.type, layout, params, computed);
 
     renderCanvas(ctx, elements, layout, params, computed);
-  }, [params, calculation, rules, schema]);
+  }, [params, calculation, rules, schema, dynamicsEnabled]);
 
-  // 更新参数
+  // 更新参数（同时重置 dynamics 状态，让弹簧从当前位置重新收敛）
   const updateParam = useCallback((name: string, value: number) => {
     setParams(prev => ({ ...prev, [name]: value }));
-  }, []);
+    dynamicsStateRef.current = null; // reset so loop re-initializes from new target
+    dismissHint();
+  }, [dismissHint]);
 
   if (!rules) {
     // 如果没有规则，显示提示
@@ -217,8 +317,9 @@ export function UniversalPhysicsRenderer({ config }: { config: ExperimentConfig 
       </div>
 
       {/* 可视化画布 */}
-      <div className="bg-white rounded-xl p-4 border">
+      <div className="bg-white rounded-xl p-4 border relative">
         <canvas ref={canvasRef} width={560} height={280} className="w-full" />
+        {hint && <FirstTimeHint hint={hint} visible={hintVisible} />}
       </div>
 
       {/* 物理说明 */}

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>光的折射</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .refraction-canvas-wrapper {
+    background: linear-gradient(180deg, #F0FDFA 0%, #CCFBF1 100%);
+  }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">入射角 θ₁</p>
+      <p class="eureka-stat-value warning" id="stat-i">30°</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">折射角 θ₂</p>
+      <p class="eureka-stat-value primary" id="stat-r">22.1°</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">临界状态</p>
+      <p class="eureka-stat-value" id="stat-status">正常折射</p>
+    </div>
+  </div>
+
+  <div class="eureka-canvas-wrapper refraction-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="680" height="400"></canvas>
+    <span class="eureka-badge" id="status-badge">计算中…</span>
+  </div>
+
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">入射角 θ₁</span>
+        <span class="eureka-control-value"><span id="v-i">30</span>°</span>
+      </div>
+      <input id="ctl-i" class="eureka-slider" type="range" min="0" max="89" step="1" value="30">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">介质1折射率 n₁</span>
+        <span class="eureka-control-value"><span id="v-n1">1.00</span></span>
+      </div>
+      <input id="ctl-n1" class="eureka-slider" type="range" min="1" max="2.5" step="0.01" value="1.00">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">介质2折射率 n₂</span>
+        <span class="eureka-control-value"><span id="v-n2">1.33</span></span>
+      </div>
+      <input id="ctl-n2" class="eureka-slider" type="range" min="1" max="2.5" step="0.01" value="1.33">
+    </div>
+
+    <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
+      常见折射率：空气 1.00 · 水 1.33 · 玻璃 1.5 · 金刚石 2.42
+    </div>
+  </div>
+
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">斯涅尔定律 (Snell's Law)</p>
+    <div class="eureka-formula-expression">n₁ × sin(θ₁) = n₂ × sin(θ₂)</div>
+    <p class="eureka-formula-note">当 n₁ > n₂ 且 sin(θ₁) > n₂/n₁ 时发生全反射</p>
+  </div>
+</div>
+
+<script src="/templates/_shared/physics-core.js"></script>
+<script>
+(function () {
+  'use strict';
+  const TEMPLATE_ID = 'physics/refraction';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  const state = { incidentAngle: 30, n1: 1.00, n2: 1.33 };
+
+  const canvas = document.getElementById('canvas');
+  const cssW = 680, cssH = 400;
+  const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
+
+  const ctlI = document.getElementById('ctl-i');
+  const ctlN1 = document.getElementById('ctl-n1');
+  const ctlN2 = document.getElementById('ctl-n2');
+  const vI = document.getElementById('v-i');
+  const vN1 = document.getElementById('v-n1');
+  const vN2 = document.getElementById('v-n2');
+  const statI = document.getElementById('stat-i');
+  const statR = document.getElementById('stat-r');
+  const statStatus = document.getElementById('stat-status');
+  const statusBadge = document.getElementById('status-badge');
+
+  const DEG = Math.PI / 180;
+
+  function compute() {
+    const theta1Rad = state.incidentAngle * DEG;
+    const sinTheta2 = (state.n1 / state.n2) * Math.sin(theta1Rad);
+    let refractionAngleDeg = null;
+    let tir = false;
+    if (Math.abs(sinTheta2) > 1) {
+      tir = true;
+    } else {
+      refractionAngleDeg = Math.asin(sinTheta2) / DEG;
+    }
+
+    // Critical angle (only meaningful when n1 > n2)
+    let criticalDeg = null;
+    if (state.n1 > state.n2) {
+      criticalDeg = Math.asin(state.n2 / state.n1) / DEG;
+    }
+
+    let statusText, statusClass;
+    if (tir) { statusText = '🔴 全反射'; statusClass = 'danger'; }
+    else if (criticalDeg && state.incidentAngle >= criticalDeg - 1) { statusText = '⚠️ 临界角附近'; statusClass = 'warning'; }
+    else { statusText = '✓ 正常折射'; statusClass = 'success'; }
+
+    return { theta1Rad, refractionAngleDeg, tir, criticalDeg, statusText, statusClass };
+  }
+
+  function render(p) {
+    EurekaCanvas.clear(ctx, cssW, cssH);
+
+    const cx = cssW / 2;
+    const interfaceY = cssH / 2;
+
+    // Upper medium (n1)
+    const n1Alpha = Math.min(0.25, (state.n1 - 1) * 0.3);
+    ctx.fillStyle = 'rgba(14, 165, 233, ' + n1Alpha + ')';
+    ctx.fillRect(0, 0, cssW, interfaceY);
+    ctx.fillStyle = '#1E40AF';
+    ctx.font = '13px system-ui';
+    ctx.fillText('介质 1  n₁ = ' + state.n1.toFixed(2), 20, 24);
+
+    // Lower medium (n2)
+    const n2Alpha = Math.min(0.35, (state.n2 - 1) * 0.3);
+    ctx.fillStyle = 'rgba(6, 182, 212, ' + n2Alpha + ')';
+    ctx.fillRect(0, interfaceY, cssW, cssH - interfaceY);
+    ctx.fillStyle = '#0F766E';
+    ctx.fillText('介质 2  n₂ = ' + state.n2.toFixed(2), 20, cssH - 14);
+
+    // Interface line
+    ctx.strokeStyle = '#0EA5E9';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, interfaceY);
+    ctx.lineTo(cssW, interfaceY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Normal line (dashed vertical)
+    ctx.strokeStyle = '#6B7280';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx, 40);
+    ctx.lineTo(cx, cssH - 40);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const rayLen = 180;
+
+    // Incident ray (from upper-left to origin)
+    const incEndX = cx - rayLen * Math.sin(p.theta1Rad);
+    const incEndY = interfaceY - rayLen * Math.cos(p.theta1Rad);
+    ctx.strokeStyle = '#F59E0B';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(incEndX, incEndY);
+    ctx.lineTo(cx, interfaceY);
+    ctx.stroke();
+    // Arrow head near origin
+    drawArrowHead(cx, interfaceY, Math.atan2(interfaceY - incEndY, cx - incEndX), '#F59E0B');
+    ctx.fillStyle = '#92400E';
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillText('入射光 θ₁ = ' + state.incidentAngle + '°', incEndX - 30, incEndY - 8);
+
+    // Reflected ray (always present, angle = incidentAngle on the same side)
+    const refX = cx + rayLen * 0.6 * Math.sin(p.theta1Rad);
+    const refY = interfaceY - rayLen * 0.6 * Math.cos(p.theta1Rad);
+    ctx.strokeStyle = '#A855F7';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx, interfaceY);
+    ctx.lineTo(refX, refY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#7E22CE';
+    ctx.font = '11px system-ui';
+    ctx.fillText('反射光', refX + 4, refY - 4);
+
+    // Refracted ray OR TIR visualization
+    if (!p.tir && p.refractionAngleDeg !== null) {
+      const t2Rad = p.refractionAngleDeg * DEG;
+      const refrEndX = cx + rayLen * Math.sin(t2Rad);
+      const refrEndY = interfaceY + rayLen * Math.cos(t2Rad);
+      ctx.strokeStyle = '#3B82F6';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, interfaceY);
+      ctx.lineTo(refrEndX, refrEndY);
+      ctx.stroke();
+      drawArrowHead(refrEndX, refrEndY, Math.atan2(refrEndY - interfaceY, refrEndX - cx), '#3B82F6');
+      ctx.fillStyle = '#1D4ED8';
+      ctx.font = 'bold 13px system-ui';
+      ctx.fillText('折射光 θ₂ = ' + p.refractionAngleDeg.toFixed(1) + '°', refrEndX + 6, refrEndY);
+    } else {
+      // TIR banner in lower medium
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+      ctx.fillRect(0, interfaceY, cssW, cssH - interfaceY);
+      ctx.fillStyle = '#B91C1C';
+      ctx.font = 'bold 16px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('全反射  (Total Internal Reflection)', cx, interfaceY + 50);
+      if (p.criticalDeg !== null) {
+        ctx.font = '13px system-ui';
+        ctx.fillText('临界角 θc ≈ ' + p.criticalDeg.toFixed(1) + '°', cx, interfaceY + 72);
+      }
+      ctx.textAlign = 'left';
+    }
+
+    // Angle arcs
+    drawAngleArc(cx, interfaceY, 36, -Math.PI / 2, -Math.PI / 2 - p.theta1Rad, '#F59E0B');
+    if (!p.tir && p.refractionAngleDeg !== null) {
+      drawAngleArc(cx, interfaceY, 36, Math.PI / 2, Math.PI / 2 - p.refractionAngleDeg * DEG, '#3B82F6');
+    }
+  }
+
+  function drawArrowHead(x, y, angle, color) {
+    const size = 9;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - size * Math.cos(angle - Math.PI / 6), y - size * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(x - size * Math.cos(angle + Math.PI / 6), y - size * Math.sin(angle + Math.PI / 6));
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawAngleArc(cx, cy, radius, startAngle, endAngle, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const ccw = endAngle < startAngle;
+    ctx.arc(cx, cy, radius, startAngle, endAngle, ccw);
+    ctx.stroke();
+  }
+
+  function update(emitParam) {
+    const p = compute();
+    vI.textContent = state.incidentAngle;
+    vN1.textContent = state.n1.toFixed(2);
+    vN2.textContent = state.n2.toFixed(2);
+    statI.textContent = state.incidentAngle + '°';
+    statR.textContent = p.tir ? '—' : p.refractionAngleDeg.toFixed(1) + '°';
+    statStatus.textContent = p.statusText;
+    statStatus.className = 'eureka-stat-value ' + p.statusClass;
+    statusBadge.textContent = p.statusText + (p.criticalDeg ? '  θc≈' + p.criticalDeg.toFixed(1) + '°' : '');
+    statusBadge.className = 'eureka-badge ' + p.statusClass;
+    render(p);
+
+    EurekaHost.emitResultUpdate({
+      incidentAngle: state.incidentAngle,
+      refractionAngle: p.tir ? -1 : Number(p.refractionAngleDeg.toFixed(2)),
+      totalInternalReflection: p.tir,
+      criticalAngle: p.criticalDeg !== null ? Number(p.criticalDeg.toFixed(2)) : -1,
+    });
+
+    if (emitParam) EurekaHost.emitParamChange(emitParam.param, emitParam.value);
+  }
+
+  function wire(el, key, decimals, param) {
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      state[key] = decimals > 0 ? Number(v.toFixed(decimals)) : v;
+      update({ param, value: state[key] });
+    });
+  }
+  wire(ctlI, 'incidentAngle', 0, 'incidentAngle');
+  wire(ctlN1, 'n1', 2, 'n1');
+  wire(ctlN2, 'n2', 2, 'n2');
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param' && typeof cmd.param === 'string' && typeof cmd.value === 'number') {
+      applyParam(cmd.param, cmd.value); update();
+    } else if (cmd.type === 'set_params' && cmd.params) {
+      for (const k in cmd.params) {
+        if (Object.prototype.hasOwnProperty.call(cmd.params, k)) applyParam(k, cmd.params[k]);
+      }
+      update();
+    } else if (cmd.type === 'reset') {
+      state.incidentAngle = 30; state.n1 = 1.00; state.n2 = 1.33;
+      ctlI.value = 30; ctlN1.value = 1.00; ctlN2.value = 1.33;
+      update();
+    }
+  });
+
+  function applyParam(name, value) {
+    switch (name) {
+      case 'incidentAngle': state.incidentAngle = EurekaFormat.clamp(value, 0, 89); ctlI.value = state.incidentAngle; break;
+      case 'n1': state.n1 = EurekaFormat.clamp(value, 1, 2.5); ctlN1.value = state.n1; break;
+      case 'n2': state.n2 = EurekaFormat.clamp(value, 1, 2.5); ctlN2.value = state.n2; break;
+    }
+  }
+
+  update();
+  setTimeout(() => { try { EurekaHints.show(canvas, '👆 尝试把 n₁ 调到 1.5、n₂ 调到 1.0 观察全反射', 6000); } catch {} }, 600);
+  EurekaHost.emitReady(['incidentAngle', 'n1', 'n2']);
+})();
+</script>
+</body>
+</html>

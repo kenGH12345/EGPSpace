@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>匀变速直线运动 — 运动学</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .kinematics-canvas-wrap {
+    position: relative;
+    background: linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%);
+  }
+  .kinematics-overlay {
+    position: absolute;
+    top: 12px; right: 16px;
+    background: rgba(255,255,255,0.92);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .kinematics-overlay .k { color: #6B7280; }
+  .kinematics-overlay .v { font-weight: 600; color: #1F2937; font-variant-numeric: tabular-nums; }
+  .kinematics-overlay-row { display: flex; justify-content: space-between; gap: 16px; }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">位移 s</p>
+      <p class="eureka-stat-value primary" id="stat-s">0.0 m</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">末速度 v</p>
+      <p class="eureka-stat-value danger" id="stat-v">0.0 m/s</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">平均速度</p>
+      <p class="eureka-stat-value" id="stat-avg">0.0 m/s</p>
+    </div>
+  </div>
+
+  <div class="eureka-canvas-wrapper kinematics-canvas-wrap">
+    <canvas id="vt-canvas" class="eureka-canvas" width="680" height="220"></canvas>
+    <div class="kinematics-overlay">
+      <div class="kinematics-overlay-row"><span class="k">v₀</span><span class="v" id="ov-v0">10</span></div>
+      <div class="kinematics-overlay-row"><span class="k">a</span><span class="v" id="ov-a">2</span></div>
+      <div class="kinematics-overlay-row"><span class="k">t</span><span class="v" id="ov-t">0.0</span></div>
+      <div class="kinematics-overlay-row"><span class="k">s</span><span class="v" id="ov-s">0.0</span></div>
+    </div>
+  </div>
+
+  <div class="eureka-canvas-wrapper kinematics-canvas-wrap">
+    <canvas id="st-canvas" class="eureka-canvas" width="680" height="220"></canvas>
+  </div>
+
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+    <div id="params-root"></div>
+  </div>
+
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">匀变速直线运动</p>
+    <div class="eureka-formula-expression">s = v₀t + ½at² &nbsp;&nbsp;&nbsp; v = v₀ + at</div>
+  </div>
+</div>
+
+<script src="/templates/_shared/experiment-core.js"></script>
+<script src="/templates/_shared/physics-utils.js"></script>
+<script>
+(function () {
+  'use strict';
+  const TEMPLATE_ID = 'physics/motion';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  bindParam('v0', {
+    min: 0, max: 50, step: 1, defaultValue: 10,
+    label: '初速度 v₀', unit: 'm/s',
+    container: document.getElementById('params-root'),
+  });
+  bindParam('acceleration', {
+    min: -10, max: 10, step: 0.5, defaultValue: 2,
+    label: '加速度 a', unit: 'm/s²',
+    container: document.getElementById('params-root'),
+  });
+  bindParam('time', {
+    min: 0, max: 20, step: 0.5, defaultValue: 5,
+    label: '时间 t', unit: 's',
+    container: document.getElementById('params-root'),
+  });
+  bindParam('mass', {
+    min: 0.1, max: 10, step: 0.1, defaultValue: 1,
+    label: '质量 m', unit: 'kg',
+    container: document.getElementById('params-root'),
+  });
+
+  const vtCanvas = document.getElementById('vt-canvas');
+  const stCanvas = document.getElementById('st-canvas');
+  const vtCtx = EurekaCanvas2D.setupHiDPI(vtCanvas, 680, 220);
+  const stCtx = EurekaCanvas2D.setupHiDPI(stCanvas, 680, 220);
+
+  const cssW = 680, cssH = 220;
+  const margin = { top: 25, right: 30, bottom: 35, left: 55 };
+
+  const ovV0 = document.getElementById('ov-v0');
+  const ovA  = document.getElementById('ov-a');
+  const ovT  = document.getElementById('ov-t');
+  const ovS  = document.getElementById('ov-s');
+
+  const statS = document.getElementById('stat-s');
+  const statV = document.getElementById('stat-v');
+  const statAvg = document.getElementById('stat-avg');
+
+  let simT = 0;
+
+  function getP() {
+    return {
+      v0: getParam('v0'),
+      a: getParam('acceleration'),
+      tMax: getParam('time'),
+      mass: getParam('mass'),
+    };
+  }
+
+  function compute(v0, a, t, mass) {
+    return {
+      s: EurekaPhysics.displacement(v0, a, t),
+      v: EurekaPhysics.finalVelocity(v0, a, t),
+      avg: EurekaPhysics.averageVelocity(v0, EurekaPhysics.finalVelocity(v0, a, t)),
+      ke: EurekaPhysics.kineticEnergy(mass, EurekaPhysics.finalVelocity(v0, a, t)),
+    };
+  }
+
+  function drawVT(v0, a, tMax) {
+    EurekaCanvas2D.clear(vtCtx, cssW, cssH, '#F8FAFC');
+    const cw = cssW - margin.left - margin.right;
+    const ch = cssH - margin.top - margin.bottom;
+    const ox = margin.left, oy = cssH - margin.bottom;
+
+    EurekaCanvas2D.drawAxis(vtCtx, ox, oy, cw, ch, {
+      tickSpacing: cw / 5,
+      xLabels: ['0', '4', '8', '12', '16', '20'],
+      yLabels: ['-60', '-30', '0', '30', '60'],
+    });
+
+    vtCtx.fillStyle = '#374151';
+    vtCtx.font = '13px system-ui, sans-serif';
+    vtCtx.textAlign = 'center';
+    vtCtx.fillText('时间 t (s)', ox + cw / 2, cssH - 6);
+    vtCtx.save();
+    vtCtx.translate(14, oy - ch / 2);
+    vtCtx.rotate(-Math.PI / 2);
+    vtCtx.fillText('速度 v (m/s)', 0, 0);
+    vtCtx.restore();
+
+    vtCtx.strokeStyle = '#3B82F6'; vtCtx.lineWidth = 2.5;
+    vtCtx.beginPath();
+    const vScale = ch / 120, tScale = cw / 20;
+    for (let i = 0; i <= 100; i++) {
+      const t = (i / 100) * tMax;
+      const v = EurekaPhysics.finalVelocity(v0, a, t);
+      const px = ox + t * tScale;
+      const py = oy - (v + 60) * vScale;
+      if (i === 0) vtCtx.moveTo(px, py); else vtCtx.lineTo(px, py);
+    }
+    vtCtx.stroke();
+
+    const curV = EurekaPhysics.finalVelocity(v0, a, simT);
+    const px = ox + simT * tScale;
+    const py = oy - (curV + 60) * vScale;
+    vtCtx.fillStyle = '#EF4444';
+    vtCtx.beginPath(); vtCtx.arc(px, py, 5, 0, Math.PI * 2); vtCtx.fill();
+  }
+
+  function drawST(v0, a, tMax) {
+    EurekaCanvas2D.clear(stCtx, cssW, cssH, '#F8FAFC');
+    const cw = cssW - margin.left - margin.right;
+    const ch = cssH - margin.top - margin.bottom;
+    const ox = margin.left, oy = cssH - margin.bottom;
+
+    EurekaCanvas2D.drawAxis(stCtx, ox, oy, cw, ch, {
+      tickSpacing: cw / 5,
+      xLabels: ['0', '4', '8', '12', '16', '20'],
+      yLabels: ['0', '500', '1000', '1500', '2000'],
+    });
+
+    stCtx.fillStyle = '#374151';
+    stCtx.font = '13px system-ui, sans-serif';
+    stCtx.textAlign = 'center';
+    stCtx.fillText('时间 t (s)', ox + cw / 2, cssH - 6);
+    stCtx.save();
+    stCtx.translate(14, oy - ch / 2);
+    stCtx.rotate(-Math.PI / 2);
+    stCtx.fillText('位移 s (m)', 0, 0);
+    stCtx.restore();
+
+    stCtx.strokeStyle = '#10B981'; stCtx.lineWidth = 2.5;
+    stCtx.beginPath();
+    const sScale = ch / 2000, tScale = cw / 20;
+    for (let i = 0; i <= 100; i++) {
+      const t = (i / 100) * tMax;
+      const s = EurekaPhysics.displacement(v0, a, t);
+      const px = ox + t * tScale;
+      const py = oy - s * sScale;
+      if (i === 0) stCtx.moveTo(px, py); else stCtx.lineTo(px, py);
+    }
+    stCtx.stroke();
+
+    const curS = EurekaPhysics.displacement(v0, a, simT);
+    const px = ox + simT * tScale;
+    const py = oy - curS * sScale;
+    stCtx.fillStyle = '#EF4444';
+    stCtx.beginPath(); stCtx.arc(px, py, 5, 0, Math.PI * 2); stCtx.fill();
+  }
+
+  function updateUI(p, res) {
+    ovV0.textContent = Number(p.v0).toFixed(1);
+    ovA.textContent = Number(p.a).toFixed(1);
+    ovT.textContent = Number(simT).toFixed(1);
+    ovS.textContent = Number(res.s).toFixed(1);
+    statS.textContent = res.s.toFixed(1) + ' m';
+    statV.textContent = res.v.toFixed(1) + ' m/s';
+    statAvg.textContent = res.avg.toFixed(1) + ' m/s';
+  }
+
+  function renderFrame(dt) {
+    const p = getP();
+    simT += dt;
+    if (simT > p.tMax) simT = 0;
+    const r = compute(p.v0, p.a, simT, p.mass);
+    drawVT(p.v0, p.a, p.tMax);
+    drawST(p.v0, p.a, p.tMax);
+    updateUI(p, r);
+    EurekaHost.emitResultUpdate({
+      displacement: Number(r.s.toFixed(3)),
+      velocity: Number(r.v.toFixed(3)),
+      averageVelocity: Number(r.avg.toFixed(3)),
+      kineticEnergy: Number(r.ke.toFixed(3)),
+      parameters: { v0: p.v0, a: p.a, t: simT, mass: p.mass },
+    });
+  }
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param') {
+      try { setParam(cmd.param, cmd.value); }
+      catch (e) { EurekaHost.emitError('Unknown param: ' + cmd.param); }
+    } else if (cmd.type === 'set_params' && cmd.params) {
+      for (const k in cmd.params) {
+        try { setParam(k, cmd.params[k]); }
+        catch (e) { EurekaHost.emitError('Param update failed: ' + e.message); }
+      }
+    } else if (cmd.type === 'reset') {
+      setParam('v0', 10, false);
+      setParam('acceleration', 2, false);
+      setParam('time', 5, false);
+      setParam('mass', 1, false);
+      simT = 0;
+    }
+  });
+
+  startRenderLoop(renderFrame);
+
+  const initP = getP();
+  const initR = compute(initP.v0, initP.a, initP.tMax, initP.mass);
+  drawVT(initP.v0, initP.a, initP.tMax);
+  drawST(initP.v0, initP.a, initP.tMax);
+  updateUI(initP, initR);
+  EurekaHost.emitReady(['v0', 'acceleration', 'time', 'mass']);
+})();
+</script>
+</body>
+</html>
