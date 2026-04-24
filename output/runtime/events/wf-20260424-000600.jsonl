@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260424-000600","createdAt":"2026-04-23T16:06:00.431Z"}
+{"seq":1,"ts":"2026-04-23T16:06:00.431Z","sessionId":"wf-20260424-000600","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"experiments/[id]/page.tsx, page.tsx, experiment data flow"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

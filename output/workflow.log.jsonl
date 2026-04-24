@@ -1,1 +1,1 @@
-[2026-04-23T10:50:35.972Z] [INIT] Workflow bridge started with args: triage --requirement 上传项目到GitHub --project-root c:/workspace/EGPSpace
+[2026-04-23T16:05:38.520Z] [INIT] Workflow bridge started with args: triage --requirement llm生成实验会提示实验未找到，同时没有预置的实验也会提示这样，没有预置的实验都应该走llm生成实验模式 --project-root c:\workspace\EGPSpace

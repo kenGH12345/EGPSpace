@@ -373,6 +373,15 @@ function BuoyancyExperiment() {
   );
 }
 
+// Map non-preset experiment IDs to concept names for LLM auto-generation
+const ID_TO_CONCEPT: Record<string, string> = {
+  electrolyte: '电解原理', combustion: '燃烧反应',
+  cell: '细胞结构', photosynthesis: '光合作用', inheritance: '遗传规律',
+  function: '函数图像', geometry: '几何证明', calculus: '微积分入门',
+  plate: '板块运动', atmosphere: '大气环流', water: '水循环',
+  generic: '物理实验',
+};
+
 export default function ExperimentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const experiment = experiments[id];
@@ -381,6 +390,8 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   const [aiConfig, setAiConfig] = useState<GeneratedConfig | null>(null);
   const [aiSchema, setAiSchema] = useState<import('@/lib/experiment-schema').ExperimentSchema | null>(null);
   const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+  const [autoGenError, setAutoGenError] = useState<string | null>(null);
 
   // 客户端挂载后从 sessionStorage 加载配置
   useEffect(() => {
@@ -388,7 +399,6 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
     if (storedConfig) {
       try {
         const parsed = JSON.parse(storedConfig);
-        // 检测是否为新格式 ExperimentSchema（有 meta.physicsType 字段）
         if (parsed?.meta?.physicsType !== undefined) {
           setAiSchema(parsed);
         } else {
@@ -401,6 +411,43 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
     }
     setIsConfigLoaded(true);
   }, []);
+
+  // Auto-generate experiment via LLM when no preset and no AI config
+  useEffect(() => {
+    if (!isConfigLoaded) return;
+    if (experiment) return;
+    if (aiConfig || aiSchema) return;
+    if (isAutoGenerating) return;
+
+    const concept = ID_TO_CONCEPT[id] || id;
+    setIsAutoGenerating(true);
+    setAutoGenError(null);
+
+    fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ concept }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.schema) {
+          const schema = data.schema;
+          if (schema?.meta?.physicsType !== undefined) {
+            setAiSchema(schema);
+          } else {
+            setAiConfig(schema);
+          }
+        } else {
+          setAutoGenError(data.error || '生成失败');
+        }
+      })
+      .catch(err => {
+        setAutoGenError(err instanceof Error ? err.message : '生成失败，请重试');
+      })
+      .finally(() => {
+        setIsAutoGenerating(false);
+      });
+  }, [isConfigLoaded, experiment, aiConfig, aiSchema, isAutoGenerating, id]);
 
   // 使用AI配置或默认配置（优先使用新格式 aiSchema）
   const displayName = aiSchema?.meta?.name || aiConfig?.name || experiment?.name || '实验';
@@ -417,15 +464,47 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   const displayErrors = aiConfig?.teaching?.errors;
   const displayDiscussion = aiConfig?.teaching?.design?.discussionPoints;
 
-  if (!experiment) {
+  // 等待配置加载完成
+  if (!isConfigLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 100%)' }}>
+        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Auto-generating experiment via LLM
+  if (isAutoGenerating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 100%)' }}>
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <h2 className="text-xl font-bold text-gray-800 mb-2">正在生成实验...</h2>
+          <p className="text-gray-600">AI 正在为您创建「{ID_TO_CONCEPT[id] || id}」实验</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show "not found" when no preset, no AI config, and not generating
+  if (!experiment && !aiConfig && !aiSchema && !isAutoGenerating) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 100%)' }}>
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-4xl">🔍</span>
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">实验未找到</h2>
-          <p className="text-gray-600 mb-4">抱歉，找不到 ID 为 &quot;{id}&quot; 的实验</p>
+          {autoGenError ? (
+            <>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">生成失败</h2>
+              <p className="text-gray-600 mb-4">{autoGenError}</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">实验未找到</h2>
+              <p className="text-gray-600 mb-4">抱歉，找不到 ID 为 &quot;{id}&quot; 的实验</p>
+            </>
+          )}
           <Link href="/" className="px-6 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors">
             返回首页
           </Link>

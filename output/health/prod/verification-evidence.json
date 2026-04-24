@@ -1,14 +1,14 @@
 {
   "protocolVersion": "evidence-v1",
-  "generatedAt": "2026-04-23T07:17:56.336Z",
-  "sessionId": "wf-20260423-144617",
+  "generatedAt": "2026-04-23T16:06:00.396Z",
+  "sessionId": "wf-20260424-000600",
   "runCategory": "prod",
   "traceFingerprint": {
     "exists": true,
     "path": "c:\\workspace\\EGPSpace\\output\\health\\prod\\workflow-trace.jsonl",
-    "size": 9339,
-    "mtime": "2026-04-23T07:17:56.293Z",
-    "hash": "a3cf570efdd25f96325c1b4e42111d108ae84865fd4e00518212388f443217ba"
+    "size": 2127,
+    "mtime": "2026-04-23T16:06:00.346Z",
+    "hash": "f200e160270a07d3e543684231f28a66aa0c4666dc3d5370e3e8a47f9ad47f5f"
   },
   "qualityReportFingerprint": {
     "exists": false,
@@ -69,6 +69,6 @@
   "verification": {
     "missingStageArtifacts": [],
     "stageCount": 5,
-    "completedStages": 2
+    "completedStages": 0
   }
 }
