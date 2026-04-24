@@ -245,51 +245,49 @@
   }
 
   function drawParallel(p) {
-    const left = 50, right = cssW - 50;
+    const left = 40, right = cssW - 40;
     const top = 50, midY = cssH / 2, bottom = cssH - 50;
-    const branchTop = top + 20;
-    const branchBottom = bottom - 20;
+    const splitX = 120, joinX = 400;
+    const rWidth = 100;
     drawBattery(left, midY);
 
-    // Left vertical wire from battery+
+    // Battery+ goes UP to top rail
     drawWire(left, midY - 15, left, top);
     
-    // Top rail from left to right
-    drawWire(left, top, right, top);
+    // Top rail: left(split) -> right(join)
+    drawWire(left, top, joinX, top);
     
-    // Top branch: R1
-    const r1X = 200;
-    drawWire(left, top, r1X, top);
-    drawResistor(r1X, top, 100, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-    drawWire(r1X + 100, top, right, top);
+    // Left side: top rail goes down to bottom rail (split point)
+    drawWire(left, top, left, bottom);
     
-    // Right vertical wire
-    drawWire(right, top, right, bottom);
+    // Bottom rail: right(join) -> left(split)
+    drawWire(joinX, bottom, left, bottom);
     
-    // Bottom rail from right to left
-    drawWire(right, bottom, left, bottom);
+    // Right vertical: top rail goes down to bottom rail (join point)
+    drawWire(joinX, top, joinX, bottom);
     
-    // Bottom branch: R2
-    drawWire(left, bottom, r1X, bottom);
-    drawResistor(r1X, bottom, 100, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
-    drawWire(r1X + 100, bottom, right, bottom);
+    // R1 on top branch
+    drawResistor(splitX, top, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
     
-    // Left vertical wire to battery-
+    // R2 on bottom branch
+    drawResistor(splitX, bottom, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    
+    // Connection wires for R1
+    drawWire(left, top, splitX, top);
+    drawWire(splitX + rWidth, top, joinX, top);
+    
+    // Connection wires for R2
+    drawWire(left, bottom, splitX, bottom);
+    drawWire(splitX + rWidth, bottom, joinX, bottom);
+    
+    // Battery- connection
     drawWire(left, bottom, left, midY + 15);
-    
-    // Junction points (vertical lines at R1 position)
-    drawWire(r1X, top, r1X, top + 25);
-    drawWire(r1X, bottom, r1X, bottom - 25);
-    
-    // Split point on left rail
-    drawWire(left, top, r1X, top);
-    drawWire(left, bottom, r1X, bottom);
 
-    // Current dots
-    drawCurrentDots(left, top, r1X, top, p.I1);
-    drawCurrentDots(r1X + 100, top, right, top, p.I1);
-    drawCurrentDots(left, bottom, r1X, bottom, p.I2);
-    drawCurrentDots(r1X + 100, bottom, right, bottom, p.I2);
+    // Current flow dots
+    drawCurrentDots(left, top, splitX, top, p.I);
+    drawCurrentDots(splitX + rWidth, top, joinX, top, p.I1);
+    drawCurrentDots(left, bottom, splitX, bottom, p.I);
+    drawCurrentDots(splitX + rWidth, bottom, joinX, bottom, p.I2);
   }
 
   function update(emitParam) {
