@@ -9,6 +9,10 @@
   .circuit-canvas-wrapper {
     background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%);
   }
+  .circuit-canvas-wrapper canvas {
+    max-width: 100%;
+    height: auto;
+  }
 </style>
 </head>
 <body>
@@ -30,7 +34,7 @@
   </div>
 
   <div class="eureka-canvas-wrapper circuit-canvas-wrapper">
-    <canvas id="canvas" class="eureka-canvas" width="680" height="340"></canvas>
+    <canvas id="canvas" class="eureka-canvas" width="560" height="240"></canvas>
     <div style="margin-top: 8px;">
       <div class="eureka-segmented">
         <button class="eureka-segmented-item active" data-topology="0">串联</button>
@@ -84,7 +88,7 @@
   const state = { voltage: 6, r1: 10, r2: 10, topology: 0 }; // 0=series 1=parallel
 
   const canvas = document.getElementById('canvas');
-  const cssW = 680, cssH = 340;
+  const cssW = 560, cssH = 240;
   const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
 
   const ctlU = document.getElementById('ctl-u');
@@ -137,24 +141,26 @@
     ctx.lineWidth = 2;
     // Long line (positive terminal)
     ctx.beginPath();
-    ctx.moveTo(x, y - 20);
-    ctx.lineTo(x, y + 20);
+    ctx.moveTo(x, y - 15);
+    ctx.lineTo(x, y + 15);
     ctx.stroke();
     // Short line (negative terminal)
     ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.moveTo(x - 10, y - 12);
-    ctx.lineTo(x - 10, y + 12);
+    ctx.moveTo(x - 8, y - 8);
+    ctx.lineTo(x - 8, y + 8);
     ctx.stroke();
     ctx.fillStyle = '#1F2937';
-    ctx.font = 'bold 13px system-ui';
-    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 24, y + 40);
-    ctx.fillText('+', x + 6, y - 24);
-    ctx.fillText('−', x - 24, y - 24);
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 18, y + 30);
+    ctx.fillStyle = '#DC2626';
+    ctx.fillText('+', x + 4, y - 18);
+    ctx.fillStyle = '#2563EB';
+    ctx.fillText('−', x - 18, y - 18);
   }
 
   function drawResistor(x, y, width, label, voltage, current) {
-    const h = 24;
+    const h = 18;
     // Zigzag resistor symbol
     ctx.strokeStyle = '#1F2937';
     ctx.lineWidth = 2;
@@ -170,13 +176,13 @@
     ctx.stroke();
 
     ctx.fillStyle = '#1F2937';
-    ctx.font = 'bold 12px system-ui';
-    ctx.fillText(label, x + width / 2 - 12, y - 18);
-    ctx.font = '11px system-ui';
-    ctx.fillStyle = '#1D4ED8';
-    ctx.fillText('U=' + voltage.toFixed(2) + 'V', x + width / 2 - 22, y + 30);
-    ctx.fillStyle = '#047857';
-    ctx.fillText('I=' + current.toFixed(3) + 'A', x + width / 2 - 24, y + 44);
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText(label, x + width / 2 - 16, y - 12);
+    ctx.font = '10px system-ui';
+    ctx.fillStyle = '#DC2626';
+    ctx.fillText('U=' + voltage.toFixed(1) + 'V', x + width / 2 - 18, y + 20);
+    ctx.fillStyle = '#2563EB';
+    ctx.fillText('I=' + current.toFixed(2) + 'A', x + width / 2 - 16, y + 32);
   }
 
   function drawWire(x1, y1, x2, y2) {
@@ -206,53 +212,84 @@
   }
 
   function drawSeries(p) {
-    const left = 80, right = cssW - 80;
-    const top = 80, bottom = cssH - 60;
-    drawBattery(left, (top + bottom) / 2);
+    const left = 40, right = cssW - 40;
+    const top = 60, bottom = cssH - 50;
+    const midY = (top + bottom) / 2;
+    drawBattery(left, midY);
 
-    // Top wire with R1 and R2
-    drawWire(left, top, left + 120, top);
-    drawResistor(left + 120, top, 120, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-    drawWire(left + 240, top, left + 360, top);
-    drawResistor(left + 360, top, 120, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
-    drawWire(left + 480, top, right, top);
+    // Top wire: battery+ -> R1 -> R2 -> right
+    drawWire(left, top, left + 60, top);
+    drawWire(left + 60, top, left + 100, top);
+    drawResistor(left + 100, top, 90, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    drawWire(left + 190, top, left + 250, top);
+    drawResistor(left + 250, top, 90, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawWire(left + 340, top, right, top);
+    
+    // Right wire down
     drawWire(right, top, right, bottom);
+    
+    // Bottom wire: right -> left
     drawWire(right, bottom, left, bottom);
-    drawWire(left, bottom, left, (top + bottom) / 2 + 20);
-    drawWire(left, (top + bottom) / 2 - 20, left, top);
+    
+    // Left wire up to battery-
+    drawWire(left, bottom, left, midY + 15);
+    
+    // Left wire from battery+ up to top
+    drawWire(left, midY - 15, left, top);
 
-    // Current flow (single loop)
-    drawCurrentDots(left, top, left + 120, top, p.I);
-    drawCurrentDots(left + 240, top, left + 360, top, p.I);
-    drawCurrentDots(left + 480, top, right, top, p.I);
+    // Current flow arrows
+    drawCurrentDots(left, top, left + 60, top, p.I);
+    drawCurrentDots(left + 190, top, left + 250, top, p.I);
+    drawCurrentDots(left + 340, top, right, top, p.I);
     drawCurrentDots(right, bottom, left, bottom, p.I);
   }
 
   function drawParallel(p) {
-    const left = 80, right = cssW - 80;
-    const top = 60, mid = cssH / 2, bottom = cssH - 40;
-    drawBattery(left, mid);
+    const left = 50, right = cssW - 50;
+    const top = 50, midY = cssH / 2, bottom = cssH - 50;
+    const branchTop = top + 20;
+    const branchBottom = bottom - 20;
+    drawBattery(left, midY);
 
-    // Main vertical rail on right
-    const junctionX = right - 120;
+    // Left vertical wire from battery+
+    drawWire(left, midY - 15, left, top);
+    
+    // Top rail from left to right
+    drawWire(left, top, right, top);
+    
     // Top branch: R1
-    drawWire(left, mid - 20, left, top);
-    drawWire(left, top, junctionX, top);
-    drawResistor(junctionX - 180, top, 120, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-
-    drawWire(junctionX, top, right, top);
+    const r1X = 200;
+    drawWire(left, top, r1X, top);
+    drawResistor(r1X, top, 100, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    drawWire(r1X + 100, top, right, top);
+    
+    // Right vertical wire
     drawWire(right, top, right, bottom);
-    drawWire(right, bottom, junctionX, bottom);
+    
+    // Bottom rail from right to left
+    drawWire(right, bottom, left, bottom);
+    
     // Bottom branch: R2
-    drawResistor(junctionX - 180, bottom, 120, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
-    drawWire(left, bottom, junctionX - 180, bottom);
-    drawWire(left, bottom, left, mid + 20);
-    drawWire(junctionX - 180 - 60, top, junctionX - 180 - 60, bottom); // left rail between branches
+    drawWire(left, bottom, r1X, bottom);
+    drawResistor(r1X, bottom, 100, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawWire(r1X + 100, bottom, right, bottom);
+    
+    // Left vertical wire to battery-
+    drawWire(left, bottom, left, midY + 15);
+    
+    // Junction points (vertical lines at R1 position)
+    drawWire(r1X, top, r1X, top + 25);
+    drawWire(r1X, bottom, r1X, bottom - 25);
+    
+    // Split point on left rail
+    drawWire(left, top, r1X, top);
+    drawWire(left, bottom, r1X, bottom);
 
     // Current dots
-    drawCurrentDots(left, top, junctionX - 180 - 60, top, p.I);
-    drawCurrentDots(junctionX - 180 - 60, top, junctionX - 180, top, p.I1);
-    drawCurrentDots(junctionX - 180 - 60, bottom, junctionX - 180, bottom, p.I2);
+    drawCurrentDots(left, top, r1X, top, p.I1);
+    drawCurrentDots(r1X + 100, top, right, top, p.I1);
+    drawCurrentDots(left, bottom, r1X, bottom, p.I2);
+    drawCurrentDots(r1X + 100, bottom, right, bottom, p.I2);
   }
 
   function update(emitParam) {
