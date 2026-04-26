@@ -43,6 +43,25 @@ Single repository (no sub-packages detected). Simplified memory structure applie
 ## ⚠️ Code Quality Observations
 
 ✅ TypeScript project with type safety
+## 实验架构
+
+所有实验统一使用 **iframe + HTML 模板** 架构：
+
+- **模板位置**: `public/templates/<subject>/<experiment-id>.html`
+- **样式系统**: `public/templates/_shared/ui-core.css`（标准化 UI）
+- **注册表**: `src/lib/template-registry.ts`（三锁审核：REGISTRY + auditStatus='approved' + whitelist）
+- **容器组件**: `src/components/IframeExperiment.tsx`（加载、超时检测、postMessage 通信）
+- **渲染逻辑**: `src/app/experiments/[id]/page.tsx` 优先通过 `resolvedTemplateId` 使用 iframe，fallback 为 `PresetExperimentFallback`
+
+已迁移为 iframe 模板的实验：
+- `physics/buoyancy` → `physics/buoyancy.html`
+- `physics/circuit` → `physics/circuit.html`
+- `chemistry/acid-base-titration` → `chemistry/acid-base-titration.html`
+
+已删除的内联组件：
+- `BuoyancyExperiment`（原内联 React 组件，已完全迁移到 HTML 模板）
+- `LeverExperimentPlaceholder`、`RefractionExperimentPlaceholder`、`CircuitExperimentPlaceholder`、`AcidBaseExperimentPlaceholder`
+
 ## 运行与预览
 
 | 环境 | 命令 | 端口 |
