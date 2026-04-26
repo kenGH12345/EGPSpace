@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { getTemplate, type TemplateMetadata } from '@/lib/template-registry';
+import { getTemplate, validateTemplateFile, type TemplateMetadata } from '@/lib/template-registry';
 import {
   validateIncomingMessage,
   MESSAGE_SOURCE,
@@ -59,6 +59,42 @@ export function IframeExperiment({
   // Resolve template through the whitelist — if not approved, we fail fast.
   const template = useMemo(() => getTemplate(templateId), [templateId]);
   const templateUrl = template ? `/templates/${template.templatePath}` : null;
+
+  // Runtime template validation — fetch and verify HTML structure before iframe load
+  useEffect(() => {
+    if (!templateUrl) return;
+
+    let cancelled = false;
+
+    fetch(templateUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
+      .then((html) => {
+        if (cancelled) return;
+        const errors = validateTemplateFile(html);
+        if (errors.length > 0) {
+          const criticalErrors = errors.filter((e) => !e.includes('optional'));
+          if (criticalErrors.length > 0) {
+            setStatus('error');
+            setErrorMsg(
+              `模板格式错误: ${criticalErrors.join('; ')}`
+            );
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('[IframeExperiment] Template validation failed:', criticalErrors);
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setStatus('error');
+        setErrorMsg(`模板加载失败: ${err.message}`);
+      });
+
+    return () => { cancelled = true; };
+  }, [templateUrl]);
 
   // Send a host command to the iframe. Commands are validated by the template side.
   const sendCommand = useCallback(

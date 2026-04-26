@@ -86,5 +86,51 @@
     "retiredAt": null,
     "filePath": "C:\\workspace\\WorkFlowAgent\\workflow\\skills\\typescript-dev.md",
     "createdAt": "2026-04-22T10:59:26.800Z"
+  },
+  {
+    "name": "project-standards",
+    "description": "Auto-discovered project conventions, coding standards, and toolchain configuration",
+    "domains": [
+      "standards",
+      "conventions",
+      "project"
+    ],
+    "type": "standards",
+    "loadLevel": "project",
+    "dependencies": [],
+    "maxTokens": 1200,
+    "triggers": {
+      "keywords": [
+        "standard",
+        "convention",
+        "style",
+        "lint",
+        "format",
+        "naming",
+        "structure"
+      ],
+      "roles": [
+        "analyst",
+        "architect",
+        "developer",
+        "reviewer"
+      ]
+    },
+    "version": "1.0.0",
+    "evolutionCount": 0,
+    "lastEvolvedAt": null,
+    "usageCount": 0,
+    "effectiveCount": 0,
+    "lastUsedAt": null,
+    "lastEffectiveAt": null,
+    "gatePassCount": 0,
+    "gateFailCount": 0,
+    "falsePositiveSignals": 0,
+    "policyWeight": 1,
+    "policyStatus": "active",
+    "policyLastUpdatedAt": null,
+    "retiredAt": null,
+    "filePath": "C:\\workspace\\EGPSpace\\.workflow\\skills\\project-standards.md",
+    "createdAt": "2026-04-24T17:32:00.543Z"
   }
 ]

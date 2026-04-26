@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-145548","createdAt":"2026-04-25T06:55:49.174Z"}
+{"seq":1,"ts":"2026-04-25T06:55:49.174Z","sessionId":"wf-20260425-145548","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"所有物理实验模板HTML + 3层共享架构JS/CSS"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

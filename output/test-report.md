@@ -1,162 +1,87 @@
-# Test Report — Phase 2: Batch-2 Physics Templates
+# Test Report — 初中物理实验模板补全
+
+> Generated: 2026-04-26
+> Session: wf-20260426-010205
 
 ## Summary
 
-| Metric | Value |
-|--------|-------|
-| **Total Tests** | 45 |
-| **Passed** | 45 |
-| **Failed** | 0 |
-| **Pass Rate** | 100% |
-| **Duration** | ~2.1s |
-| **Test Command** | `node test-phase2.js` |
+| Check | Status | Details |
+|-------|--------|---------|
+| TypeScript Compilation | ✅ PASS | `npx tsc --noEmit` — 0 errors |
+| Unit Tests | ✅ PASS | 13 suites, 311 tests passed |
+| Quality Check (modified files) | ✅ PASS | 6/6 files PASS |
+| File Size Check | ✅ PASS | All new templates ≤ 600 lines |
+| Lint (existing files) | ⚠️ KNOWN ISSUE | 1 error in pre-existing files |
+| Entropy (existing files) | ⚠️ KNOWN ISSUE | 8 FILE_TOO_LARGE in pre-existing files |
 
-## Test Environment
+## Stage 6 Output: Code Self-Review
 
-- **OS**: Windows (PowerShell)
-- **Node.js**: v20.x
-- **Project**: EGPSpace
-- **Date**: 2026-04-24
+### Checklist Results
 
-## Test Categories
+| ID | Category | Sev | Status | Notes |
+|----|----------|-----|--------|-------|
+| SYNTAX-001 | Syntax | CRIT | ✅ PASS | All HTML templates are well-formed |
+| SYNTAX-002 | Syntax | HIGH | ✅ PASS | No broken comment blocks |
+| SEC-001 | Security | HIGH | N/A | No DB interaction in templates |
+| SEC-002 | Security | HIGH | ✅ PASS | No hardcoded secrets |
+| SEC-003 | Security | HIGH | ✅ PASS | Inputs clamped with `EurekaFormat.clamp` |
+| ERR-001 | Error Handling | HIGH | N/A | Primarily synchronous |
+| ERR-002 | Error Handling | MED | ✅ PASS | No silent swallowing |
+| PERF-001 | Performance | MED | N/A | No DB queries |
+| PERF-002 | Performance | MED | ✅ PASS | `requestAnimationFrame` properly cleaned up; `curvePoints` capped at 800 |
+| REQ-001 | Requirements | HIGH | ✅ PASS | All 5 acceptance criteria met |
+| REQ-002 | Requirements | MED | ✅ PASS | No scope creep |
+| EDGE-001 | Edge Cases | MED | ✅ PASS | Zero-div guards (`volume <= 0` checks) |
+| EDGE-002 | Edge Cases | MED | ✅ PASS | Empty inputs handled |
+| INTF-001 | Interface | HIGH | ✅ PASS | `emitResultUpdate` fields complete |
+| EXPORT-001 | Exports | MED | N/A | Self-contained HTML files |
+| STYLE-001 | Style | LOW | ✅ PASS | No dead code |
+| STYLE-002 | Style | MED | ✅ PASS | Comment density < 1/10 |
 
-### T-1: Syntax Validation (7 tests) ✅
-All 7 modified/created files parse correctly:
-- `experiment-core.js` ✅
-- `physics-utils.js` ✅
-- `motion.html` ✅
-- `energy.html` ✅
-- `waves.html` ✅
-- `electromagnetism.html` ✅
-- `motion-prototype.html` ✅
+### Adversarial Review
 
-### T-2: Formula Correctness (17 tests) ✅
-All 17 physics formulas verified with numerical assertions:
+1. **Attack Surface**: Templates are front-end only. User input comes exclusively from range sliders with `min/max` attributes and `clamp()` validation. No XSS vector exists (no `innerHTML` with external data, `textContent` used throughout).
+2. **Regression Risk**:
+   - Risk 1: `template-registry.ts` duplicate entry for `physics/buoyancy`. → Mitigated: verified with `grep_search`; no duplicates exist.
+   - Risk 2: `physics-core.js` API compatibility. → Mitigated: all new templates use the same API patterns as `buoyancy.html`.
+3. **Edge Case Stress**: The most complex function is `phase-change` animation loop. (a) `dt` capped at 0.5s prevents explosion, (b) `curvePoints` limited to 800 prevents memory growth, (c) N/A for concurrent access (single-threaded front-end).
+4. **Dependency Chain**: No new dependencies introduced. Reuses existing `physics-core.js` and `ui-core.css`.
 
-**Batch-2 (New)**:
-- `displacement(v0=0, a=2, t=3) → 9m` ✅
-- `displacement(v0=10, a=0, t=5) → 50m` ✅
-- `finalVelocity(v0=0, a=2, t=3) → 6m/s` ✅
-- `averageVelocity(s=100, t=10) → 10m/s` ✅
-- `kineticEnergy(m=2, v=3) → 9J` ✅
-- `waveDisplacement(A=1, λ=2, f=1, t=0, x=0.5) → 1cm` ✅
-- `superposition(0.3, 0.7) → 1.0` ✅
-- `waveSpeed(λ=2, f=3) → 6m/s` ✅
-- `faradayEMF(dΦ=0.5, dt=0.5) → -1V` ✅
-- `magneticFlux(B=0.5, area=0.02) → 0.01Wb` ✅
-- **Lenz direction logic** (clockwise/anticlockwise) ✅
+## Unit Test Results
 
-**Batch-1 (Regression)**:
-- `buoyancy(l=4, w=2, h=9, ρ=800, g=9.8) → 564,480N` ✅
-- `lever(F1=100, d1=2, d2=4) → F2=50N` ✅
-- `refraction(n1=1, n2=1.5, θ1=30°) → θ2≈19.47°` ✅
-- `archimedes(ratio=0.7, ρ_obj=700, ρ_fluid=1000) → 490kg/m³` ✅
-- `coulomb(Q=1μC, r=0.1m) → 0.899N` ✅
+```
+> projects@0.1.0 test
+> jest
 
-### T-3: Backward Compatibility (4 tests) ✅
-All old templates (`buoyancy`, `lever`, `circuit`, `refraction`) still reference `physics-core.js` and were NOT migrated to `experiment-core.js`:
-- `buoyancy.html` → `/_shared/physics-core.js` ✅
-- `lever.html` → `/_shared/physics-core.js` ✅
-- `circuit.html` → `/_shared/physics-core.js` ✅
-- `refraction.html` → `/_shared/physics-core.js` ✅
-
-### T-4: Template Registry (2 tests) ✅
-- 4 new templates (`motion`, `energy`, `waves`, `electromagnetism`) registered ✅
-- All 4 have `auditStatus='pending'` ✅
-
-### T-5: Concept-to-Template Routing (5 tests) ✅
-- Chinese keywords mapped for 运动学 (`匀变速直线运动`) ✅
-- Chinese keywords mapped for 机械能守恒 (`机械能守恒`) ✅
-- Chinese keywords mapped for 机械波 (`机械波`) ✅
-- Chinese keywords mapped for 电磁感应 (`电磁感应`) ✅
-- `includePending` parameter exists for dev testing ✅
-
-### T-6: Host Protocol Compliance (4 tests) ✅
-- `motion-prototype` emits `protocolVersion: '1.0'` ✅
-- `motion-prototype` emits `supportedParams` array with metadata ✅
-- `bindParam` has `clamp(v, min, max)` boundary enforcement ✅
-- `bindParam` has `snap(value, step)` step enforcement ✅
-
-### T-7: Security Audit (2 tests) ✅
-- No `eval()` in `experiment-core.js` ✅
-- No unsanitized user text in `innerHTML` (all inputs are controlled numeric param sliders) ✅
-
-### T-8: Audit Document Format (4 tests) ✅
-All 4 audit documents (`physics-motion.md`, `physics-energy.md`, `physics-waves.md`, `physics-electromagnetism.md`) contain:
-- Section 1: 学科一致性 ✅
-- Section 2: 公式 Checklist ✅
-- Section 3: 交互设计 ✅
-- Section 4: 无障碍 ✅
-- Section 5: 性能检查 ✅
-- Section 6: 安全审查 ✅
-- 审计结论 ✅
-- 审核人 ✅
-
-## Lint / Type Check
-
-| Check | Command | Result |
-|-------|---------|--------|
-| TypeScript | `npx tsc --noEmit` | ⚠️ Not configured (no tsconfig for templates) |
-| ESLint | `npx eslint` | ⚠️ Not configured for public/templates |
-| Syntax | `node -c <file>` | ✅ All JS files valid |
-
-> Templates are static HTML+JS files in `public/`, not TypeScript modules. Syntax validation via `node -c` is sufficient.
-
-## Acceptance Criteria Status
-
-| AC | Status | Evidence |
-|----|--------|----------|
-| **T-1**: `experiment-core.js` backward compatible | ✅ | emitReady, emitParamChange, emitResultUpdate, emitInteraction, emitError, onHostCommand all present |
-| **T-1**: `bindParam()` auto-generates sliders | ✅ | motion.html uses bindParam, generates 4 sliders |
-| **T-1**: Protocol v1.0 | ✅ | `PROTOCOL_VERSION = '1.0'` |
-| **T-2**: ≥12 formulas | ✅ | 17 formulas verified |
-| **T-2**: Basic assertions | ✅ | 17 assertions pass |
-| **T-2**: Canvas render helpers | ✅ | drawArrow, drawAxis, drawEnergyBar, setupHiDPI |
-| **T-3**: motion.html new API | ✅ | Uses bindParam + startRenderLoop |
-| **T-4**: energy.html energy conservation | ✅ | SVG pendulum + Canvas energy bars |
-| **T-5**: waves.html dual wave superposition | ✅ | Dual Canvas wave1/wave2/superposition |
-| **T-6**: electromagnetism.html induction | ✅ | SVG magnet+coil + flux graph + Lenz direction |
-| **T-7**: prototype Host communication | ✅ | emitReady sends protocolVersion + supportedParams |
-| **T-7**: Slider drag reports | ✅ | input event triggers update(true) |
-| **T-7**: pause/resume | ✅ | onHostCommand handles pause/resume |
-| **T-7**: ≥30fps | ✅ | requestAnimationFrame loop, 60fps |
-| **T-8**: Registry updated | ✅ | 4 entries added |
-| **T-9**: Concept routing updated | ✅ | 4 new mappings, includePending dev switch |
-| **T-10~13**: Audit docs | ✅ | 4 docs with required sections |
-| **T-14**: Backward compatible | ✅ | Old templates unchanged (4/4 verified) |
-
-## Known Limitations
-
-1. **端到端浏览器测试未运行**: 当前测试为静态验证（语法、公式、文件引用）。完整的 Canvas 渲染验证需要在浏览器环境中运行。
-2. **TypeScript 类型检查未配置**: `public/templates/` 为静态文件，无 tsconfig 覆盖。
-3. **ESLint 未配置**: 同上原因。
-
-## JSON Block (Machine-readable)
-
-```json
-{
-  "passed": 45,
-  "failed": 0,
-  "coverage": "N/A (static validation suite)",
-  "failures": [],
-  "durationMs": 2100,
-  "command": "node test-phase2.js",
-  "categories": {
-    "syntax": { "passed": 7, "failed": 0 },
-    "formula": { "passed": 17, "failed": 0 },
-    "backward_compat": { "passed": 4, "failed": 0 },
-    "registry": { "passed": 2, "failed": 0 },
-    "routing": { "passed": 5, "failed": 0 },
-    "protocol": { "passed": 4, "failed": 0 },
-    "security": { "passed": 2, "failed": 0 },
-    "audit_format": { "passed": 4, "failed": 0 }
-  }
-}
+Test Suites: 13 passed, 13 total
+Tests:       311 passed, 311 total
+Snapshots:   0 total
+Time:        ~1.5s
 ```
 
----
+## Quality Check Detailed Results
 
-**Tester**: ai-test-agent
-**Date**: 2026-04-24
-**Stage**: TEST
-**Status**: ✅ PASSED
+| File | Status |
+|------|--------|
+| `src/lib/template-registry.ts` | ✅ PASS |
+| `public/templates/physics/pressure.html` | ✅ PASS |
+| `public/templates/physics/density.html` | ✅ PASS |
+| `public/templates/physics/work-power.html` | ✅ PASS |
+| `public/templates/physics/friction.html` | ✅ PASS |
+| `public/templates/physics/phase-change.html` | ✅ PASS |
+
+## File Size Audit
+
+| File | Lines | Limit | Status |
+|------|-------|-------|--------|
+| pressure.html | 464 | 600 | ✅ |
+| density.html | 432 | 600 | ✅ |
+| work-power.html | 445 | 600 | ✅ |
+| friction.html | 435 | 600 | ✅ |
+| phase-change.html | 526 | 600 | ✅ |
+
+## Notes
+
+- All lint errors and FILE_TOO_LARGE entropy violations originate from **pre-existing files** (e.g., `src/lib/experiment-schema.ts:1186 lines`) and are **not within the scope of this task**.
+- No new dependencies were introduced.
+- All 5 templates follow the established `buoyancy.html` pattern for consistent UX.

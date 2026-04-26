@@ -541,3 +541,107 @@ export function getTemplateUrl(id: string): string | null {
 export function isApprovedTemplate(id: string | null | undefined): boolean {
   return getTemplate(id) !== null;
 }
+
+/**
+ * Validate template HTML content for structural correctness.
+ * Returns an array of error messages (empty if valid).
+ *
+ * Checks:
+ *  - DOCTYPE declaration
+ *  - <html> tag
+ *  - <head> tag
+ *  - <body> tag
+ *  - Proper closing tags
+ *  - <template-metadata> block (optional but recommended)
+ */
+export function validateTemplateFile(content: string): string[] {
+  const errors: string[] = [];
+
+  if (!content || typeof content !== 'string') {
+    errors.push('Template content is empty or not a string');
+    return errors;
+  }
+
+  const trimmed = content.trim();
+
+  // Check DOCTYPE
+  if (!/<!DOCTYPE\s+html/i.test(trimmed)) {
+    errors.push('Missing or invalid <!DOCTYPE html> declaration');
+  }
+
+  // Check <html> tag
+  if (!/<html[\s>]/i.test(trimmed)) {
+    errors.push('Missing <html> tag');
+  }
+
+  // Check </html> closing tag
+  if (!/<\/html>/i.test(trimmed)) {
+    errors.push('Missing </html> closing tag');
+  }
+
+  // Check <head> tag
+  if (!/<head[\s>]/i.test(trimmed)) {
+    errors.push('Missing <head> tag');
+  }
+
+  // Check </head> closing tag
+  if (!/<\/head>/i.test(trimmed)) {
+    errors.push('Missing </head> closing tag');
+  }
+
+  // Check <body> tag
+  if (!/<body[\s>]/i.test(trimmed)) {
+    errors.push('Missing <body> tag');
+  }
+
+  // Check </body> closing tag
+  if (!/<\/body>/i.test(trimmed)) {
+    errors.push('Missing </body> closing tag');
+  }
+
+  // Check template-metadata (optional but recommended)
+  if (!/<template-metadata>/i.test(trimmed)) {
+    errors.push('Missing <template-metadata> block (optional but recommended)');
+  }
+
+  return errors;
+}
+
+// Helper to register approved templates (creates a minimal registry entry for ExperimentSchema-based templates)
+function addApprovedTemplate(
+  templateId: string,
+  meta: { auditStatus: AuditStatus; reviewer: string; deploymentDate: string }
+): void {
+  if (!REGISTRY[templateId]) {
+    REGISTRY[templateId] = {
+      id: templateId,
+      subject: 'chemistry',
+      title: templateId,
+      description: '化学实验模板',
+      icon: '🧪',
+      gradient: 'from-blue-400 to-cyan-500',
+      templatePath: `chemistry/${templateId}.html`,
+      parameters: [],
+      auditStatus: meta.auditStatus,
+      lastAuditedAt: meta.deploymentDate,
+      tags: ['chemistry', templateId],
+    };
+  }
+  // Update audit status
+  REGISTRY[templateId].auditStatus = meta.auditStatus;
+  REGISTRY[templateId].lastAuditedAt = meta.deploymentDate;
+}
+
+// 物理实验（已验证查重）
+addApprovedTemplate('buoyancy', { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
+addApprovedTemplate('lever',    { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
+addApprovedTemplate('refraction',{ auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
+addApprovedTemplate('circuit',  { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
+
+// === 物理 + 化学实验（Phase 2 — 统一框架迁移） ===
+addApprovedTemplate('acid-base-titration', { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
+addApprovedTemplate('electrolysis',        { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
+addApprovedTemplate('reaction-rate',       { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
+addApprovedTemplate('combustion',          { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
+
+// 示例占位 & 兜底

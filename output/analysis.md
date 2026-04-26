@@ -1,186 +1,374 @@
-# EGPSpace 架构转向：HTML 模板 + 三重锁 —— 根因诊断分析
+# 化学实验模板补全分析
 
-> **会话**：wf-20260424091211. · **需求 fingerprint**：`后续要继续完成全部所有学科所有实验 折射 接受三重锁方案 杠杆 模板技术栈参考对方`
-> **本文档仅限诊断性分析**（根因/受影响位置/变更范围/风险评估）。需求规约、用户故事、验收标准等内容写入 `output/requirement.md`。
+> Session: wf-20260426-011701
+> Date: 2026-04-26
 
----
+## Input Artifact
 
-## 根因 / Root Cause
+**Input Requirement**: 继续进行化学没有实验室模板的知识点的实验室功能开发
 
-### 核心根因：LLM 参与"画面生成"导致不确定性
+**Preserved from previous stages**: None (new task for chemistry domain)
 
-**EGPSpace 当前实验系统的本质缺陷**：将"LLM 生成内容"与"实验画面渲染"耦合在同一条数据流中，LLM 输出的 `ExperimentSchema` 会**直接**驱动 Canvas 绘制，任何概率性失误（参数错误、拓扑错误、坐标错位）都会**直接投影到用户看到的画面上**。
+**Referenced files**:
+- `src/lib/engines/registry.ts` — Engine type mappings
+- `src/lib/engines/chemistry/titration.ts` — Reference engine implementation
+- `src/lib/engines/chemistry/index.ts` — Chemistry engine exports
+- `src/lib/template-registry.ts` — Template registration state
+- `public/templates/physics/buoyancy.html` — Template structure blueprint
 
-**对比 EurekaFinder 的关键差异**（基于对 `output/eureka2-page.js` bundle 第 48/106/107/173 行的反向分析）：
+## Thinking Summary
 
-| 维度 | EGPSpace 现状 | EurekaFinder 实际做法 |
-|-----|-----|-----|
-| LLM 输出内容 | 完整 `ExperimentSchema`（meta+params+formulas+canvas elements） | 只输出 `physicsType` 关键词 或 `:::artifact{type=…}` 标记 |
-| 画面来源 | Canvas 动态绘制（每次打开都现画） | iframe 加载 `/templates/physics/physics-mechanics-lever.html`（固定 HTML） |
-| LLM 犯错的后果 | 电路接错、杠杆方向反、参数飘忽 | 最差只是选错模板，画面本身永远不会画错 |
-| 代码中对 LLM 的约束 | 无硬性禁令 | system prompt 明文：「**不要**生成任何 playground / sketchfab / AR 实验类的 artifact」+ 路由白名单 `Yn={...}` 校验 |
+Through analysis of the current codebase, the following key findings emerged:
 
-**用户本次诉求的本质**（"不犯常识性错误 + 功能正常性 + 确定性"）= **要求画面层与 LLM 输出解耦**。LLM 的概率性和用户要的确定性**在数学上互斥**，解耦是唯一路径。
+1. **Chemistry templates are completely absent** — `public/templates/chemistry/` directory does not exist. Zero HTML templates.
+2. **Engine support is partial** — 4 engine types registered (`acid-base`, `titration`, `electrolysis`, `reaction-rate`), but only `titration` has a full implementation (140 lines). The other 3 are "phantom" mappings.
+3. **Registry inconsistency** — `template-registry.ts` whitelist has 2 chemistry paths (`acid-base-titration`, `iron-rusting`), but `TEMPLATES_MAP` has zero chemistry entries.
+4. **Physics template pattern is mature and reusable** — 18 physics templates in `public/templates/physics/`, all following consistent HTML5 Canvas + physics-core.js pattern.
+5. **Five core chemistry experiments identified** from middle school chemistry curriculum: titration (supported), iron-rusting, electrolysis, reaction-rate, combustion-conditions.
 
-### 次级根因
+## Risk Assessment
 
-1. **合规规则不严密**：`.gitignore` 当前只排除 `output/eureka-*.js` / `output/eureka-*.html`，而实际 bundle 文件名是 `output/eureka2-page.js`，**glob 模式 `eureka-*` 不能匹配 `eureka2-`**（`eureka-` 后面强制要求 `-`，但实际字符是 `2-`）。这导致外部参考材料仍可能进入 git 历史，需要修复为更严格的排除规则。
-2. **现有渲染栈的"扩展性承诺"是虚假安全**：Canvas 声明式渲染器（`src/lib/declarative-renderer.ts`、21 种元素类型）看起来"能画任何东西"，但每新增一个学科/实验类型，就要扩展元素类型、物理引擎、表达式求值器，最终 LLM 仍然可以组合出**语法合法但物理错误**的配置（例：浮力实验中物体质量为负数，或电路中电压箭头反向）。声明式 DSL 本身**无法表达"常识正确性"**。
-
----
-
-## 受影响位置
-
-### 将被"限定用途"的现有代码（保留但不再作为主路径）
-| 文件 | 现状用途 | 转向后用途 |
-|-----|-----|-----|
-| `src/lib/experiment-schema.ts` | LLM 生成的实验主数据结构 | 仅供 4 个预置实验的遗留适配层；新概念走 HTML 模板路径 |
-| `src/lib/declarative-renderer.ts` | Canvas 动态绘制所有实验 | 仅用于"已人工审核"的预置 schema；禁止 LLM 新输出直接进入此处 |
-| `src/lib/experiment-dynamics.ts` | 弹簧阻尼/浸没动力学积分 | 保留，但物理运算从 HTML 模板内部调用（模板可以内嵌此模块的简化版） |
-| `src/lib/ambient-animations.ts` | 波纹/气泡环境动画 | 同上，保留为可选的视觉增强库 |
-| `src/lib/physics-engine.ts` | 公式驱动计算 | 保留为**JSON 接口**，HTML 模板可 postMessage 调用此接口做计算 |
-| `src/lib/preset-templates.ts` | 4 个预置实验的 Canvas schema | 将被废弃，由 `public/templates/physics/*.html` 取代 |
-| `src/components/DynamicExperiment.tsx` | Canvas 实验组件 | 仅为兜底组件；新 UI 默认走 `IframeExperiment` |
-
-### 将被"架构禁令"的现有代码（LLM 路径改造）
-| 文件 | 改造内容 |
-|-----|-----|
-| `src/app/api/generate/route.ts` | system prompt 新增硬禁令："禁止输出 canvas.elements / canvas.shapes / canvas 坐标 / 图形实体定义"；响应字段从 `schema` 改为 `{ templateId?, lesson: markdown, flashcards?}`；未命中模板时只返回文字讲解，绝不生成实验画面 |
-| `src/app/experiments/[id]/page.tsx` | 将 `<DynamicExperiment schema=…>` 替换为 `<IframeExperiment templateId=…>` 作为主路径 |
-| `src/components/ExperimentChatPanel.tsx` | 增加当前 `templateId` 作为 artifactContext 上下文传给 LLM |
-
-### 将被新增的代码
-| 新文件/目录 | 职责 |
-|-----|-----|
-| `public/templates/` | HTML 实验模板根目录，按学科子目录组织 |
-| `public/templates/physics/buoyancy.html` | 浮力实验（首批） |
-| `public/templates/physics/lever.html` | 杠杆实验（首批） |
-| `public/templates/physics/refraction.html` | 折射实验（首批） |
-| `public/templates/physics/circuit.html` | 串并联电路实验（首批） |
-| `public/templates/_shared/physics-core.js` | 模板共用的物理常量、单位转换、边界检查工具 |
-| `public/templates/_shared/ui-core.css` | 模板共用的参数滑杆/按钮样式 |
-| `src/lib/template-registry.ts` | 模板 ID → 文件路径/元数据 的**白名单**（三重锁中的第 3 锁） |
-| `src/lib/concept-to-template.ts` | 关键词 → 模板 ID 的路由表（三重锁中的第 2 锁） |
-| `src/components/IframeExperiment.tsx` | 统一 iframe 承载组件（loading/error/resize/postMessage 桥） |
-| `docs/template-authoring-guide.md` | 模板开发规范 + 物理常识审核清单（电气/力学/光学/电路各一份） |
-
-### 合规与规则更新
-| 文件 | 修改 |
-|-----|-----|
-| `.gitignore` | `output/eureka-*.js` → `output/eureka*.js`（去掉中间的 `-`，兼容 `eureka2-page.js`）；同理 `.html`。追加 `output/reference-bundles/` 目录规则作为未来沉淀位置 |
-| `docs/external-reference-policy.md` | 补充："参考对方实现逻辑必须落地为抽象设计决策，禁止直接抄写对方代码片段" |
+| ID | Risk | Severity | Likelihood | Mitigation |
+|----|------|----------|------------|------------|
+| R1 | Template style inconsistency between chemistry and physics | MED | HIGH | Reuse physics template CSS/layout; adapt Canvas rendering for chemistry visuals |
+| R2 | Stub engines may break existing tests | MED | MED | Implement full `IExperimentEngine` interface; maintain backward compatibility |
+| R3 | File size exceeds 600-line limit | LOW | MED | Condense animation loops; extract shared helper functions |
+| R4 | Need for new shared resource (chemistry-core.js) | MED | HIGH | Evaluate reuse of physics-core.js vs create chemistry-specific helpers |
+| R5 | Scope creep beyond core 5 experiments | LOW | LOW | Strictly limit to 5 templates per execution plan |
 
 ---
 
-## 修改范围
+## 🧠 Analysis Reasoning
 
-<!-- change_scope -->
-本次变更范围分为**短期（首批 4 个物理实验 + 基础设施）**和**中期（全学科扩展）**两个阶段。短期范围在本次 /wf 内交付，中期范围作为后续迭代规划。核心变更是将实验画面来源从 **LLM 动态生成 Canvas schema** 切换为 **人工预构建 HTML 模板 + iframe 加载**，同时改造 LLM API 加入三重锁禁令。涉及新增文件 8 个、改造文件 3 个、修复文件 1 个。
-1. **基础设施层**（T-1 ~ T-3）
-   - 建 `public/templates/` 目录骨架 + 共用 CSS/JS
-   - 实现 `IframeExperiment` 组件（含 postMessage 双向通信协议）
-   - 实现 `template-registry.ts` 白名单与 `concept-to-template.ts` 路由
+### 1. 用户真实意图
+用户要求"继续进行化学没有实验室模板的知识点的实验室功能开发"。这不是从零开始的新功能开发，而是继已完成的中考物理实验模板（欧姆定律、浮力、光的折射、电路、凸透镜等 18 个模板）之后，对**化学学科**缺失的实验可视化模板进行补全。
 
-2. **首批 4 个物理模板**（T-4 ~ T-7）
-   - `physics/buoyancy.html`（浮力）
-   - `physics/lever.html`（杠杆）
-   - `physics/refraction.html`（折射）
-   - `physics/circuit.html`（串并联电路）
-   - 每个模板必须通过**物理常识审核清单**后才能合并
+### 2. 现有代码库上下文
 
-3. **LLM 生成 API 改造**（T-8）
-   - 改写 `/api/generate/route.ts` 的 system prompt 加入三重锁禁令
-   - 响应字段从 `schema` 切换为 `{ templateId, lesson }`
-   - 未命中白名单时降级为"文字讲解"而非"动态生成实验"
+#### 2.1 化学引擎现状
+| 引擎 ID | 注册状态 | 实现状态 | 说明 |
+|---------|----------|----------|------|
+| `chemistry/titration` | ✅ 已注册 | ✅ 已实现 (140 行) | Acid-Base Titration Engine |
+| `chemistry/acid-base` | ✅ 已注册 | ❌ 未实现 | 仅在 registry 映射中 |
+| `chemistry/electrolysis` | ✅ 已注册 | ❌ 未实现 | 仅在 registry 映射中 |
+| `chemistry/reaction-rate` | ✅ 已注册 | ❌ 未实现 | 仅在 registry 映射中 |
 
-4. **预置实验页面切换**（T-9）
-   - `src/app/experiments/[id]/page.tsx` 切换主路径为 `IframeExperiment`
-   - 保留 `DynamicExperiment` 作为特殊情况的 fallback
+#### 2.2 化学模板现状
+- `public/templates/chemistry/` 目录**不存在**
+- `template-registry.ts` 中 `TEMPLATES_MAP` **无化学条目**
+- whitelist 中仅有 2 条路径：
+  - `"chemistry/acid-base-titration"`
+  - `"chemistry/iron-rusting"`
 
-5. **合规修复**（T-10）
-   - 修复 `.gitignore` glob 漏洞
-   - 补充外部参考政策文档
+#### 2.3 物理模板成功模式（可复用）
+- 所有物理模板位于 `public/templates/physics/`
+- 复用 `physics-core.js` 共享 API（`EurekaCanvas`, `EurekaFormat`）
+- 结构：`HTML5 Canvas` + 交互式滑块 + 实时公式计算 + `{ subject: 'physics', type: 'buoyancy' }` emitResultUpdate
+- 行数控制在 ≤ 600 行
 
-### 中期范围（后续迭代，不在本次 /wf 内交付）
-- 化学模板（酸碱中和、氧化还原、电解）—— 新增 3-5 个
-- 生物模板（光合作用、有丝分裂、DNA 复制）—— 新增 3-5 个
-- 数学模板（函数图像、几何证明、概率分布）—— 新增 3-5 个
-- 地理模板（板块运动、水循环、气候带）—— 新增 3-5 个
-- Canvas 渲染栈的最终退役（确认无遗留依赖后删除）
+### 3. 复杂度评估
+- **Level**: Moderate (15/100)
+- **原因**: 
+  - 物理模板模式已成熟，可直接复用（降低复杂度）
+  - 需要同时为缺失的引擎创建 stub 实现（增加复杂度）
+  - 化学可视化与物理不同（分子/离子/颜色变化 vs 力学运动）
 
-### 明确排除（本次不做）
-- ❌ 不做 Three.js / 3D 模板（对方也是单独通道，按用户诉求"确定性"优先，3D 首批跳过）
-- ❌ 不做 AR / MediaPipe 交互（高不确定性）
-- ❌ 不做多模型切换 UI（对方有但非用户核心诉求，推迟）
-- ❌ 不做流式生成（对方的 `:::artifact` 流式解析复杂度高，推迟）
-- ❌ 不做对方模板代码的反向抄袭（合规约束，也无源码可抄）
+### 4. 隐含的假设
+1. 用户期望化学模板采用与物理模板类似的 HTML5 Canvas 交互式实验风格
+2. 化学引擎可以与物理模板并存（`subject: 'chemistry'`）
+3. 不需要完整实现所有 3 个缺失引擎，可以先创建 stub 引擎以支持模板注册
 
----
-
-## 风险评估
-
-<!-- risk_assessment -->
-共识别 8 条风险（R1-R8），其中高风险 3 条、中风险 3 条、低风险 2 条。最高优先级风险是 **R1（对方模板源码不可见）** 和 **R2（物理常识审核依赖人工）**，均有具体缓解措施。R8（postMessage XSS）虽然优先级低但必须在首批模板上线前解决。
-
-**R1 · 对方模板源码不可见，"参考对方技术栈"只能基于 bundle 反推**
-- 影响：我们设计的 HTML 模板规范可能在细节上与对方不同
-- 缓解：
-  1. 明确核心技术栈（原生 HTML + Canvas 2D + SVG + 原生 JS + postMessage）已由 bundle 证据支撑，**架构层无风险**
-  2. 细节如滑杆样式、加载动画、错误提示 UI 属于"视觉美学"，我们自己设计即可
-  3. 保留能力扩展点：首批模板用 vanilla，若后续发现需要 Three.js（3D）、p5.js（可视化），在 `template-registry` 的 metadata 中加字段 `runtime: "vanilla" | "three" | "p5"`
-
-**R2 · 物理常识审核依赖人工，规模化后会成为瓶颈**
-- 影响：每个学科每个实验都要人工过审，可能拖慢交付速度
-- 缓解：
-  1. 首批 4 个做透做稳，沉淀"学科通用审核清单"（物理有电气/力学/光学/热学 4 张表）
-  2. 建立**单元测试级别的物理约束检查**：模板内置自测脚本（例：电路模板自动验证欧姆定律 U=IR 在所有参数组合下成立）
-  3. 长期：引入社区/教师审核流程（非本次交付范围）
-
-**R3 · LLM 的 "未命中模板降级为文字讲解" 会让用户感知"AI 变弱了"**
-- 影响：用户输入"抛体运动"等未覆盖概念时，没有交互实验，体验倒退
-- 缓解：
-  1. UI 明确提示："此概念暂无交互实验，以下是文字讲解 + 闪卡"
-  2. 文字讲解质量要高（保留现有学段感知 prompt）
-  3. 提供"建议模板"按钮让用户反馈需求，驱动后续模板开发
-
-### 中风险项
-
-**R4 · iframe 首屏加载延迟**
-- 影响：用户感觉"卡一下"
-- 缓解：模板文件控制在 <50KB，使用 `loading="eager"` + skeleton UI 占位
-
-**R5 · Canvas 栈代码的沉没成本**
-- 影响：5 个文件 ~2500 行代码由主路径降级为兜底路径，团队可能觉得"白写了"
-- 缓解：明确定位"Canvas 栈 = 实验性新概念兜底通道"，不删除，让其自然退化直到完全替代
-
-**R6 · 现有 4 个预置实验从 Canvas schema 迁移到 HTML 模板，存在行为差异**
-- 影响：用户可能抱怨"原来能调的参数现在不能调了"
-- 缓解：逐个实验做**功能对等性测试**，保证参数数量、范围、计算结果完全一致
-
-### 低风险项
-
-**R7 · `.gitignore` 修复会误排除其他 `eureka*` 命名文件**
-- 影响：如果未来有 `eureka-config.ts` 之类文件，会被误排除
-- 缓解：用更精确的规则 `output/eureka*-page.js` 和 `output/eureka*-page.html`，只针对对方 bundle 命名模式
-
-**R8 · postMessage 通信协议设计不当导致 XSS**
-- 影响：恶意模板可能 postMessage 注入主应用
-- 缓解：主应用只接受 `event.origin === window.location.origin`，且 message 结构必须通过 JSON Schema 白名单校验
+### 5. 最小需求集
+- 至少开发一个**有完整引擎支持**的化学模板（titration）
+- 补充 registry 中的化学条目和 whitelist
+- 可以基于初中化学考纲增加额外的实验模板
 
 ---
 
-## 思考摘要
+## Root Cause
 
-| 问题 | 我的回答 |
-|-----|-----|
-| Q1: 用户真实诉求 | 短期交付 4 个物理 + 长期扩展全学科，架构必须通用 |
-| Q2: "参考对方技术栈" 的落地 | 原生 HTML + Canvas 2D + SVG + 原生 JS（无框架），按学科子目录组织 |
-| Q3: 最大矛盾 | 沉没成本 vs 架构转向，选择"Canvas 栈降级为兜底，不删除" |
-| Q4: 对方真的是 iframe+HTML 吗 | bundle 证据支撑，预置实验走 iframe，深度学习走 playground（首批只实现 iframe 路径） |
-| Q5: 不犯常识错误的根本保证 | 每个模板必须通过人工物理审核清单（流程约束，非代码约束） |
-| Q6: 长期工作量 | 模板代码量与现有 LLM 路径相当，真正成本是审核时间 |
-| Q7: 遗漏的假设 | 对方模板的物理正确性未知；"所有学科"范围需确认；iframe 首屏性能需验证 |
-| Q8: 合规风险 | `.gitignore` 存在漏洞（`eureka-*` 未命中 `eureka2-page.js`），必须修复 |
+化学实验模板缺失的根本原因在于：
+1. **项目初期仅聚焦于物理学科** — 物理模板已覆盖 18 个核心实验，但化学/生物/数学/地理学科的实验模板从未纳入开发计划
+2. **化学引擎注册与实际实现脱节** — `registry.ts` 中注册了 4 种化学引擎类型，但仅 `titration` 有完整实现，其余 3 种（acid-base, electrolysis, reaction-rate）仅有映射无代码
+3. **template-registry.ts 未更新** — whitelist 中有 2 条化学路径但无对应文件，`TEMPLATES_MAP` 中没有化学条目，说明注册流程在物理模板完成后未继续扩展
 
-### CoVe 验证结果
-所有关键断言（对方 iframe 机制、LLM 禁令、.gitignore 漏洞、首批实验可行性）均通过 bundle 实际代码或文件内容交叉验证，无未支撑声明。
+## Change Scope
+
+### In Scope
+1. 创建 `public/templates/chemistry/` 目录结构
+2. 开发 5 个化学实验 HTML 模板：
+   - `chemistry/acid-base-titration` (酸碱中和滴定)
+   - `chemistry/iron-rusting` (铁生锈条件探究)
+   - `chemistry/electrolysis` (电解水)
+   - `chemistry/reaction-rate` (化学反应速率)
+   - `chemistry/combustion-conditions` (燃烧条件)
+3. 为缺失的 3 个引擎创建 stub TypeScript 实现 (iron-rusting, electrolysis, reaction-rate)
+4. 更新 `template-registry.ts`：5 个新条目 + whitelist
+5. 创建 `_audit/` 审核文档
+
+### Out of Scope
+- 化学引擎的完整复杂算法实现（stub 即可，后续迭代完善）
+- 修改物理模板或物理引擎
+- 修改现有化学引擎（titration）
+- 新增依赖库
+- 知识图谱模块开发
+- 生物/数学/地理学科的模板
+
+## 问题定义 (Problem)
+
+化学学科的实验可视化模板完全缺失。
+
+**Current State**:
+- 4 种化学引擎类型已注册，但仅 1 种有实现
+- 0 个化学 HTML 模板
+- Registry 中无化学条目
+- Whitelist 中有 2 条路径但无对应文件
+
+**Target State**:
+- 每个已注册化学引擎类型至少有 1 个 HTML 模板
+- Registry 中正确注册化学模板
+- 模板采用与物理模板一致的交互式实验风格
+
+---
+
+## 范围 (Scope)
+
+### In Scope
+1. 创建 `public/templates/chemistry/` 目录
+2. 开发 5 个化学实验 HTML 模板：
+   - `chemistry/acid-base-titration` (酸碱中和滴定)
+   - `chemistry/iron-rusting` (铁生锈条件探究)
+   - `chemistry/electrolysis` (电解水)
+   - `chemistry/reaction-rate` (化学反应速率)
+   - `chemistry/combustion-conditions` (燃烧条件)
+3. 为缺失的 3 个引擎创建 stub TypeScript 实现
+4. 更新 `template-registry.ts`：5 个新条目 + whitelist
+5. 创建 `_audit/` 审核文档
+
+### Out of Scope
+- 化学引擎的完整复杂算法实现（stub 即可）
+- 修改物理模板
+- 修改现有化学引擎（titration）
+- 新增依赖库
+
+---
+
+## 依赖分析 (Dependencies)
+
+### 上游依赖
+- `src/lib/engines/interface.ts` — 引擎接口契约
+- `src/lib/engines/chemistry/titration.ts` — 现有 titration 引擎（参考模式）
+- `public/templates/_shared/physics-core.js` — 共享 API（可能需要创建 chemistry-core.js）
+- `public/templates/physics/buoyancy.html` — 模板结构蓝本
+
+### 下游依赖
+- `src/lib/template-registry.ts` — 需要注册新模板
+- `src/lib/engines/index.ts` — 需要导出 stub 引擎
+- `src/lib/engines/registry.ts` — 引擎映射
+
+---
+
+## 风险分析 (Risks)
+
+| ID | 风险 | 严重程度 | 可能性 | 缓解措施 |
+|----|------|----------|--------|----------|
+| R1 | 化学可视化与物理差异大，模板风格不一致 | MED | HIGH | 以 titration 引擎数据为锚点设计 Canvas 渲染，复用物理模板的 CSS/布局框架 |
+| R2 | stub 引擎可能不通过现有测试 | MED | MED | 确保 stub 引擎正确实现 `IExperimentEngine` 接口，保持向后兼容 |
+| R3 | 模板行数超过 600 行限制 | LOW | MED | 精简 Canvas 动画逻辑，复用共享工具函数 |
+| R4 | 物理模板依赖 `physics-core.js`，化学模板可能需要新的共享文件 | MED | HIGH | 评估是直接使用 physics-core.js（通用 API）还是创建 chemistry-core.js |
+| R5 | 初中化学考纲知识点覆盖不完整 (Scope creep) | LOW | LOW | 本阶段仅覆盖 5 个核心实验，后续迭代补充 |
+
+---
+
+## 建议的模板列表
+
+| # | 模板 ID | 实验名称 | 可视化内容 | 引擎状态 | 优先级 |
+|---|---------|----------|------------|----------|--------|
+| 1 | `chemistry/acid-base-titration` | 酸碱中和滴定 | 滴定管、烧杯、指示剂颜色变化、pH 曲线 | ✅ 已有 | HIGH |
+| 2 | `chemistry/iron-rusting` | 铁生锈条件探究 | 三根铁钉（干燥/水中/盐水中），生锈程度变化 | ❌ stub | HIGH |
+| 3 | `chemistry/electrolysis` | 电解水 | U 型管、电极、气泡产生、H₂/O₂ 体积比 | ❌ stub | MED |
+| 4 | `chemistry/reaction-rate` | 化学反应速率 | 烧杯反应物浓度下降曲线、温度影响 | ❌ stub | MED |
+| 5 | `chemistry/combustion-conditions` | 燃烧条件探究 | 三根蜡烛（氧气/温度/可燃物变量） | ❌ stub | MED |
+
+---
+
+## 🔍 Socratic Validation
+
+1. **Q**: 为什么不先实现完整的化学引擎，再做模板？
+   **A**: 引擎的核心算法（如电解法拉第定律、反应速率阿伦尼乌斯方程）需要大量化学专业计算，而模板只需要引擎返回的基本数据（摩尔数、pH、体积等）就可以做可视化。stub 引擎可以返回模拟数据，模板先跑通，后续再精确引擎。
+
+2. **Q**: 化学模板是否可以直接复用物理模板的 `physics-core.js`？
+   **A**: `physics-core.js` 是通用的 Canvas/SVG helper，不限于物理学科。化学模板可以直接引用它（或通过改名/alias 使用）。但如果化学需要特殊可视化（如分子结构），则可能需要创建 `chemistry-core.js`。
+
+3. **Q**: 开发 5 个模板 + 3 个 stub 引擎 + registry 更新，工作量是否过大？
+   **A**: 参考物理模板开发：5 个模板约 45 分钟 + registry 更新 10 分钟 = ~1 小时。化学模板可以复用相同的代码结构和 CSS，每个模板约 400-550 行，总工作量大体相同。
+
+---
+
+## 📋 用户故事
+
+### 故事 1 — 化学老师
+> 作为一名高中化学老师，我希望在 EGPSpace 中运行一个酸碱滴定仿真，这样我可以在课堂上实时演示不同指示剂下 pH 曲线的变化，而不需要携带大量化学试剂。
+
+**Acceptance Criteria**:
+- WHEN 老师选择"酸碱滴定"实验 THEN 系统加载完整的滴定场景（滴定管、锥形瓶、指示剂、pH 计）
+- WHEN 老师调节酸/碱浓度和体积 THEN 系统实时计算并绘制 pH 滴定曲线
+- WHEN 加入指示剂（酚酞/甲基橙）THEN 颜色根据 pH 范围实时变化
+- THEN 系统显示半中和点、等当点、缓冲区域标注
+
+### 故事 2 — 生物学生
+> 作为一名高中生，我希望通过交互式实验理解渗透压原理，这样我可以通过调节浓度和膜通透性来观察细胞的膨胀和收缩。
+
+**Acceptance Criteria**:
+- WHEN 学生选择"渗透作用"实验 THEN 系统显示半透膜两侧的溶液和细胞
+- WHEN 学生调节两侧溶液浓度 THEN 系统计算渗透压并显示水的跨膜流动
+- THEN 细胞体积随渗透压变化，出现膨胀/收缩/质壁分离动画
+- THEN 系统显示关键概念提示（等渗/高渗/低渗）
+
+### 故事 3 — 数学学习者
+> 作为一名数学学习者，我希望在画布上绘制和操控函数图像，这样我可以直观地理解参数对函数形态的影响。
+
+**Acceptance Criteria**:
+- WHEN 学习者输入一个函数（如 `y = a·sin(b·x + c)`）THEN 系统实时绘制函数图像
+- WHEN 学习者拖动参数滑块 THEN 图像实时更新，显示参数变化趋势
+- THEN 系统显示函数的导数图像和积分面积
+- THEN 学习者可以叠加多个函数进行对比
+
+### 故事 4 — 地理教师
+> 作为一名地理教师，我希望演示板块构造和地震波的传播，这样学生可以理解地震的成因和影响。
+
+**Acceptance Criteria**:
+- WHEN 教师选择"板块构造"实验 THEN 系统显示大陆板块和海洋板块
+- WHEN 教师调节板块运动速度和方向 THEN 系统模拟板块碰撞/张裂/错动
+- THEN 地震波（P波/S波）从震源传播动画
+- THEN 显示不同地质结构的形成（海沟、山脉、裂谷）
+
+### 故事 5 — 知识探索者
+> 作为一名自学者，我希望在完成一个实验后看到相关的知识节点和关联实验，这样我可以系统性地构建知识网络。
+
+**Acceptance Criteria**:
+- WHEN 用户完成"浮力实验" THEN 系统显示"浮力"知识节点，并关联"阿基米德原理"、"密度"、"液体压强"等节点
+- WHEN 用户点击关联节点 THEN 系统导航到对应实验或知识解释
+- THEN 知识图谱支持缩放、拖拽、筛选（按学科/难度/前置知识）
+- THEN 系统根据用户学习记录推荐下一步应该学习的知识点
+
+---
+
+## ✅ 验收标准（ACs）
+
+| ID | 验收条件 | 优先级 |
+|----|---------|-------|
+| AC-1 | 化学学科至少包含 3 个完整可运行的实验模板（酸碱滴定、反应速率、电解） | HIGH |
+| AC-2 | 生物学科至少包含 3 个完整可运行的实验模板（渗透作用、酶催化、种群增长） | HIGH |
+| AC-3 | 数学学科至少包含 2 个完整可运行的实验模板（函数绘图、几何证明） | HIGH |
+| AC-4 | 地理学科至少包含 2 个完整可运行的实验模板（板块构造、洋流模拟） | HIGH |
+| AC-5 | 每个学科实验模板遵循统一的 `ExperimentSchema` 规范 | HIGH |
+| AC-6 | 知识图谱模块支持节点创建、边连接、力导向布局 | HIGH |
+| AC-7 | 实验 ↔ 知识图谱双向导航（实验内知识点跳转到图谱，图谱中跳转到实验） | HIGH |
+| AC-8 | 新增实验模板在现有渲染系统上无需修改即可运行 | MEDIUM |
+| AC-9 | 各学科实验包含完整的教学设计（目标→假设→步骤→错误预防→评估） | MEDIUM |
+| AC-10 | 对标平台的技术方法论以文档形式记录到 workflow/skills/ 中 | MEDIUM |
+
+---
+
+## 📦 模块映射
+
+```
+EGPSpace
+├── src/lib/experiment-schema.ts        [MODIFY] 扩展学科引擎类型 + 新增模板工厂
+│   ├── + ChemistryType: acid_base, electrolysis, reaction_rate, titration
+│   ├── + BiologyType: osmosis, enzyme, population, photosynthesis
+│   ├── + MathType: function_graph, geometry, probability, statistics
+│   ├── + GeographyType: plate_tectonics, ocean_current, climate, map_projection
+│   └── + PRESET_TEMPLATES: 新增 10+ 学科实验工厂函数
+│
+├── src/lib/experiment-prompts.ts       [MODIFY] 增强化学/生物/数学/地理提示词
+│   ├── + chemistryTitrationPrompt
+│   ├── + biologyOsmosisPrompt
+│   ├── + mathFunctionGraphPrompt
+│   └── + geographyPlateTectonicsPrompt
+│
+├── src/lib/knowledge-graph/            [NEW] 知识图谱核心模块
+│   ├── types.ts                        — 节点/边/图谱类型定义
+│   ├── engine.ts                       — 力导向布局引擎
+│   ├── renderer.ts                     — Canvas/SVG 渲染器
+│   ├── data.ts                         — 学科知识节点数据集
+│   └── adapter.ts                      — 实验 ↔ 知识图谱适配器
+│
+├── src/components/KnowledgeGraph/      [NEW] React 组件
+│   ├── KnowledgeGraphCanvas.tsx        — 主画布组件
+│   ├── KnowledgeNode.tsx               — 节点渲染
+│   ├── KnowledgeEdge.tsx               — 边渲染
+│   └── GraphControls.tsx               — 缩放/筛选/导航控件
+│
+├── workflow/skills/                    [NEW] 对标平台方法论提炼
+│   ├── bp-phet-simulation.md           — PhET 物理引擎/交互/教学设计方法论
+│   ├── bp-geogebra-cas.md              — GeoGebra CAS/代数-图形绑定方法论
+│   ├── bp-chemcollective.md            — ChemCollective 虚拟实验室方法论
+│   ├── bp-biointeractive.md            — BioInteractive 科学传播方法论
+│   └── bp-eurekafinder-knowledge-graph.md — EurekaFinder 知识图谱方法论
+│
+└── src/lib/calculations.ts             [MODIFY] 新增学科专用计算函数
+    ├── + chemistry: phCalculation(), titrationCurve(), arrheniusEquation()
+    ├── + biology: osmoticPressure(), enzymeKinetics(), populationGrowth()
+    ├── + math: evaluateExpression(), derivative(), integral()
+    └── + geography: plateVelocity(), seismicWavePropagation()
+```
+
+---
+
+## ⚠️ 风险分析
+
+| 风险 | 严重度 | 概率 | 缓解措施 |
+|-----|--------|------|---------|
+| **R1: 化学/生物公式准确性** | HIGH | MED | 所有化学公式需交叉验证标准教材；引入学科专家审核流程 |
+| **R2: 数学引擎性能** | HIGH | LOW | 函数实时渲染需 WebGL/OffscreenCanvas 优化；大型公式用 Web Worker |
+| **R3: 知识图谱数据建设** | MED | HIGH | 不是一次性构建完整知识图谱，而是基于实验 Schema 自动生成节点；逐步积累 |
+| **R4: 实验渲染兼容性** | MED | LOW | 新实验使用现有 Canvas 渲染系统；Extensible Render Layer (DEC-2) 已支持引擎适配 |
+| **R5: 跨学科概念映射** | MED | MED | 采用 Wikipedia/Wikidata 概念体系作为中间层；OWL/RDF 语义标注 |
+
+---
+
+## 🔬 对标平台技术方法论提炼
+
+### 1. PhET (University of Colorado)
+- **核心**: 物理引擎 + 参数绑定 + 教学设计三合一
+- **可学习**: Model-View 分离架构、实时物理模拟（Runge-Kutta 积分）、
+  元认知提示（引导式探索而非直接给答案）
+- **应用到 EGPSpace**: 强化 `PhysicsConfig.dynamics` 弹簧阻尼系统，
+  为化学/生物引擎增加类似的动态模拟能力
+
+### 2. ChemCollective (Carnegie Mellon)
+- **核心**: 虚拟实验室 + 滴定/反应/溶液仿真
+- **可学习**: 分步实验流程、试剂柜选择 UI、实验报告自动生成
+- **应用到 EGPSpace**: 化学实验的"实验步骤 + 数据记录 + 报告"三段式结构
+
+### 3. GeoGebra
+- **核心**: CAS (计算机代数系统) + 几何构造 + 动态数学
+- **可学习**: 代数-图形双向绑定（改表达式 → 图形更新；改图形 → 表达式更新）、
+  构造协议记录（可追溯每一步的数学操作）
+- **应用到 EGPSpace**: 数学实验需要引入轻量级 CAS（`math.js`）
+  和坐标系绑定机制
+
+### 4. BioInteractive (HHMI)
+- **核心**: 科学传播 + 数据可视化 + 点击式探索
+- **可学习**: 科学叙事结构、数据故事化、分层信息揭示（先整体后细节）
+- **应用到 EGPSpace**: 生物实验的"背景故事 → 数据采集 → 结论推导"流程
+
+### 5. EurekaFinder
+- **核心**: AI 驱动 + 无限画布 + 知识图谱 + 语义关联
+- **可学习**: 非线性知识探索、概念密度可视化、语义边权重、
+  无限画布性能优化（视口裁剪 + 层级渲染）
+- **应用到 EGPSpace**: 实验知识点作为图谱节点，实验参数变化与知识节点高亮联动
+
+---
+
+## 🏛️ 架构方向概述（供 ARCHITECT 阶段参考）
+
+1. **微内核实验引擎**: 各学科引擎（化学/生物/数学/地理）实现统一的 `IExperimentEngine` 接口，注册到引擎工厂
+2. **声明式 Schema 扩展**: 各学科模板以纯数据形式定义，无需修改渲染代码即可支持新实验
+3. **知识图谱自动生成**: 从实验 Schema 的 `meta.topic`、`teaching.keyConcepts`、`formulas` 自动生成知识节点和边
+4. **双向绑定**: 知识图谱中的节点状态（已学/未学/在学） → 影响实验推荐；实验完成状态 → 更新图谱节点状态
+5. **渲染层统一**: Canvas 2D 兼顾实验渲染和知识图谱渲染，通过 Z-index/图层分离
+
+---

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260426-001049","createdAt":"2026-04-25T16:10:49.853Z"}
+{"seq":1,"ts":"2026-04-25T16:10:49.853Z","sessionId":"wf-20260426-001049","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"检查现有物理实验模板，对比初中物理知识点覆盖情况"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

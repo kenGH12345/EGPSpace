@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-142509","createdAt":"2026-04-25T06:25:09.355Z"}
+{"seq":1,"ts":"2026-04-25T06:25:09.355Z","sessionId":"wf-20260425-142509","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"sound.html介质选择,motion.html运动类型选择"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

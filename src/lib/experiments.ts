@@ -633,10 +633,23 @@ import {
   createLeverExperiment,
   createRefractionExperiment,
   createCircuitExperiment,
+  createAcidBaseTitrationExperiment,
+  createElectrolysisExperiment,
+  createReactionRateExperiment,
+  createCombustionExperiment,
+  ExperimentSchema,
 } from './experiment-schema';
-import type { ExperimentSchema } from './experiment-schema';
+// import { enrichSchema } from './schema-enricher'; // Not used in current module
+// import { validateParams } from './ai-validator'; // Module not yet implemented
 
-export { ExperimentSchema };
+export interface EnrichedExperiment {
+  id: string;
+  name: string;
+  type: string;
+  schema: ExperimentSchema;
+}
+
+export type { ExperimentSchema };
 
 export const presetExperimentSchemas: ExperimentSchema[] = [
   createBuoyancyExperiment(),
@@ -648,3 +661,16 @@ export const presetExperimentSchemas: ExperimentSchema[] = [
 export function getExperimentSchemaByType(physicsType: string): ExperimentSchema | undefined {
   return presetExperimentSchemas.find(s => s.meta.physicsType === physicsType);
 }
+
+export const experimentFactories = [
+  { id: 'buoyancy', name: '浮力实验', type: '物理', create: createBuoyancyExperiment },
+  { id: 'lever', name: '杠杆实验', type: '物理', create: createLeverExperiment },
+  { id: 'refraction', name: '折射实验', type: '物理', create: createRefractionExperiment },
+  { id: 'circuit', name: '电路实验', type: '物理', create: createCircuitExperiment },
+
+  // 化学实验 (Phase 2 — 统一框架迁移)
+  { id: 'acid-base-titration', name: '酸碱滴定实验', type: '化学', create: createAcidBaseTitrationExperiment },
+  { id: 'electrolysis', name: '电解水实验', type: '化学', create: createElectrolysisExperiment },
+  { id: 'reaction-rate', name: '化学反应速率实验', type: '化学', create: createReactionRateExperiment },
+  { id: 'combustion', name: '燃烧条件探究实验', type: '化学', create: createCombustionExperiment },
+];

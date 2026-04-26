@@ -28,5 +28,15 @@
       "summary": "Initial creation: TypeScript development patterns",
       "sourceExpId": null
     }
+  ],
+  "project-standards": [
+    {
+      "version": "1.0.0",
+      "parentVersion": null,
+      "type": "create",
+      "timestamp": "2026-04-24T17:32:00.543Z",
+      "summary": "Initial creation: Auto-discovered project conventions, coding standards, and toolchain configuration",
+      "sourceExpId": null
+    }
   ]
 }

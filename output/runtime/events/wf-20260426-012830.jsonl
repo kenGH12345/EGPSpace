@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260426-012830","createdAt":"2026-04-25T17:28:30.229Z"}
+{"seq":1,"ts":"2026-04-25T17:28:30.229Z","sessionId":"wf-20260426-012830","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"output/analysis.md: 5 chemistry templates (titration, iron-rusting, electrolysis, reaction-rate, combustion-conditions), 3 stub engines needed, physics template pattern established"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

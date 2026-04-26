@@ -1,0 +1,3 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-121659","createdAt":"2026-04-25T04:17:00.034Z"}
+{"seq":1,"ts":"2026-04-25T04:17:00.034Z","sessionId":"wf-20260425-121659","kind":"stage_started","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageInput":"修复sound.html介质选择缺失、motion.html运动模式缺失"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":2,"ts":"2026-04-25T04:34:18.486Z","sessionId":"wf-20260425-121659","kind":"stage_completed","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageOutput":"2个独立任务，可并行执行，风险评估已完成"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

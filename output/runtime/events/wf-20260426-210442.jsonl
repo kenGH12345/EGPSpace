@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260426-210442","createdAt":"2026-04-26T13:04:43.000Z"}
+{"seq":1,"ts":"2026-04-26T13:04:43.000Z","sessionId":"wf-20260426-210442","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"experiment-schema.ts, physics-engine.ts, experiment-canvas.tsx, page.tsx, experiment-types.ts, additional-experiments.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

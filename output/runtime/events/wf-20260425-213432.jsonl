@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-213432","createdAt":"2026-04-25T13:34:32.664Z"}
+{"seq":1,"ts":"2026-04-25T13:34:32.664Z","sessionId":"wf-20260425-213432","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"Exploring https://www.eurekafinder.com/ for chemistry, biology, math, geography subject experiment templates"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

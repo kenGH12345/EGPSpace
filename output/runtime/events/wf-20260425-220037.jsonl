@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-220037","createdAt":"2026-04-25T14:00:37.533Z"}
+{"seq":1,"ts":"2026-04-25T14:00:37.532Z","sessionId":"wf-20260425-220037","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"output/analysis.md, src/lib/experiment-schema.ts, src/lib/experiment-methodology.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

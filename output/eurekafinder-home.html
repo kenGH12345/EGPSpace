@@ -1,0 +1,83 @@
+﻿
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Eureka - æç¥è¯å¯è§å | Visualize Knowledge AI</title>
+    <meta name="description" content="Eureka æ¯ä¸ä¸ª AI é©±å¨çæ éç»å¸ç¥è¯æ¢ç´¢å¼æï¼å°ç¥è¯å¯è§åä¸ºäº¤äºå¼å¾è°±ãTurn knowledge into interactive knowledge maps." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- 
+      å¾®ä¿¡ JSSDKï¼å¨å°ç¨åº web-view ä¸­ä½¿ç¨ wx.miniProgram.reLaunch ç­ API å¿é¡»å¼å¥
+      å¼å¥åå¾®ä¿¡å®¢æ·ç«¯ä¼æ³¨å¥ wx.miniProgram å¯¹è±¡ï¼æä¾ reLaunch/navigateTo/postMessage ç­æ¹æ³
+      å¯¹æ®éæµè§å¨æ å½±åï¼åªä¼å¤ä¸ä¸ªå¨å± wx å¯¹è±¡ï¼ä¸ä¼è¢«è¯¯ç¨ï¼
+    -->
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+    
+    <!-- èµæºé¢å è½½ä¼å - ä½¿ç¨å½åéå -->
+    <link rel="preconnect" href="https://fonts.loli.net">
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+    <link rel="preconnect" href="https://accounts.google.com">
+    <link rel="preconnect" href="https://aistudiocdn.com">
+    
+    <!-- DNS é¢è§£æ - ä½¿ç¨å½åéå -->
+    <link rel="dns-prefetch" href="https://fonts.loli.net">
+    <link rel="dns-prefetch" href="https://gstatic.loli.net">
+    <link rel="dns-prefetch" href="https://accounts.google.com">
+    
+    <!-- å­ä½å è½½ä¼å - ä½¿ç¨å½åéåï¼fonts.loli.netï¼ä¸­å½å¤§éå¯è®¿é®ï¼ -->
+    <!-- 
+      Eureka K12 å­ä½æ¹æ¡ -ãæ¸©æä¹¦æ¿ãé£æ ¼ï¼
+      - ä¸­ææ é¢ï¼Noto Serif SCï¼ä¹¦å·æ°è¡¬çº¿ï¼
+      - è±ææ é¢ï¼Instrument Serifï¼è´æ¬ HappyCapyï¼
+      - åç/Logoï¼Playfair Displayï¼ç²¾è´è¡¬çº¿ï¼é«è¾¨è¯åº¦ï¼
+      - æ­£æï¼DM Sansï¼ç°ä»£å ä½æ è¡¬çº¿ï¼
+      - ä»£ç ï¼JetBrains Mono
+    -->
+    <link href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Google Identity Services for OAuth -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      body {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        background-color: #f3f4f6;
+        overflow: hidden; /* Prevent native scroll */
+      }
+    </style>
+
+<!-- CSS will be automatically injected by Vite during build -->
+<script>
+  // Inject runtime environment variables for Cloud Run
+  // API Keys are now handled by backend proxy for security
+  if (typeof window !== 'undefined') {
+    // Load Google Client ID (needed for OAuth login)
+    const metaClientId = document.querySelector('meta[name="google-client-id"]');
+    if (metaClientId) {
+      window.__GOOGLE_CLIENT_ID__ = metaClientId.getAttribute('content');
+      console.log('[Runtime] GOOGLE_CLIENT_ID loaded from meta tag');
+    }
+  }
+</script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/js/index-HhZJtxor.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/js/vendor-C9WqxvgN.js">
+  <link rel="stylesheet" crossorigin href="/assets/css/vendor-CWXVPzG4.css">
+  <link rel="stylesheet" crossorigin href="/assets/css/index-DJpSTsA4.css">
+</head>
+  <body>
+    <div id="root"></div>
+</body>
+</html>

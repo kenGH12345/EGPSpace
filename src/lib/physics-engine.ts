@@ -8,7 +8,8 @@
  * Architecture decision: DEC-3 (declarative formulas + engine adapters)
  */
 
-import type { PhysicsConfig, ComputedParam, PhysicsEngineType } from './experiment-schema';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import type { PhysicsConfig, PhysicsEngineType } from './experiment-schema';
 
 // ============ Result Types ============
 
@@ -291,6 +292,7 @@ const ENGINES: Record<PhysicsEngineType, PhysicsEngine> = {
   electrolysis: new GenericEngine(),
   reaction_rate: new GenericEngine(),
   titration: new GenericEngine(),
+  combustion: new GenericEngine(),
   // Biology
   osmosis: new GenericEngine(),
   enzyme: new GenericEngine(),

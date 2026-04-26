@@ -1,253 +1,354 @@
-# EGPSpace Batch-2 Architecture: Cross-Subject Experiment Template Infrastructure
+# 化学实验迁移架构设计 (Architecture Design)
 
-> 前置：Triple-Lock 架构已在第一批完成验证（`wf-20260424091211.`）  
-> 当前目标：建立可扩展的跨学科基础设施，使新学科模板能够低摩擦接入
-> 核心约束：不修改 `IframeExperiment.tsx`，向后兼容4个已上线物理模板
+## 🧠 架构推理
 
----
+### 1. 核心质量属性
 
-## 架构概览
+| 质量属性 | 优先级 | 说明 |
+|----------|--------|------|
+| **可维护性** | P0 | 新增实验只需声明式配置，零代码侵入 |
+| **可扩展性** | P0 | 横向添加实验无需修改渲染引擎 |
+| **向后兼容** | P0 | 现有物理实验100%不受影响 |
+| **性能** | P1 | Canvas 渲染60fps，参数响应 < 16ms |
+| **可测试性** | P1 | Schema 可静态验证，引擎逻辑独立测试 |
 
-本批次（Batch 2）的核心任务不是"增加模板数量"，而是**将物理专用的共享基础设施抽象为跨学科通用层**。这解决了第一批验证的架构瓶颈：`physics-core.js` 是物理专用的，化学/生物学科无法复用。
+### 2. 硬约束
 
-**分层策略**（两层共享模型）：
-```
-Layer 1: experiment-core.js    ← 跨学科通用（通信、状态、参数、渲染循环）
-Layer 2: {subject}-utils.js    ← 学科专用（公式、常量、渲染辅助）
-Layer 3: template-specific.js  ← 模板专用（实验逻辑、Canvas/SVG绘制）
-```
+- **时间线**：单会话完成（用户等待）
+- **团队规模**：单人开发
+- **现有基础设施**：React + TypeScript + Canvas 2D，无 WebGL/Three.js
+- **兼容性约束**：TypeScript 5.x，Next.js App Router
 
-**向后兼容策略**：
-- 旧模板继续引用 `physics-core.js`（该文件变为 `experiment-core.js` + `physics-utils.js` 的合并兼容包）
-- 新模板拆分引用 `experiment-core.js` → `{subject}-utils.js` → 模板逻辑
+### 3. 最简单可行的架构
 
----
+采用**扩展开闭原则（OCP）**：
+- **不修改**`ExperimentSchema` 接口定义
+- **不修改**已有渲染引擎（BuoyancyEngine/LeverEngine/...）
+- **扩展**新的预设类型到 `PresetTemplateType`
+- **扩展**新的模板工厂到 `schema-enricher.ts`
+- **扩展**新的 Canvas 绘制分支到 `preset-templates.ts`
 
-## 模块设计
+### 4. 可复用的现有模块
 
-### Module 1: experiment-core.js（通用共享层）
+| 模块 | 复用方式 | 说明 |
+|------|----------|------|
+| `ExperimentSchema` 接口 | 直接使用 | 化学实验的数据模型与物理实验一致 |
+| `GenericEngine` | 直接使用 | 通用公式解析引擎支持任何数学公式 |
+| `generateSlidersFromParams` | 直接使用 | 自动从 input 参数生成滑块配置 |
+| `generateComputedParamsFromFormulas` | 直接使用 | 自动从 formula 生成计算参数 |
+| `ExperimentCanvas` 渲染管线 | 扩展 case | 新增化学实验的 `generateElements` 分支 |
+| `experimentSchemaToLegacy` | 直接使用 | 新 Schema 转换为 `ExperimentConfig` |
+| `ExperimentLayout` shell | 直接使用 | 侧边栏、公式卡片、理论 Tabs 完全复用 |
 
-**职责**：定义与Host的postMessage通信协议，管理模板生命周期，提供跨学科通用工具。
+### 5. 前 3 技术风险及缓解
 
-**导出接口**：
-```typescript
-interface EurekaCore {
-  // 生命周期
-  setTemplateId(id: string): void;
-  emitReady(supportedParams: ParamMeta[]): void;
-  emitError(message: string, code?: string): void;
-
-  // 参数系统
-  bindParam(name: string, config: ParamConfig): void;
-  getParam(name: string): number;
-  setParam(name: string, value: number): void;
-
-  // 渲染循环
-  startRenderLoop(fn: (dt: number) => void): number;
-  stopRenderLoop(id: number): void;
-
-  // Host命令订阅
-  onHostCommand(callback: (cmd: HostCommand) => void): void;
-}
-
-interface ParamConfig {
-  min: number;
-  max: number;
-  step: number;
-  defaultValue: number;
-  unit?: string;
-  onChange?: (value: number) => void;
-}
-
-type HostCommand =
-  | { type: 'set_param'; param: string; value: number }
-  | { type: 'reset' }
-  | { type: 'pause' }
-  | { type: 'resume' };
-```
-
-**关键设计决策**：
-- **参数系统内置**：旧模板直接在DOM中操作input range，新模板通过 `bindParam()` 注册参数，`experiment-core` 自动管理DOM控件渲染和事件绑定。这使得模板代码可以更专注于物理模拟而非UI样板。
-- **渲染循环托管**：`startRenderLoop()` 内部使用 `requestAnimationFrame` + delta-time计算，支持 `pause/resume` 命令。模板只需提供 `update(dt)` 函数。
-
-### Module 2: physics-utils.js（物理专用层）
-
-**职责**：提供物理学科的公式计算、单位换算、常量定义和物理专用渲染辅助。
-
-**导出内容**：
-```javascript
-// 常量
-export const G = 9.8;               // m/s²
-export const PI = Math.PI;
-
-// 力学公式
-export const buoyancyForce = (rhoFluid, volume, g = G) => rhoFluid * volume * g;
-export const gravityForce = (mass, g = G) => mass * g;
-export const leverTorque = (force, armLength) => force * armLength;
-export const snellsLaw = (n1, theta1, n2) => Math.asin((n1 * Math.sin(theta1)) / n2);
-
-// 运动学公式（第二批新增）
-export const kineticEnergy = (mass, velocity) => 0.5 * mass * velocity * velocity;
-export const potentialEnergy = (mass, height, g = G) => mass * g * height;
-export const waveDisplacement = (amplitude, wavelength, frequency, time, x) =>
-  amplitude * Math.sin(2 * PI * (x / wavelength - frequency * time));
-export const faradayEMF = (dPhi, dt) => -dPhi / dt;  // ε = -dΦ/dt
-
-// 渲染辅助
-export const drawArrow = (ctx, fromX, fromY, toX, toY, color = '#000') => { ... };
-export const drawAxis = (ctx, originX, originY, width, height, options) => { ... };
-export const drawEnergyBar = (ctx, x, y, value, maxValue, label, color) => { ... };
-```
-
-### Module 3: 第二批物理模板（4个）
-
-| 模板ID | 核心物理概念 | 参数 | 可视化方案 | 技术栈 |
-|--------|-------------|------|-----------|--------|
-| `physics/motion` | 运动学（v-t, s-t图） | 初速度、加速度、时间 | Canvas2D绘制坐标系+运动轨迹+时序动画 | Canvas2D |
-| `physics/energy` | 机械能守恒 | 质量、高度、初速度 | SVG小球+能量分布柱状图（动能/势能/总能量） | SVG + Canvas2D |
-| `physics/waves` | 机械波（简谐波） | 振幅、波长、频率、波速 | Canvas2D绘制正弦波+波的叠加（干涉/衍射） | Canvas2D |
-| `physics/electromagnetism` | 法拉第电磁感应 | 磁通量、线圈匝数、变化率 | SVG磁铁+线圈+感应电流动画（大小/方向） | SVG |
+| 风险 | 缓解策略 |
+|------|----------|
+| **R1: physicsType 语义偏向物理** | 内部按 "experimentType" 理解兼容，保持接口字段名不变 |
+| **R2: Canvas 元素类型不够表达化学图形** | 组合基础几何类型（rect/circle/line/text/arc）构建复杂实验装置 |
+| **R3: Legacy Config 与 Schema 字段映射不全** | 使用 `additionalConfig` 注入化学实验特有字段，转换函数兜底 |
 
 ---
 
-## 数据流设计
+## 📐 组件设计
+
+### 组件关系图
 
 ```mermaid
-sequenceDiagram
-    participant User
-    participant Host as Next.js /experiments/[id]
-    participant Router as concept-to-template.ts
-    participant Registry as template-registry.ts
-    participant Iframe as IframeExperiment.tsx
-    participant Template as <experiment>.html
-    participant Core as experiment-core.js
-    participant Utils as physics-utils.js
+graph TD
+    subgraph "Frontend Layer"
+        A[Home Page<br/>page.tsx] -->|点击实验卡片| B{Experiment Router<br/>/experiments/[id]/page.tsx}
+    end
 
-    User->>Host: 访问 /experiments/motion
-    Host->>Router: conceptToTemplateId('motion')
-    Router-->>Host: 'physics/motion'
-    Host->>Registry: getTemplate('physics/motion')
-    Registry-->>Host: metadata (auditStatus='approved')
-    Host->>Iframe: render iframe src=/templates/physics/motion.html
-    Iframe->>Template: load HTML
-    Template->>Core: 加载 experiment-core.js
-    Core->>Template: EurekaHost.emitReady(['velocity','acceleration','time'])
-    Template->>Utils: 加载 physics-utils.js
-    Template->>Template: 绑定参数 → 初始化Canvas → 启动渲染循环
-    Template->>Iframe: postMessage {type:'ready', templateId:'physics/motion', protocolVersion:'1.0'}
-    Iframe->>Host: 显示参数面板 + 统计区域
-    User->>Template: 拖动"初速度"滑块
-    Template->>Core: setParam('velocity', 15)
-    Template->>Template: update(dt) → 重新计算位移 → 重绘轨迹
-    Template->>Iframe: postMessage {type:'result_update', results: {displacement: 45}}
-    Iframe->>Host: 更新统计面板数值
+    subgraph "Triple-Lock Routing"
+        B -->|1. concept mapping| C[concept-to-template.ts]
+        C -->|2. whitelist check| D[template-registry.ts]
+        D -->|3. schema enrich| E[schema-enricher.ts]
+    end
+
+    subgraph "Schema Layer"
+        E -->|fetch template| F[experiment-schema.ts<br/>createAcidBaseExperiment()<br/>createElectrolysisExperiment()<br/>createReactionRateExperiment()<br/>createCombustionExperiment()]
+        F -->|export| G[experiments.ts<br/>presetExperimentSchemas]
+    end
+
+    subgraph "Legacy Bridge"
+        G -->|convert| H[DynamicExperiment.tsx<br/>experimentSchemaToLegacy()]
+        H -->|UniversalPhysicsRenderer| I[Legacy ExperimentConfig]
+    end
+
+    subgraph "Rendering Layer"
+        I -->|route by id| J[experiment-canvas.tsx]
+        J -->|preset template| K[preset-templates.ts<br/>buildAcidBaseElements<br/>buildElectrolysisElements<br/>buildReactionRateElements<br/>buildCombustionElements]
+        K -->|Canvas 2D| L[Canvas Context]
+    end
+
+    subgraph "Shell Layer"
+        I -->|render controls| M[experiment-layout.tsx<br/>侧边栏+公式+理论/提示/示例]
+        M -->|useMediaPipeHands| N[Gesture Control]
+    end
 ```
 
----
+### 新增/修改组件详述
 
-## 向后兼容策略
+#### C1: `experiment-schema.ts` — 扩展化学实验工厂函数
 
-### 旧模板（浮力/杠杆/折射/电路）的兼容路径
+**职责**：为每个化学实验提供完整的 `ExperimentSchema` 声明式定义。
 
-旧模板引用路径：`/templates/_shared/physics-core.js`
-
-```javascript
-// physics-core.js (兼容包 —— 保留，仅用于旧模板)
-// 这个文件的内容是：experiment-core.js + physics-utils.js 的合并
-// 旧模板中的 `EurekaHost` 对象通过此文件获得，API签名完全不变
-
-import { EurekaHost, bindParam, getParam, setParam } from './experiment-core.js';
-import * as physics from './physics-utils.js';
-
-window.EurekaHost = EurekaHost;
-Object.assign(window, physics);
+**接口**：
+```typescript
+export function createAcidBaseTitrationExperiment(): ExperimentSchema;
+export function createElectrolysisExperiment(): ExperimentSchema;
+export function createReactionRateExperiment(): ExperimentSchema;
+export function createCombustionExperiment(): ExperimentSchema;
 ```
 
-### 新模板的加载路径
+**设计要点**：
+- `meta.physicsType` 使用化学实验标识符（如 `'acid_base'`）
+- `params` 定义完整的可调节参数（浓度、体积、温度等）
+- `formulas` 定义化学方程和计算公式
+- `canvas.presetTemplate` 指向对应的预设模板类型
+- `physics.engine` 使用 `'generic'`（通用公式引擎）
 
-```html
-<!-- 新模板（如 motion.html） -->
-<script src="/templates/_shared/experiment-core.js"></script>
-<script src="/templates/_shared/physics-utils.js"></script>
-<script>
-  // 模板专用代码
-  EurekaHost.setTemplateId('physics/motion');
-  bindParam('velocity', { min: 0, max: 50, step: 1, defaultValue: 0, unit: 'm/s' });
-  bindParam('acceleration', { min: -10, max: 10, step: 0.1, defaultValue: 2, unit: 'm/s²' });
-  // ...
-</script>
+#### C2: `preset-templates.ts` — 扩展化学实验预设渲染
+
+**职责**：根据 experiment id 生成 Canvas 元素列表。
+
+**扩展**：
+```typescript
+export type PresetTemplateType = 
+  | 'buoyancy' | 'lever' | 'refraction' | 'circuit'
+  | 'acid-base-titration' | 'electrolysis' | 'reaction-rate' | 'combustion';  // 新增
 ```
 
----
+**设计要点**：
+- 每个化学实验独立的 `buildXxxElements()` 函数
+- 使用现有 `CanvasElement` 基础类型组合绘制复杂实验装置
+- 动画效果通过 `params` 中的时间/状态参数驱动
 
-## 决策记录
+#### C3: `experiment-canvas.tsx` — 扩展路由分支
 
-```json
+**职责**：根据 experiment id 选择对应的模板渲染。
+
+**修改点**：
+```typescript
+// presetRenderMap 新增化学实验映射
+if (presetRenderMap.has(id)) {
+  return presetRenderMap.get(id)!(layout, params, computed);
+}
+```
+
+#### C4: `schema-enricher.ts` — 注册化学实验模板
+
+**职责**：将化学实验的 partial schema 补全为完整 schema。
+
+**修改点**：
+```typescript
+const TEMPLATES: Record<string, () => ExperimentSchema> = {
+  buoyancy: createBuoyancyExperiment,
+  lever: createLeverExperiment,
+  refraction: createRefractionExperiment,
+  circuit: createCircuitExperiment,
+  // 新增化学实验
+  'acid-base-titration': createAcidBaseTitrationExperiment,
+  'electrolysis': createElectrolysisExperiment,
+  'reaction-rate': createReactionRateExperiment,
+  'combustion': createCombustionExperiment,
+};
+```
+
+#### C5: `template-registry.ts` — 注册化学实验白名单
+
+**职责**：声明哪些模板 ID 是已审核通过的。
+
+**修改点**：
+```typescript
+addApprovedTemplate('acid-base-titration', { auditStatus: 'approved' });
+addApprovedTemplate('electrolysis', { auditStatus: 'approved' });
+addApprovedTemplate('reaction-rate', { auditStatus: 'approved' });
+addApprovedTemplate('combustion', { auditStatus: 'approved' });
+```
+
+#### C6: `concept-to-template.ts` — 添加化学实验概念映射
+
+**职责**：将用户的自然语言概念映射到模板 ID。
+
+**修改点**：
+```typescript
 {
-  "decisions": [
-    {
-      "id": "D-B2-1",
-      "choice": "将 physics-core.js 拆分为 experiment-core.js + physics-utils.js，旧文件保留为兼容wrapper",
-      "rationale": "向后兼容是硬性约束。旧模板的iframe是独立沙箱，它们加载的 physics-core.js 可以保持为合并包。新模板按最佳实践拆分加载。",
-      "alternatives": ["完全重写共享层（需要修改旧模板）", "直接复制一份改名（代码重复）"],
-      "status": "approved"
-    },
-    {
-      "id": "D-B2-2",
-      "choice": "experiment-core.js 内置参数系统bindParam()，替代模板直接DOM操作",
-      "rationale": "观察到第一批4个模板中，参数滑块的HTML结构和事件监听代码高度重复。提取到通用层可以减少60%的模板样板代码。",
-      "alternatives": ["保留第一批的DOM直接操作方式（模板代码冗长但可预测）"],
-      "status": "approved"
-    },
-    {
-      "id": "D-B2-3",
-      "choice": "第二批物理模板继续使用Canvas2D/SVG，不引入WebGL",
-      "rationale": "运动学、机械能、机械波、电磁感应这4个实验的交互复杂度与第一批相当，Canvas2D/SVG足以胜任。引入WebGL会增加复杂度且无必要。",
-      "alternatives": ["使用Three.js/WebGL（过度设计）"],
-      "status": "approved"
-    },
-    {
-      "id": "D-B2-4",
-      "choice": "不新增任何外部npm依赖",
-      "rationale": "保持与第一批一致的原则：零依赖，使用浏览器原生API。这降低了supply chain风险和部署复杂度。",
-      "alternatives": ["引入D3.js（运动学可视化更便利但需要额外依赖）"],
-      "status": "approved"
-    },
-    {
-      "id": "D-B2-5",
-      "choice": "postMessage协议保持v1.0不变，不在本批次引入协议升级",
-      "rationale": "协议变更需要同时修改Host端（IframeExperiment.tsx），而约束是不修改Host端。所有新增消息类型必须能在v1协议下表达。",
-      "alternatives": ["引入v2协议支持学科扩展字段（风险：需要修改Host）"],
-      "status": "approved"
-    }
-  ]
+  keywords: ['酸碱滴定', '滴定', 'pH曲线', '指示剂', 'acid-base titration'],
+  templateId: 'acid-base-titration',
+},
+{
+  keywords: ['电解水', '电解', '氢气', '氧气', 'electrolysis'],
+  templateId: 'electrolysis',
+},
+{
+  keywords: ['反应速率', '化学反应速率', '催化剂', 'reaction rate'],
+  templateId: 'reaction-rate',
+},
+{
+  keywords: ['燃烧条件', '燃烧', '着火点', 'combustion'],
+  templateId: 'combustion',
 }
 ```
 
 ---
 
-## 安全考量
+## 📡 API 契约
 
-本批次的安全边界与第一批完全一致：
-- **Triple-Lock 1**: `/api/generate` 系统提示中的 canvas 禁令保持不变
-- **Triple-Lock 2**: `concept-to-template.ts` 新增第二批关键词映射后必须仍通过 `isApprovedTemplate()` 检查
-- **Triple-Lock 3**: `template-registry.ts` 新增的第二批模板初始 `auditStatus` 为 `'pending'`，只有通过审计后才标记 `'approved'`
-- **iframe sandbox**: 新模板继续使用相同的安全策略，`allow-scripts` 但不允许 `allow-same-origin`（与第一批一致）
+### Schema 导出契约
+
+`experiments.ts` 统一导出：
+```typescript
+export const presetExperimentSchemas: ExperimentSchema[] = [
+  createBuoyancyExperiment(),
+  createLeverExperiment(),
+  createRefractionExperiment(),
+  createCircuitExperiment(),
+  // 新增化学实验
+  createAcidBaseTitrationExperiment(),
+  createElectrolysisExperiment(),
+  createReactionRateExperiment(),
+  createCombustionExperiment(),
+];
+```
+
+### Legacy 转换契约
+
+`DynamicExperiment.tsx` 的 `experimentSchemaToLegacy()` 必须能正确转换化学实验的 Schema：
+- `meta.name` → `config.title`
+- `params` → `config.params`（需映射字段名：name→label, default→default, ...）
+- `formulas` → `config.formula` / `config.formulaExplanation`
+- `teaching.theory` → `config.theory`
+- `teaching.tips` → `config.tips`
+- `teaching.examples` → `config.examples`
+
+### Canvas 渲染契约
+
+`preset-templates.ts` 的 `buildPresetElements()` 签名保持不变：
+```typescript
+function buildPresetElements(
+  type: string,
+  layout: { width: number; height: number },
+  params: Record<string, number>,
+  computed: Record<string, number>
+): CanvasElement[];
+```
 
 ---
 
-## 性能考量
+## 🔄 关键决策与权衡
 
-- **模板体积**: 单文件gzip <50KB（沿用NFR-1）。`experiment-core.js` 约5KB gzip，`physics-utils.js` 约3KB gzip，模板HTML约10-20KB gzip，总计单模板package约20-30KB，符合要求。
-- **加载顺序优化**: 使用 `<script type="module">` + `import`（HTTP/2复用连接），或保持 `<script>` 按序加载（实验模板数量少，差异可忽略）。
-- **渲染性能**: 第二批运动学模板动画帧率目标 ≥30fps，`experiment-core.js` 的 `requestAnimationFrame` + delta-time循环已优化避免卡顿。
+### 决策 1：物理/化学共享一套 Schema 还是分两套？
+
+**选择**：共享一套 `ExperimentSchema`，使用 `GenericEngine`
+
+**替代方案**：为化学实验创建 `ChemistrySchema` 子类型
+
+**权衡**：
+- **共享方案**：复用现有基础设施，减少代码量，向后兼容 ✅
+- **独立方案**：更语义清晰，但需新建转换层和渲染管线，复杂度翻倍 ❌
+
+**理由**：`ExperimentSchema` 的 `params`/`formulas`/`canvas` 等字段对化学实验完全适用，`GenericEngine` 的公式解析不考虑物理/化学语义，只负责数学计算。
+
+### 决策 2：Canvas 渲染用 DOM overlay 还是纯 Canvas？
+
+**选择**：纯 Canvas 2D（遵循现有架构）
+
+**替代方案**：React DOM 覆盖层（化学实验的装置可能更适合 DOM）
+
+**权衡**：
+- **纯 Canvas**：与物理实验渲染一致，状态驱动，手势控制原生支持 ✅
+- **DOM overlay**：对复杂装置排版更灵活，但与现有手势/导出系统不兼容 ❌
+
+**理由**：保持一致性优先，化学实验的烧杯/滴定管等装置可以用基础几何类型组合。
+
+### 决策 3：化学实验的 `physicsType` 字段值如何命名？
+
+**选择**：使用 snake_case 化学标识符（如 `'acid_base'`），保持字段名不变
+
+**替代方案**：新增 `experimentType` 字段，废弃 `physicsType`
+
+**权衡**：
+- **保持字段名**：零侵入，向后兼容，语义偏差通过文档说明 ✅
+- **新增字段名**：更语义正确，但需修改 `schema-enricher.ts`/`experiments.ts` 等 N 处 ❌
+
+**理由**：最小变更原则，字段内容是标识符（URI 风格），字段名只是键名。
 
 ---
 
-## 思考摘要
+## 🔍 架构自审清单
 
-1. **核心挑战**: 第一批验证了三重锁架构，但共享层是物理专用的，无法支持跨学科扩展
-2. **关键决策**: 采用"两层共享"模型（通用层 + 学科专用层），旧模板通过兼容wrapper保持零修改
-3. **最大创新**: `experiment-core.js` 内置参数系统 `bindParam()`，将第一批中高度重复的滑块DOM操作代码提取到通用层
-4. **范围控制**: 本批次仅限物理学科内的第二批4个实验 + 跨学科基础设施抽象，不真正新增化学/生物模板（移至第三批）
-5. **向后兼容保证**: 旧模板引用的 `physics-core.js` 保留为兼容包，API签名100%不变
+| ID | 检查项 | 严重度 | 评估 |
+|----|--------|--------|------|
+| ARCH-001 | 每个关键技术选择都有理由 | HIGH | ✅ PASS — 决策 1/2/3 均有理由 |
+| ARCH-002 | 权衡被承认 | MED | ✅ PASS — 每个决策都列出了替代方案 |
+| ARCH-004 | 水平扩展策略 | HIGH | ✅ PASS — 新增实验只需声明式配置 |
+| ARCH-007 | 无单点故障 | HIGH | ✅ PASS — 各实验独立，渲染引擎通用 |
+| ARCH-010 | 认证授权架构 | HIGH | N/A — 实验平台无需认证 |
+| ARCH-013 | 可观测性 | MED | ✅ PASS — Schema 可静态验证，渲染可视觉验证 |
+| ARCH-015 | 需求覆盖 | HIGH | ✅ PASS — 覆盖全部7个验收标准 |
+| ARCH-016 | 功能需求支持 | HIGH | ✅ PASS — 4个化学实验均可声明式定义 |
+| ARCH-017 | 无内部矛盾 | HIGH | ✅ PASS — 所有组件契约一致 |
+
+---
+
+## 🔥 对抗性审查
+
+### 1. 魔鬼代言人：如果假设错了？
+
+**假设 A**：`GenericEngine` 的公式解析能满足化学实验的计算需求。
+- **如果错**：化学浓度计算涉及对数（pH），通用引擎可能精度不足。
+- **缓解**：在 `computedParams` 中预计算复杂公式，引擎只负责最终展示。
+
+**假设 B**：Canvas 基础类型可以表达所有化学实验装置。
+- **如果错**：某些分子结构可能需要更复杂的图形。
+- **缓解**：Phase 2 可以扩展 `CanvasElement` 的 type 联合类型，或引入 SVG 叠加层。
+
+**假设 C**：`ExperimentConfig`（Legacy）字段足够承载化学实验。
+- **如果错**：化学实验需要特有字段（如化学方程式字符串）。
+- **缓解**：`additionalConfig` 扩展字段，或 Schema 端存储丰富数据，Legacy 端仅保留核心字段。
+
+### 2. 最可能的故障场景
+
+**场景**：用户调节参数后 Canvas 不更新。
+- **根因**：`generateElements()` 未在 `params` 变化时重新调用，或 `computed` 值计算错误。
+- **架构应对**：`ExperimentCanvas` 的 `useEffect` 依赖 `params` + `results`，确保任何参数变化触发重绘。`GenericEngine` 的错误公式解析会返回 `NaN`，需要默认值兜底。
+
+### 3. 简化挑战
+
+能否用更简单架构实现 80% 目标？—— 可以：直接在 `page.tsx` 中 hard-code 4 个化学实验组件，不迁移到统一框架。
+- **差异**：简单方案缺少可扩展性、手势控制、导出报告、AI 对话等高级功能。
+- **额外复杂度是否值得**：值得，因为用户明确选择了方案 A（架构迁移），且后续需要添加更多实验。
+
+### 4. 外部依赖风险
+
+唯一风险依赖：`GenericEngine` 的公式解析。
+- **备用方案**：如果解析失败，降级为预计算值 stored in `computedParams`。
+
+---
+
+## 📊 架构决策记录 (ADR)
+
+| ADR | 决策 | 状态 |
+|-----|------|------|
+| ADR-001 | 化学实验复用 `ExperimentSchema` 接口 | 已批准 |
+| ADR-002 | Canvas 渲染延续纯 2D 方案 | 已批准 |
+| ADR-003 | 保留 `physicsType` 字段名不变 | 已批准 |
+| ADR-004 | 化学实验使用 `GenericEngine` 而非专用引擎 | 已批准 |
+
+## 🛡️ 迁移安全方案
+
+### 回滚策略
+- 所有修改都是**增量**（新增工厂函数、新增 case 分支、新增注册）
+- 回滚只需删除新增代码行，不影响物理实验
+- `page.tsx` 的 `presetExperimentIds` 从 Set 中移除新 ID 即可隐藏实验
+
+### 兼容性策略
+- 物理实验的 `ExperimentSchema`、`GenericEngine`、`ExperimentCanvas` 均**不做任何修改**
+- 仅扩展 TypeScript 联合类型和 switch/case 分支
+- 类型安全：所有扩展处均有 TypeScript 编译时检查
+
+### 漂移检测
+- 物理实验路由 (`physics/buoyancy` 等) 测试：确保渲染正常
+- 化学实验路由 (`acid-base-titration` 等) 测试：确保 Schema 能完整加载并渲染

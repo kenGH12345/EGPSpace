@@ -29,7 +29,13 @@ import { isApprovedTemplate } from './template-registry';
  * 2. The target template ID MUST exist in template-registry.ts
  * 3. Both Chinese and English keywords supported
  */
-const CONCEPT_MAPPINGS: Array<{ keywords: string[]; templateId: string }> = [
+interface ConceptMapping {
+  keywords: string[];
+  templateId: string;
+  params?: Record<string, unknown>;
+}
+
+const CONCEPT_MAPPINGS: ConceptMapping[] = [
   // Physics - Mechanics
   {
     keywords: ['浮力', '阿基米德', '排水', '浮沉', 'buoyancy', 'archimedes', 'floating', 'sinking'],
@@ -92,6 +98,32 @@ const CONCEPT_MAPPINGS: Array<{ keywords: string[]; templateId: string }> = [
   {
     keywords: ['声/音调', '声波', '音调', '响度', '音色', '声波传播', '声音的特性'],
     templateId: 'physics/sound',
+  },
+
+  { keywords: ['digital', 'digital_circuit', '二进制实验'], templateId: 'digital_circuit', params: { highlight: ['digital_circuit'] } },
+  // === 已批准的 "备用" 新实验 ===
+  { keywords: ['density', '弹性', '浮力与密度'], templateId: 'buoyancy_density_relation', params: { highlight: ['buoyancy', 'density'] } },
+
+  // === 化学实验 — Phase 2（统一框架迁移） ===
+  {
+    keywords: ['酸碱滴定', '滴定', 'pH曲线', '强酸强碱', 'acid-base titration'],
+    templateId: 'acid-base-titration',
+    params: { highlight: ['acid-base-titration'] },
+  },
+  {
+    keywords: ['电解水', '电解', '氢气氧气', '阴极阳极', 'electrolysis'],
+    templateId: 'electrolysis',
+    params: { highlight: ['electrolysis'] },
+  },
+  {
+    keywords: ['反应速率', '阿伦尼乌斯', '催化剂', '化学动力学', 'reaction rate'],
+    templateId: 'reaction-rate',
+    params: { highlight: ['reaction-rate'] },
+  },
+  {
+    keywords: ['燃烧条件', '燃烧三要素', '燃点', '助燃物', 'combustion conditions'],
+    templateId: 'combustion',
+    params: { highlight: ['combustion'] },
   },
 ];
 
