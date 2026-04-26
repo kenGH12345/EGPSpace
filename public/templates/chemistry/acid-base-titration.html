@@ -44,64 +44,61 @@
 
   <div class="eureka-card">
     <h3 class="eureka-card-title">参数调节</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">酸浓度 (HCl)</span>
-        <span class="eureka-control-value"><span id="v-acidConc">0.10</span> mol/L</span>
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">酸浓度 (HCl)</span>
+          <span class="eureka-control-value"><span id="v-acidConc">0.10</span> mol/L</span>
+        </div>
+        <input id="ctl-acidConc" class="eureka-slider" type="range" min="0.01" max="1.0" step="0.01" value="0.1">
       </div>
-      <input id="ctl-acidConc" class="eureka-slider" type="range" min="0.01" max="1.0" step="0.01" value="0.1">
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">碱浓度 (NaOH)</span>
+          <span class="eureka-control-value"><span id="v-baseConc">0.10</span> mol/L</span>
+        </div>
+        <input id="ctl-baseConc" class="eureka-slider" type="range" min="0.01" max="1.0" step="0.01" value="0.1">
+      </div>
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">酸体积</span>
+          <span class="eureka-control-value"><span id="v-acidVolume">25</span> mL</span>
+        </div>
+        <input id="ctl-acidVolume" class="eureka-slider" type="range" min="10" max="50" step="1" value="25">
+      </div>
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">已加碱体积</span>
+          <span class="eureka-control-value"><span id="v-baseAdded">0.0</span> mL</span>
+        </div>
+        <input id="ctl-baseAdded" class="eureka-slider" type="range" min="0" max="50" step="0.1" value="0">
+      </div>
+
+      <div class="eureka-control" style="grid-column: 1 / -1;">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">指示剂</span>
+          <span class="eureka-control-value" id="v-indicator">酚酞</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="eureka-btn" data-ind="0" style="flex:1;font-size:12px;">酚酞</button>
+          <button class="eureka-btn" data-ind="1" style="flex:1;font-size:12px;">甲基橙</button>
+          <button class="eureka-btn" data-ind="2" style="flex:1;font-size:12px;">石蕊</button>
+        </div>
+      </div>
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">温度</span>
+          <span class="eureka-control-value"><span id="v-temperature">25</span> °C</span>
+        </div>
+        <input id="ctl-temperature" class="eureka-slider" type="range" min="10" max="60" step="1" value="25">
+      </div>
+
     </div>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">碱浓度 (NaOH)</span>
-        <span class="eureka-control-value"><span id="v-baseConc">0.10</span> mol/L</span>
-      </div>
-      <input id="ctl-baseConc" class="eureka-slider" type="range" min="0.01" max="1.0" step="0.01" value="0.1">
-    </div>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">酸体积</span>
-        <span class="eureka-control-value"><span id="v-acidVolume">25</span> mL</span>
-      </div>
-      <input id="ctl-acidVolume" class="eureka-slider" type="range" min="10" max="50" step="1" value="25">
-    </div>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">已加碱体积</span>
-        <span class="eureka-control-value"><span id="v-baseAdded">0.0</span> mL</span>
-      </div>
-      <input id="ctl-baseAdded" class="eureka-slider" type="range" min="0" max="50" step="0.1" value="0">
-    </div>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">指示剂</span>
-        <span class="eureka-control-value" id="v-indicator">酚酞</span>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <button class="eureka-btn" data-ind="0" style="flex:1;font-size:12px;">酚酞</button>
-        <button class="eureka-btn" data-ind="1" style="flex:1;font-size:12px;">甲基橙</button>
-        <button class="eureka-btn" data-ind="2" style="flex:1;font-size:12px;">石蕊</button>
-      </div>
-    </div>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">温度</span>
-        <span class="eureka-control-value"><span id="v-temperature">25</span> °C</span>
-      </div>
-      <input id="ctl-temperature" class="eureka-slider" type="range" min="10" max="60" step="1" value="25">
-    </div>
-  </div>
-
-  <div class="eureka-formula">
-    <p class="eureka-formula-title">核心公式</p>
-    <div class="eureka-formula-expression">HCl + NaOH → NaCl + H<sub>2</sub>O</div>
-    <div class="eureka-formula-expression" style="margin-top:6px;">等当点: C<sub>酸</sub>V<sub>酸</sub> = C<sub>碱</sub>V<sub>碱</sub></div>
   </div>
 
 </div>

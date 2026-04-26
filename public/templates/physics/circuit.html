@@ -85,31 +85,7 @@
 <body>
 <div class="eureka-root">
 
-  <div class="circuit-layout">
-    <!-- 左侧边栏：AI 教学助手 -->
-    <div class="circuit-sidebar">
-      <div class="eureka-card">
-        <h3 class="eureka-card-title">🤖 AI 教学助手</h3>
-        <div style="font-size: 11px; color: var(--eureka-text-muted); line-height: 1.5;">
-          <p style="margin-bottom: 6px;"><strong>串联电路：</strong></p>
-          <p>电流处处相等</p>
-          <p>总电压 = 各电压之和</p>
-          <p>R<sub>总</sub> = R₁ + R₂</p>
-          <p style="margin-top: 6px; margin-bottom: 6px;"><strong>并联电路：</strong></p>
-          <p>各支路电压相等</p>
-          <p>总电流 = 各电流之和</p>
-          <p>1/R<sub>总</sub> = 1/R₁ + 1/R₂</p>
-        </div>
-      </div>
-      <div class="eureka-formula">
-        <p class="eureka-formula-title">核心公式</p>
-        <div class="eureka-formula-expression">I = U / R</div>
-        <p class="eureka-formula-note">欧姆定律是电路基础</p>
-      </div>
-    </div>
-
-    <!-- 右侧主区域 -->
-    <div class="circuit-main">
+  <div class="circuit-main">
       <div class="circuit-stats">
         <div class="eureka-stat">
           <p class="eureka-stat-label">总电阻 R</p>
@@ -137,34 +113,36 @@
 
       <div class="eureka-card" style="margin-top: 8px;">
         <h3 class="eureka-card-title">参数调节</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 
-        <div class="eureka-control">
-          <div class="eureka-control-header">
-            <span class="eureka-control-label">电源电压 U</span>
-            <span class="eureka-control-value"><span id="v-u">6.0</span> V</span>
+          <div class="eureka-control">
+            <div class="eureka-control-header">
+              <span class="eureka-control-label">电源电压 U</span>
+              <span class="eureka-control-value"><span id="v-u">6.0</span> V</span>
+            </div>
+            <input id="ctl-u" class="eureka-slider" type="range" min="1" max="24" step="0.1" value="6">
           </div>
-          <input id="ctl-u" class="eureka-slider" type="range" min="1" max="24" step="0.1" value="6">
-        </div>
 
-        <div class="eureka-control">
-          <div class="eureka-control-header">
-            <span class="eureka-control-label">电阻 R₁</span>
-            <span class="eureka-control-value"><span id="v-r1">10</span> Ω</span>
+          <div class="eureka-control">
+            <div class="eureka-control-header">
+              <span class="eureka-control-label">电阻 R₁</span>
+              <span class="eureka-control-value"><span id="v-r1">10</span> Ω</span>
+            </div>
+            <input id="ctl-r1" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
           </div>
-          <input id="ctl-r1" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
-        </div>
 
-        <div class="eureka-control">
-          <div class="eureka-control-header">
-            <span class="eureka-control-label">电阻 R₂</span>
-            <span class="eureka-control-value"><span id="v-r2">10</span> Ω</span>
+          <div class="eureka-control" style="grid-column: 1 / -1;">
+            <div class="eureka-control-header">
+              <span class="eureka-control-label">电阻 R₂</span>
+              <span class="eureka-control-value"><span id="v-r2">10</span> Ω</span>
+            </div>
+            <input id="ctl-r2" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
           </div>
-          <input id="ctl-r2" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
+
         </div>
       </div>
     </div>
   </div>
-</div>
 
 <script src="/templates/_shared/physics-core.js"></script>
 <script>

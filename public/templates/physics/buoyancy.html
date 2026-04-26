@@ -38,55 +38,52 @@
 
   <div class="eureka-card">
     <h3 class="eureka-card-title">参数调节</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">物体体积</span>
-        <span class="eureka-control-value"><span id="v-volume">50</span> cm³</span>
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">物体体积</span>
+          <span class="eureka-control-value"><span id="v-volume">50</span> cm³</span>
+        </div>
+        <input id="ctl-volume" class="eureka-slider" type="range" min="10" max="200" value="50">
       </div>
-      <input id="ctl-volume" class="eureka-slider" type="range" min="10" max="200" value="50">
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">物体密度 (ρ物)</span>
+          <span class="eureka-control-value"><span id="v-obj-density">800</span> kg/m³</span>
+        </div>
+        <input id="ctl-obj-density" class="eureka-slider" type="range" min="200" max="2000" step="50" value="800">
+        <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">
+          <span>200 (软木)</span>
+          <span>1000 (水)</span>
+          <span>2000 (金属)</span>
+        </div>
+      </div>
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">液体密度 (ρ液)</span>
+          <span class="eureka-control-value"><span id="v-liq-density">1000</span> kg/m³</span>
+        </div>
+        <input id="ctl-liq-density" class="eureka-slider" type="range" min="800" max="13600" step="100" value="1000">
+        <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">
+          <span>800 (油)</span>
+          <span>1000 (水)</span>
+          <span>13600 (汞)</span>
+        </div>
+      </div>
+
+      <div class="eureka-control" id="force-control" style="display: none;">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">外力 (按压)</span>
+          <span class="eureka-control-value"><span id="v-force">0.0</span> N</span>
+        </div>
+        <input id="ctl-force" class="eureka-slider" type="range" min="0" max="10" step="0.1" value="0">
+        <p style="font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">对下沉物体施加外力可改变浸入深度</p>
+      </div>
+
     </div>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">物体密度 (ρ物)</span>
-        <span class="eureka-control-value"><span id="v-obj-density">800</span> kg/m³</span>
-      </div>
-      <input id="ctl-obj-density" class="eureka-slider" type="range" min="200" max="2000" step="50" value="800">
-      <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">
-        <span>200 (软木)</span>
-        <span>1000 (水)</span>
-        <span>2000 (金属)</span>
-      </div>
-    </div>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">液体密度 (ρ液)</span>
-        <span class="eureka-control-value"><span id="v-liq-density">1000</span> kg/m³</span>
-      </div>
-      <input id="ctl-liq-density" class="eureka-slider" type="range" min="800" max="13600" step="100" value="1000">
-      <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">
-        <span>800 (油)</span>
-        <span>1000 (水)</span>
-        <span>13600 (汞)</span>
-      </div>
-    </div>
-
-    <div class="eureka-control" id="force-control" style="display: none;">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">外力 (按压)</span>
-        <span class="eureka-control-value"><span id="v-force">0.0</span> N</span>
-      </div>
-      <input id="ctl-force" class="eureka-slider" type="range" min="0" max="10" step="0.1" value="0">
-      <p style="font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">对下沉物体施加外力可改变浸入深度</p>
-    </div>
-  </div>
-
-  <div class="eureka-formula">
-    <p class="eureka-formula-title">浮力公式</p>
-    <div class="eureka-formula-expression">F<sub>浮</sub> = ρ<sub>液</sub> × g × V<sub>排</sub></div>
-    <p class="eureka-formula-note">浸入体积比 = ρ<sub>物</sub> / ρ<sub>液</sub></p>
   </div>
 
 </div>

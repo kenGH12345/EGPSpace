@@ -18,7 +18,7 @@ const experiments: Record<string, PresetExperiment & { component: 'buoyancy' | '
     name: '浮力原理',
     icon: '🌊', gradient: 'from-blue-400 to-cyan-500', color: 'blue', subject: '物理',
     component: 'buoyancy', templateId: 'physics/buoyancy',
-    defaultKnowledge: ['阿基米德原理', '物体的浮沉条件'],
+    defaultKnowledge: ['阿基米德原理', '物体的浮沉条件', '公式：F浮 = ρ液 × g × V排', '浸入体积比 = ρ物 / ρ液'],
   },
   lever: {
     name: '杠杆原理',
@@ -36,13 +36,13 @@ const experiments: Record<string, PresetExperiment & { component: 'buoyancy' | '
     name: '电路串并联',
     icon: '⚡', gradient: 'from-emerald-500 to-teal-500', color: 'emerald', subject: '物理',
     component: 'circuit', templateId: 'physics/circuit',
-    defaultKnowledge: ['欧姆定律 I=U/R', '串联分压不分流', '并联分流不分压'],
+    defaultKnowledge: ['欧姆定律 I=U/R', '串联分压不分流', '并联分流不分压', '公式：I = U/R', '串联：R总 = R1 + R2', '并联：1/R总 = 1/R1 + 1/R2'],
   },
   'acid-base': {
     name: '酸碱滴定',
     icon: '🧪', gradient: 'from-red-500 to-orange-500', color: 'red', subject: '化学',
     component: 'acid-base', templateId: 'chemistry/acid-base-titration',
-    defaultKnowledge: ['酸碱中和反应', '指示剂变色原理', '滴定终点判断'],
+    defaultKnowledge: ['酸碱中和反应', '指示剂变色原理', '滴定终点判断', '公式：HCl + NaOH → NaCl + H₂O', '等当点：C酸V酸 = C碱V碱'],
   },
   'acid-base-titration': {
     name: '酸碱中和滴定',
