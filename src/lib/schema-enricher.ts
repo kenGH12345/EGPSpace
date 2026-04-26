@@ -21,6 +21,10 @@ import {
   createRefractionExperiment,
   createCircuitExperiment,
   createDefaultSchema,
+  createAcidBaseTitrationExperiment,
+  createElectrolysisExperiment,
+  createReactionRateExperiment,
+  createCombustionExperiment,
 } from './experiment-schema';
 
 // ============ Template Registry ============
@@ -30,6 +34,11 @@ const TEMPLATES: Record<string, () => ExperimentSchema> = {
   lever: createLeverExperiment,
   refraction: createRefractionExperiment,
   circuit: createCircuitExperiment,
+  // Chemistry experiments (Phase 2 — Unified Schema)
+  'acid-base-titration': createAcidBaseTitrationExperiment,
+  electrolysis: createElectrolysisExperiment,
+  'reaction-rate': createReactionRateExperiment,
+  combustion: createCombustionExperiment,
 };
 
 // ============ Enrichment Logic ============

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-231958","createdAt":"2026-04-25T15:19:58.534Z"}
+{"seq":1,"ts":"2026-04-25T15:19:58.534Z","sessionId":"wf-20260425-231958","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"test execution, quality validation"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

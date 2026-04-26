@@ -17,7 +17,7 @@ export type SubjectDomain = 'physics' | 'chemistry' | 'biology' | 'geography' | 
 // Physics engine types
 type PhysicsType = 'buoyancy' | 'lever' | 'refraction' | 'circuit' | 'pendulum' | 'wave';
 // Chemistry engine types
-type ChemistryType = 'acid_base' | 'electrolysis' | 'reaction_rate' | 'titration';
+type ChemistryType = 'acid_base' | 'electrolysis' | 'reaction_rate' | 'titration' | 'combustion';
 // Biology engine types
 type BiologyType = 'osmosis' | 'enzyme' | 'population' | 'photosynthesis';
 // Math engine types
@@ -95,6 +95,7 @@ export interface CanvasElement {
   stroke?: string;
   strokeWidth?: number;
   fontSize?: number;
+  fontWeight?: string;
   text?: string;
   opacity?: number;
   visible?: boolean;
@@ -1065,6 +1066,982 @@ export function createCircuitExperiment(): ExperimentSchema {
     scenes: [
       { name: '标准电路', description: '12V电源，10Ω电阻', params: { voltage: 12, resistance: 10 } },
       { name: '高电阻', description: '12V电源，100Ω电阻', params: { voltage: 12, resistance: 100 } },
+    ],
+  };
+}
+
+// ============ Chemistry Experiments (Phase 2 — Unified Schema) ============
+
+export function createAcidBaseTitrationExperiment(): ExperimentSchema {
+  const CANVAS_W = 560;
+  const CANVAS_H = 280;
+  const FLASK_X = CANVAS_W / 2 + 80;
+  const FLASK_Y = 140;
+  const FLASK_W = 70;
+  const FLASK_H = 85;
+
+  return {
+    meta: {
+      name: '酸碱滴定实验',
+      subject: 'chemistry',
+      topic: '酸碱中和反应',
+      description: '通过酸碱滴定观察pH变化，理解中和反应原理',
+      icon: '🧪',
+      gradient: 'from-pink-500 to-rose-500',
+      physicsType: 'acid_base',
+    },
+    params: [
+      {
+        name: 'C_acid',
+        label: '酸浓度 (HCl)',
+        unit: 'mol/L',
+        defaultValue: 0.1,
+        min: 0.01,
+        max: 1.0,
+        step: 0.01,
+        category: 'input',
+        description: '酸溶液的初始浓度',
+      },
+      {
+        name: 'C_base',
+        label: '碱浓度 (NaOH)',
+        unit: 'mol/L',
+        defaultValue: 0.1,
+        min: 0.01,
+        max: 1.0,
+        step: 0.01,
+        category: 'input',
+        description: '滴定用碱溶液的浓度',
+      },
+      {
+        name: 'V_acid',
+        label: '酸溶液体积',
+        unit: 'mL',
+        defaultValue: 25,
+        min: 1,
+        max: 100,
+        step: 1,
+        category: 'input',
+        description: '锥形瓶中酸溶液的体积',
+      },
+      {
+        name: 'V_added',
+        label: '已加入NaOH体积',
+        unit: 'mL',
+        defaultValue: 0,
+        min: 0,
+        max: 50,
+        step: 0.1,
+        category: 'input',
+        description: '滴定管中已加入的碱溶液体积',
+      },
+    ],
+    formulas: [
+      {
+        name: '物质的量公式',
+        expression: 'n = C × V',
+        description: '物质的量等于浓度乘体积',
+        variables: ['C_acid', 'V_acid'],
+        resultVariable: 'n_acid',
+      },
+      {
+        name: 'pH计算（强酸强碱）',
+        expression: 'pH = -log[H+]',
+        description: '强酸强碱滴定的pH计算',
+        variables: ['C_acid', 'V_acid', 'C_base', 'V_added'],
+        resultVariable: 'pH_value',
+      },
+    ],
+    canvas: {
+      layout: { width: CANVAS_W, height: CANVAS_H, background: '#fff1f2' },
+      elements: [
+        // Burette (滴定管)
+        {
+          id: 'burette',
+          type: 'rect',
+          label: '滴定管',
+          x: CANVAS_W / 2 - 30,
+          y: 30,
+          width: 18,
+          height: 120,
+          fill: 'rgba(200,220,255,0.5)',
+          stroke: '#3b82f6',
+          strokeWidth: 2,
+        },
+        // Stopcock
+        {
+          id: 'stopcock',
+          type: 'rect',
+          label: '活塞',
+          x: CANVAS_W / 2 - 38,
+          y: 148,
+          width: 34,
+          height: 10,
+          fill: '#6b7280',
+          stroke: '#4b5563',
+          strokeWidth: 1,
+        },
+        // Burette tip
+        {
+          id: 'burette-tip',
+          type: 'polygon',
+          label: '滴定管尖嘴',
+          x: 0,
+          y: 0,
+          points: [
+            { x: CANVAS_W / 2 - 30, y: 158 },
+            { x: CANVAS_W / 2 - 12, y: 158 },
+            { x: CANVAS_W / 2 - 21, y: 170 },
+          ],
+          fill: 'rgba(200,220,255,0.5)',
+          stroke: '#3b82f6',
+          strokeWidth: 1,
+        },
+        // Liquid column in burette (level driven by V_added)
+        {
+          id: 'burette-liquid',
+          type: 'rect',
+          label: '碱液',
+          x: CANVAS_W / 2 - 28,
+          y: '30 + 120 * (1 - V_added / 50)',
+          width: 14,
+          height: '120 * V_added / 50',
+          fill: 'rgba(59,130,246,0.5)',
+          stroke: 'none',
+        },
+        // Flask (conical flask)
+        {
+          id: 'flask',
+          type: 'polygon',
+          label: '锥形瓶',
+          x: 0,
+          y: 0,
+          points: [
+            { x: FLASK_X - FLASK_W / 2, y: FLASK_Y + FLASK_H / 2 },
+            { x: FLASK_X + FLASK_W / 2, y: FLASK_Y + FLASK_H / 2 },
+            { x: FLASK_X + 12, y: FLASK_Y - FLASK_H / 2 },
+            { x: FLASK_X - 12, y: FLASK_Y - FLASK_H / 2 },
+          ],
+          fill: 'rgba(255,255,255,0.6)',
+          stroke: '#94a3b8',
+          strokeWidth: 2,
+        },
+        // Liquid in flask (color changes with pH)
+        {
+          id: 'flask-liquid',
+          type: 'polygon',
+          label: '溶液',
+          x: 0,
+          y: 0,
+          points: [
+            { x: FLASK_X - FLASK_W / 2 + 6, y: FLASK_Y + FLASK_H / 2 - 5 },
+            { x: FLASK_X + FLASK_W / 2 - 6, y: FLASK_Y + FLASK_H / 2 - 5 },
+            { x: FLASK_X + 9, y: FLASK_Y + 20 },
+            { x: FLASK_X - 9, y: FLASK_Y + 20 },
+          ],
+          fill: 'liquidColor',
+          stroke: 'none',
+          dynamic: {
+            fill: 'pH_value < 7 ? "rgba(255,107,107,0.6)" : pH_value > 7 ? "rgba(107,171,255,0.6)" : "rgba(156,163,175,0.5)"',
+          },
+        },
+        // pH value label
+        {
+          id: 'ph-label',
+          type: 'text',
+          label: 'pH值',
+          x: FLASK_X + 50,
+          y: FLASK_Y + 20,
+          text: 'pH: {pH}',
+          fontSize: 14,
+          fill: '#e11d48',
+          dynamic: {
+            text: '"pH: " + pH_value.toFixed(2)',
+          },
+        },
+        // Status label
+        {
+          id: 'status-label',
+          type: 'text',
+          label: '状态',
+          x: FLASK_X + 50,
+          y: FLASK_Y + 50,
+          text: '状态',
+          fontSize: 12,
+          fill: '#374151',
+          dynamic: {
+            text: 'pH_value < 6.9 ? "酸性 (未中和)" : pH_value > 7.1 ? "碱性 (过量)" : "中性 (已中和)"',
+          },
+        },
+      ],
+      presetTemplate: 'acid_base',
+    },
+    physics: {
+      engine: 'generic',
+      equations: [
+        {
+          name: '物质的量计算',
+          expression: 'n = C × V',
+          description: '酸/碱的物质的量',
+          variables: ['C_acid', 'V_acid'],
+          resultVariable: 'n_acid',
+        },
+      ],
+      computedParams: [
+        { name: 'n_acid', formula: 'C_acid * V_acid', dependsOn: ['C_acid', 'V_acid'] },
+        { name: 'n_base', formula: 'C_base * V_added', dependsOn: ['C_base', 'V_added'] },
+        { name: 'totalVolume', formula: 'V_acid + V_added', dependsOn: ['V_acid', 'V_added'] },
+        { name: 'excess', formula: 'n_acid - n_base', dependsOn: ['n_acid', 'n_base'] },
+        { name: 'pH_value', formula: 'excess > 0.001 ? -Math.log10(Math.abs(excess) / totalVolume) : Math.abs(excess) > 0.001 ? 14 + Math.log10(Math.abs(excess) / totalVolume) : 7.0', dependsOn: ['excess', 'totalVolume'] },
+      ],
+    },
+    interactions: {
+      sliders: [
+        { param: 'C_acid', label: '酸浓度', min: 0.01, max: 1.0, step: 0.01, unit: 'mol/L' },
+        { param: 'C_base', label: '碱浓度', min: 0.01, max: 1.0, step: 0.01, unit: 'mol/L' },
+        { param: 'V_acid', label: '酸体积', min: 1, max: 100, step: 1, unit: 'mL' },
+        { param: 'V_added', label: '已加碱体积', min: 0, max: 50, step: 0.1, unit: 'mL' },
+      ],
+      firstTimeHint: '调节“已加碱体积”滑块，观察pH变化和溶液颜色',
+    },
+    teaching: {
+      understanding: {
+        objective: '理解酸碱中和反应的本质和pH变化规律',
+        keyConcepts: ['酸碱中和反应', '化学计量点', 'pH曲线', '强酸强碱滴定'],
+        prerequisites: ['酸碱概念', '物质的量'],
+      },
+      reasoning: {
+        hypothesis: '当酸和碱的物质的量相等时，溶液呈中性',
+        variables: ['酸浓度', '碱浓度', '酸体积', '碱加入体积'],
+        controlMethod: '逐滴加入碱液，记录pH变化',
+      },
+      design: {
+        steps: ['配置标准酸碱溶液', '向酸中逐滴加入碱', '记录每次加入的体积和pH值', '绘制pH滴定曲线'],
+        dataCollection: '记录每滴碱液的体积和对应pH值',
+        analysisMethod: '找出pH突变点对应的碱液体积',
+      },
+      errors: {
+        common: ['读数时视线未平视', '滴定前未赶气泡', '终点判断失误'],
+        prevention: ['实验前检查滴定管', '边滴边摇', '使用指示剂辅助判断'],
+      },
+      evaluation: {
+        questions: ['为什么pH=7时恰好中和？', '强酸弱碱滴定的终点在平几滴？'],
+        criteria: ['能正确计算pH值', '能画出典型滴定曲线'],
+      },
+    },
+    scenes: [
+      { name: '滴定起点', description: '起始酸性溶液', params: { C_acid: 0.1, C_base: 0.1, V_acid: 25, V_added: 0 } },
+      { name: '接近终点', description: '即将中和', params: { C_acid: 0.1, C_base: 0.1, V_acid: 25, V_added: 24.9 } },
+      { name: '恰好中和', description: '化学计量点', params: { C_acid: 0.1, C_base: 0.1, V_acid: 25, V_added: 25 } },
+      { name: '碱过量', description: '超过化学计量点', params: { C_acid: 0.1, C_base: 0.1, V_acid: 25, V_added: 30 } },
+    ],
+  };
+}
+
+export function createElectrolysisExperiment(): ExperimentSchema {
+  const CANVAS_W = 560;
+  const CANVAS_H = 280;
+
+  return {
+    meta: {
+      name: '电解水实验',
+      subject: 'chemistry',
+      topic: '电解',
+      description: '通过电解水验证水的组成，观察氢气和氧气的生成过程',
+      icon: '⚡',
+      gradient: 'from-sky-500 to-teal-500',
+      physicsType: 'electrolysis',
+    },
+    params: [
+      {
+        name: 'voltage',
+        label: '电压',
+        unit: 'V',
+        defaultValue: 12,
+        min: 2,
+        max: 24,
+        step: 0.5,
+        category: 'input',
+        description: '电解电压',
+      },
+      {
+        name: 'conductivity',
+        label: '电解质浓度 (NaOH)',
+        unit: '%',
+        defaultValue: 5,
+        min: 0,
+        max: 20,
+        step: 1,
+        category: 'input',
+        description: '加入的电解质浓度（提高导电性）',
+      },
+      {
+        name: 'time',
+        label: '电解时间',
+        unit: 'min',
+        defaultValue: 5,
+        min: 0,
+        max: 60,
+        step: 1,
+        category: 'input',
+        description: '电解时间',
+      },
+    ],
+    formulas: [
+      {
+        name: '法拉第第一定律',
+        expression: 'm = MIt / (nF)',
+        description: '电解产物的质量与通过的电量成正比',
+        variables: ['voltage', 'conductivity', 'time'],
+        resultVariable: 'gas_volume',
+      },
+    ],
+    canvas: {
+      layout: { width: CANVAS_W, height: CANVAS_H, background: '#f0f9ff' },
+      elements: [
+        // Electrolysis tank
+        {
+          id: 'tank',
+          type: 'rect',
+          label: '电解槽',
+          x: CANVAS_W / 2 - 60,
+          y: 80,
+          width: 120,
+          height: 140,
+          fill: 'rgba(200,235,255,0.3)',
+          stroke: '#60a5fa',
+          strokeWidth: 2,
+        },
+        // Anode electrode (left, +)
+        {
+          id: 'anode',
+          type: 'rect',
+          label: '阳极',
+          x: CANVAS_W / 2 - 40,
+          y: 90,
+          width: 4,
+          height: 120,
+          fill: '#ef4444',
+          stroke: '#b91c1c',
+          strokeWidth: 1,
+        },
+        // Cathode electrode (right, -)
+        {
+          id: 'cathode',
+          type: 'rect',
+          label: '阴极',
+          x: CANVAS_W / 2 + 36,
+          y: 90,
+          width: 4,
+          height: 120,
+          fill: '#3b82f6',
+          stroke: '#1d4ed8',
+          strokeWidth: 1,
+        },
+        // Battery / power source
+        {
+          id: 'battery',
+          type: 'rect',
+          label: '电源',
+          x: CANVAS_W / 2 - 20,
+          y: 20,
+          width: 40,
+          height: 30,
+          fill: '#fbbf24',
+          stroke: '#d97706',
+          strokeWidth: 1,
+        },
+        {
+          id: 'battery-label',
+          type: 'text',
+          label: 'U',
+          x: CANVAS_W / 2 - 5,
+          y: 40,
+          text: '⚡',
+          fontSize: 14,
+        },
+        // H2 gas label
+        {
+          id: 'h2-label',
+          type: 'text',
+          label: '氢气体积',
+          x: CANVAS_W / 2 - 120,
+          y: 150,
+          text: 'H₂: {H2_volume} mL',
+          fontSize: 13,
+          fill: '#1d4ed8',
+          dynamic: {
+            text: '"H₂: " + H2_volume.toFixed(1) + " mL"',
+          },
+        },
+        // O2 gas label
+        {
+          id: 'o2-label',
+          type: 'text',
+          label: '氧气体积',
+          x: CANVAS_W / 2 + 50,
+          y: 150,
+          text: 'O₂: {O2_volume} mL',
+          fontSize: 13,
+          fill: '#b91c1c',
+          dynamic: {
+            text: '"O₂: " + O2_volume.toFixed(1) + " mL"',
+          },
+        },
+        // Gas ratio label
+        {
+          id: 'ratio-label',
+          type: 'text',
+          label: '体积比',
+          x: CANVAS_W / 2 - 40,
+          y: 240,
+          text: 'V(H₂):V(O₂) ≈ 2:1',
+          fontSize: 12,
+          fill: '#374151',
+        },
+      ],
+      presetTemplate: 'electrolysis',
+      ambientAnimations: [
+        {
+          type: 'bubble',
+          target: 'tank',
+          params: {
+            count: 8,
+            minRadius: 2,
+            maxRadius: 5,
+            x: CANVAS_W / 2 - 60 + 10,
+            y: 80 + 20,
+            width: 120 - 20,
+            height: 140 - 30,
+            color: 'rgba(186,230,253,0.7)',
+          },
+        },
+      ],
+    },
+    physics: {
+      engine: 'generic',
+      equations: [
+        {
+          name: '气体体积计算',
+          expression: 'V(H₂) = 2 × (mL/min × t × 导电率系数)',
+          description: '氢气体积与时间成正比',
+          variables: ['voltage', 'conductivity', 'time'],
+          resultVariable: 'gas_volume',
+        },
+      ],
+      computedParams: [
+        { name: 'gas_rate', formula: '0.5 * (voltage / 12) * (1 + conductivity / 100)', dependsOn: ['voltage', 'conductivity'] },
+        { name: 'H2_volume', formula: 'gas_rate * time * 2', dependsOn: ['gas_rate', 'time'] },
+        { name: 'O2_volume', formula: 'gas_rate * time', dependsOn: ['gas_rate', 'time'] },
+      ],
+    },
+    interactions: {
+      sliders: [
+        { param: 'voltage', label: '电压', min: 2, max: 24, step: 0.5, unit: 'V' },
+        { param: 'conductivity', label: '电解质浓度', min: 0, max: 20, step: 1, unit: '%' },
+        { param: 'time', label: '电解时间', min: 0, max: 60, step: 1, unit: 'min' },
+      ],
+      firstTimeHint: '调节电压和电解时间，观察氢气和氧气体积变化',
+    },
+    teaching: {
+      understanding: {
+        objective: '理解电解水的原理和产物比例',
+        keyConcepts: ['电解', '阴极还原', '阳极氧化', '水的组成'],
+        prerequisites: ['氧化还原反应', '离子导电'],
+      },
+      reasoning: {
+        hypothesis: '阴极产生氢气，阳极产生氧气，体积比为2:1',
+        variables: ['电压', '电解质浓度', '电解时间'],
+        controlMethod: '保持电压不变，改变电解时间',
+      },
+      design: {
+        steps: ['设置电压和电解质浓度', '通电开始电解', '记录气体体积', '比较阴阳极气体体积比'],
+        dataCollection: '记录阴阳极收集的气体体积',
+        analysisMethod: '计算体积比并与理论值2:1比较',
+      },
+      errors: {
+        common: ['忽略电解质的作用', '未完全收集气体', '电压过高导致副反应'],
+        prevention: ['加入适量电解质', '确保装置气密性', '控制适当电压'],
+      },
+      evaluation: {
+        questions: ['为什么阴极产生氢气，阳极产生氧气？', '加入NaOH的作用是什么？'],
+        criteria: ['能正确判断阴阳极产物', '能验证体积比为2:1'],
+      },
+    },
+    scenes: [
+      { name: '初始状态', description: '刚通电时', params: { voltage: 12, conductivity: 5, time: 0 } },
+      { name: '短时间电解', description: '电解5分钟', params: { voltage: 12, conductivity: 5, time: 5 } },
+      { name: '长时电解', description: '电解30分钟', params: { voltage: 12, conductivity: 5, time: 30 } },
+    ],
+  };
+}
+
+export function createReactionRateExperiment(): ExperimentSchema {
+  const CANVAS_W = 560;
+  const CANVAS_H = 280;
+
+  return {
+    meta: {
+      name: '化学反应速率实验',
+      subject: 'chemistry',
+      topic: '反应速率',
+      description: '探究温度、浓度、催化剂对化学反应速率的影响',
+      icon: '🔥',
+      gradient: 'from-orange-500 to-red-500',
+      physicsType: 'reaction_rate',
+    },
+    params: [
+      {
+        name: 'temperature',
+        label: '温度',
+        unit: '°C',
+        defaultValue: 25,
+        min: 0,
+        max: 100,
+        step: 1,
+        category: 'input',
+        description: '反应体系温度',
+      },
+      {
+        name: 'concentration',
+        label: '反应物浓度',
+        unit: 'mol/L',
+        defaultValue: 0.1,
+        min: 0.01,
+        max: 2.0,
+        step: 0.01,
+        category: 'input',
+        description: '反应物的初始浓度',
+      },
+      {
+        name: 'catalyst',
+        label: '催化剂系数',
+        unit: '',
+        defaultValue: 1,
+        min: 1,
+        max: 10,
+        step: 0.5,
+        category: 'input',
+        description: '催化剂活性系数（1=无催化剂，2-10=有催化剂）',
+      },
+    ],
+    formulas: [
+      {
+        name: '阿伦尼乌斯方程',
+        expression: 'k = A exp(-Ea/RT)',
+        description: '速率常数与温度的关系',
+        variables: ['temperature', 'catalyst'],
+        resultVariable: 'rate_constant',
+      },
+      {
+        name: '反应速率公式',
+        expression: 'v = k[C]^n',
+        description: '反应速率与浓度的关系',
+        variables: ['temperature', 'concentration', 'catalyst'],
+        resultVariable: 'reaction_rate',
+      },
+    ],
+    canvas: {
+      layout: { width: CANVAS_W, height: CANVAS_H, background: '#fff7ed' },
+      elements: [
+        // Reaction vessel
+        {
+          id: 'vessel',
+          type: 'rect',
+          label: '反应容器',
+          x: CANVAS_W / 2 - 80,
+          y: 60,
+          width: 160,
+          height: 150,
+          fill: 'rgba(255,255,255,0.8)',
+          stroke: '#94a3b8',
+          strokeWidth: 2,
+        },
+        // Particles count label
+        {
+          id: 'rate-label',
+          type: 'text',
+          label: '反应速率',
+          x: CANVAS_W / 2 + 100,
+          y: 80,
+          text: 'v = {rate}',
+          fontSize: 14,
+          fill: '#ea580c',
+          dynamic: {
+            text: '"v = " + reaction_rate.toFixed(3) + " mol/(L·s)"',
+          },
+        },
+        // Temperature display
+        {
+          id: 'temp-display',
+          type: 'text',
+          label: '温度显示',
+          x: CANVAS_W / 2 + 100,
+          y: 110,
+          text: 'T = {temp} °C',
+          fontSize: 12,
+          fill: '#374151',
+          dynamic: {
+            text: '"T = " + temperature + " °C"',
+          },
+        },
+        // Concentration display
+        {
+          id: 'conc-display',
+          type: 'text',
+          label: '浓度显示',
+          x: CANVAS_W / 2 + 100,
+          y: 135,
+          text: 'C = {conc} mol/L',
+          fontSize: 12,
+          fill: '#374151',
+          dynamic: {
+            text: '"C = " + concentration.toFixed(2) + " mol/L"',
+          },
+        },
+        // Rate constant display
+        {
+          id: 'k-display',
+          type: 'text',
+          label: '速率常数',
+          x: CANVAS_W / 2 + 100,
+          y: 160,
+          text: 'k = {k_val}',
+          fontSize: 12,
+          fill: '#374151',
+          dynamic: {
+            text: '"k = " + rate_constant.toFixed(4)',
+          },
+        },
+      ],
+      presetTemplate: 'reaction_rate',
+      ambientAnimations: [
+        {
+          type: 'particle',
+          params: {
+            count: 15,
+            speed: 'temperature / 25',
+            color: 'rgba(251,146,60,0.8)',
+            size: 3,
+          },
+        },
+      ],
+    },
+    physics: {
+      engine: 'generic',
+      equations: [
+        {
+          name: '反应速率',
+          expression: 'v = k · [C]ⁿ',
+          description: '反应速率公式',
+          variables: ['temperature', 'concentration', 'catalyst'],
+          resultVariable: 'reaction_rate',
+        },
+      ],
+      computedParams: [
+        { name: 'rate_constant', formula: '0.05 * catalyst * Math.exp(-5000 / (8.314 * (temperature + 273.15)))', dependsOn: ['temperature', 'catalyst'] },
+        { name: 'reaction_rate', formula: 'rate_constant * concentration', dependsOn: ['rate_constant', 'concentration'] },
+      ],
+    },
+    interactions: {
+      sliders: [
+        { param: 'temperature', label: '温度', min: 0, max: 100, step: 1, unit: '°C' },
+        { param: 'concentration', label: '反应物浓度', min: 0.01, max: 2.0, step: 0.01, unit: 'mol/L' },
+        { param: 'catalyst', label: '催化剂系数', min: 1, max: 10, step: 0.5, unit: '' },
+      ],
+      firstTimeHint: '调节温度和浓度，观察反应速率的变化',
+    },
+    teaching: {
+      understanding: {
+        objective: '理解反应速率的影响因素',
+        keyConcepts: ['速率常数', '阿伦尼乌斯方程', '活化能', '催化剂'],
+        prerequisites: ['化学反应基本概念', '温度与分子运动'],
+      },
+      reasoning: {
+        hypothesis: '温度升高10°C，速率大约翻倍；增加浓度或加入催化剂也能加快速率',
+        variables: ['温度', '浓度', '催化剂'],
+        controlMethod: '控制变量法：每次只改变一个因素',
+      },
+      design: {
+        steps: ['设置反应条件', '改变一个因素', '测量反应速率', '记录数据'],
+        dataCollection: '记录不同条件下的反应速率',
+        analysisMethod: '比较各条件下速率大小，得出影响规律',
+      },
+      errors: {
+        common: ['同时改变多个变量', '忽略反应级数的影响', '催化剂浓度未量化'],
+        prevention: ['严格使用控制变量法', '确认反应级数', '记录催化剂用量'],
+      },
+      evaluation: {
+        questions: ['为什么温度对反应速率影响这么大？', '催化剂为什么不改变平衡位置？'],
+        criteria: ['能判断影响速率的三个因素', '能解释温度-速率曲线'],
+      },
+    },
+    scenes: [
+      { name: '常温低浓度', description: '标准条件', params: { temperature: 25, concentration: 0.1, catalyst: 1 } },
+      { name: '高温条件', description: '温度升高', params: { temperature: 60, concentration: 0.1, catalyst: 1 } },
+      { name: '高浓度+催化剂', description: '浓度和催化剂都增加', params: { temperature: 25, concentration: 1.0, catalyst: 5 } },
+    ],
+  };
+}
+
+export function createCombustionExperiment(): ExperimentSchema {
+  const CANVAS_W = 560;
+  const CANVAS_H = 280;
+
+  return {
+    meta: {
+      name: '燃烧条件探究实验',
+      subject: 'chemistry',
+      topic: '燃烧',
+      description: '通过控制变量法探究燃烧的三个条件',
+      icon: '🔥',
+      gradient: 'from-red-600 to-orange-500',
+      physicsType: 'generic',
+    },
+    params: [
+      {
+        name: 'temperature',
+        label: '环境温度',
+        unit: '°C',
+        defaultValue: 25,
+        min: 0,
+        max: 500,
+        step: 5,
+        category: 'input',
+        description: '环境初始温度',
+      },
+      {
+        name: 'o2_percent',
+        label: '氧气浓度',
+        unit: '%',
+        defaultValue: 21,
+        min: 0,
+        max: 100,
+        step: 1,
+        category: 'input',
+        description: '环境中氧气百分比',
+      },
+      {
+        name: 'fuel_type',
+        label: '燃料类型',
+        unit: '',
+        defaultValue: 1,
+        min: 0,
+        max: 3,
+        step: 1,
+        category: 'input',
+        description: '0=无可燃物,1=木材(燃点300°C),2=纸张(燃点230°C),3=乙醇(燃点363°C)',
+      },
+    ],
+    formulas: [
+      {
+        name: '燃烧条件验证',
+        expression: '燃烧 = (T ≥ 燃点) ∧ (氧气 > 0) ∧ (存在可燃物)',
+        description: '三个条件同时满足才能燃烧',
+        variables: ['temperature', 'o2_percent', 'fuel_type'],
+        resultVariable: 'is_burning',
+      },
+    ],
+    canvas: {
+      layout: { width: CANVAS_W, height: CANVAS_H, background: '#fef2f2' },
+      elements: [
+        // Zone 1 label: Fuel
+        {
+          id: 'zone1-label',
+          type: 'text',
+          label: '可燃物区域',
+          x: 30,
+          y: 30,
+          text: '条件1: 可燃物',
+          fontSize: 13,
+          fill: '#374151',
+        },
+        // Fuel pile
+        {
+          id: 'fuel-pile',
+          type: 'polygon',
+          label: '燃料堆',
+          x: 0,
+          y: 0,
+          points: [
+            { x: 40, y: 80 },
+            { x: 80, y: 70 },
+            { x: 90, y: 90 },
+            { x: 50, y: 100 },
+          ],
+          fill: 'fuelColor',
+          stroke: '#78350f',
+          strokeWidth: 1,
+          dynamic: {
+            fill: 'fuel_type === 1 ? "#92400e" : fuel_type === 2 ? "#d97706" : fuel_type === 3 ? "#60a5fa" : "#d1d5db"',
+          },
+        },
+        // Zone 2 label: Oxygen
+        {
+          id: 'zone2-label',
+          type: 'text',
+          label: '助燃物区域',
+          x: 230,
+          y: 30,
+          text: '条件2: 助燃物',
+          fontSize: 13,
+          fill: '#374151',
+        },
+        // Air in zone 2
+        {
+          id: 'air-zone',
+          type: 'rect',
+          label: '气体区域',
+          x: 220,
+          y: 60,
+          width: 100,
+          height: 80,
+          fill: 'airColor',
+          stroke: 'none',
+          opacity: 0.3,
+          dynamic: {
+            fill: 'o2_percent > 10 ? "rgba(59,130,246,0.3)" : "rgba(156,163,175,0.2)"',
+          },
+        },
+        {
+          id: 'o2-label',
+          type: 'text',
+          label: '氧气浓度',
+          x: 230,
+          y: 80,
+          text: 'O₂: {o2}%',
+          fontSize: 12,
+          fill: '#1e40af',
+          dynamic: {
+            text: '"O₂: " + o2_percent + "%"',
+          },
+        },
+        // Zone 3 label: Temperature
+        {
+          id: 'zone3-label',
+          type: 'text',
+          label: '温度区域',
+          x: 430,
+          y: 30,
+          text: '条件3: 温度≥燃点',
+          fontSize: 13,
+          fill: '#374151',
+        },
+        // Thermometer
+        {
+          id: 'thermometer',
+          type: 'rect',
+          label: '温度计',
+          x: 455,
+          y: 60,
+          width: 12,
+          height: 100,
+          fill: 'rgba(255,255,255,0.8)',
+          stroke: '#6b7280',
+          strokeWidth: 1,
+        },
+        {
+          id: 'mercury',
+          type: 'rect',
+          label: '水银柱',
+          x: 457,
+          y: 'mercuryY',
+          width: 8,
+          height: 'mercuryH',
+          fill: '#ef4444',
+          stroke: 'none',
+          dynamic: {
+            y: '160 - temperature * 0.2',
+          },
+        },
+        {
+          id: 'temp-label',
+          type: 'text',
+          label: '温度值',
+          x: 475,
+          y: 100,
+          text: '{temp}°C',
+          fontSize: 12,
+          fill: '#dc2626',
+          dynamic: {
+            text: 'temperature + "°C"',
+          },
+        },
+        // Burning result
+        {
+          id: 'result-label',
+          type: 'text',
+          label: '结果',
+          x: 230,
+          y: 200,
+          text: '结果',
+          fontSize: 16,
+          fill: '#374151',
+          dynamic: {
+            text: 'is_burning ? "🔥 燃烧中！" : "❌ 未燃烧"',
+            fill: 'is_burning ? "#dc2626" : "#6b7280"',
+          },
+        },
+      ],
+      presetTemplate: 'combustion',
+    },
+    physics: {
+      engine: 'generic',
+      equations: [
+        {
+          name: '燃烧条件',
+          expression: '燃烧 = T≥燃点 ∧ O₂>0 ∧ 可燃物',
+          description: '三个条件缺一不可',
+          variables: ['temperature', 'o2_percent', 'fuel_type'],
+          resultVariable: 'is_burning',
+        },
+      ],
+      computedParams: [
+        { name: 'ignition_point', formula: 'fuel_type === 1 ? 300 : fuel_type === 2 ? 230 : fuel_type === 3 ? 363 : 9999', dependsOn: ['fuel_type'] },
+        { name: 'is_burning', formula: 'temperature >= ignition_point && o2_percent > 10 && fuel_type > 0 ? 1 : 0', dependsOn: ['temperature', 'o2_percent', 'fuel_type', 'ignition_point'] },
+        { name: 'hasFuel', formula: 'fuel_type > 0 ? 1 : 0', dependsOn: ['fuel_type'] },
+        { name: 'enoughO2', formula: 'o2_percent > 10 ? 1 : 0', dependsOn: ['o2_percent'] },
+        { name: 'hotEnough', formula: 'temperature >= ignition_point ? 1 : 0', dependsOn: ['temperature', 'ignition_point'] },
+      ],
+    },
+    interactions: {
+      sliders: [
+        { param: 'temperature', label: '环境温度', min: 0, max: 500, step: 5, unit: '°C' },
+        { param: 'o2_percent', label: '氧气浓度', min: 0, max: 100, step: 1, unit: '%' },
+        { param: 'fuel_type', label: '燃料类型', min: 0, max: 3, step: 1, unit: '' },
+      ],
+      firstTimeHint: '三个条件同时满足才能燃烧！尝试找到每种燃料的燃点',
+    },
+    teaching: {
+      understanding: {
+        objective: '理解燃烧的三个必要条件',
+        keyConcepts: ['燃烧三要素', '燃点', '助燃物', '可燃物'],
+        prerequisites: ['氧化反应', '物质的熔沸点'],
+      },
+      reasoning: {
+        hypothesis: '燃烧必须同时满足三个条件：可燃物、助燃物、温度达到燃点',
+        variables: ['燃料类型', '氧气浓度', '环境温度'],
+        controlMethod: '控制变量法，每次只改变一个条件',
+      },
+      design: {
+        steps: ['选择燃料类型', '设置氧气浓度', '调节温度', '观察是否燃烧'],
+        dataCollection: '记录不同条件下的燃烧状态',
+        analysisMethod: '判断哪些条件同时满足',
+      },
+      errors: {
+        common: ['忽略助燃物的作用', '混淆燃点和着火点', '未控制变量'],
+        prevention: ['严格使用控制变量法', '理解三者缺一不可'],
+      },
+      evaluation: {
+        questions: ['为什么灭火毯能灭火？', '为什么人要降温到燃点以下才能自救？'],
+        criteria: ['能正确判断燃烧条件', '能分别描述灭火原理'],
+      },
+    },
+    scenes: [
+      { name: '缺可燃物', description: '没有燃料', params: { temperature: 500, o2_percent: 21, fuel_type: 0 } },
+      { name: '缺氧气', description: '氧气不足', params: { temperature: 500, o2_percent: 5, fuel_type: 1 } },
+      { name: '温度不够', description: '低于燃点', params: { temperature: 200, o2_percent: 21, fuel_type: 1 } },
+      { name: '恰好燃烧', description: '三个条件都满足', params: { temperature: 350, o2_percent: 21, fuel_type: 1 } },
     ],
   };
 }

@@ -170,7 +170,16 @@ export default function HomePage() {
       return 'circuit';
     }
     if (name.includes('酸碱') || desc.includes('滴定') || desc.includes('指示剂') || desc.includes('ph')) {
-      return 'acid-base';
+      return 'acid-base-titration';
+    }
+    if (name.includes('电解') || desc.includes('电解') || desc.includes('阴极') || desc.includes('阳极') || desc.includes('氢气') || desc.includes('氧气')) {
+      return 'electrolysis';
+    }
+    if (name.includes('速率') || desc.includes('速率') || desc.includes('阿伦尼乌斯') || desc.includes('催化剂')) {
+      return 'reaction-rate';
+    }
+    if (name.includes('燃烧') || desc.includes('燃烧') || desc.includes('燃点') || desc.includes('着火点')) {
+      return 'combustion-conditions';
     }
     return 'buoyancy';
   };
@@ -239,7 +248,7 @@ export default function HomePage() {
               {currentExperiments.map((exp) => (
                 <button
                   key={exp.id}
-onClick={() => handleExperimentClick(exp.id, exp.title, exp.description)}
+                  onClick={() => handleExperimentClick(exp.id, exp.title, exp.description)}
                   className="bg-white rounded-2xl p-5 text-left border border-gray-200 hover:border-amber-300 hover:shadow-lg transition-all duration-300 group"
                 >
                   <div className="flex items-start gap-4">

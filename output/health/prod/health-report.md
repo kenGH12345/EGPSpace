@@ -1,7 +1,7 @@
 # 🏥 System Health Monitoring Report
 
-> Generated: 2026-04-24T13:30:25.958Z
-> Session ID: `wf-20260424-213025`
+> Generated: 2026-04-26T15:09:07.266Z
+> Session ID: `wf-20260426-225458`
 > Run Category: `prod`
 
 ---
@@ -10,14 +10,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Requirement** | 补充更多的物理知识点模板，覆盖初中物理剩余核心知识点（光学、热学、声学、电学基础等） |
+| **Requirement** | 将化学实验迁移到统一声明式框架 |
 | **Entry Point** | `IDE_AGENT` |
 | **Mode** | `sequential` |
 
 ### Full User Input
 
 ```
-/wf 补充更多的物理知识点模板，覆盖初中物理剩余核心知识点（光学、热学、声学、电学基础等）
+/wf 将化学实验迁移到统一声明式框架
 ```
 
 ---
@@ -48,7 +48,7 @@
 | Stage: TEST | ❌ |
 | **Overall Status** | **⚠️ INCOMPLETE** |
 
-**⚠️ Missing Stages:** `ANALYSE (✗start/✗end)`, `ARCHITECT (✗start/✗end)`, `PLAN (✗start/✗end)`, `CODE (✗start/✗end)`, `TEST (✗start/✗end)`
+**⚠️ Missing Stages:** `ANALYSE (✗start/✗end)`, `ARCHITECT (✗start/✗end)`, `PLAN (✗start/✗end)`, `CODE (✗start/✗end)`, `TEST (✓start/✗end)`
 
 ---
 
@@ -101,30 +101,30 @@
 |--------|-------|
 | Trend Enabled | ✅ Yes |
 | Window Size | 5 |
-| History Sessions | 26 |
-| Recent Avg Score | 56.2 |
-| Previous Avg Score | 64.6 |
-| Delta (Recent-Previous) | -8.4 |
+| History Sessions | 61 |
+| Recent Avg Score | 52.0 |
+| Previous Avg Score | 53.4 |
+| Delta (Recent-Previous) | -1.4 |
 | Low Score Threshold | 75 |
 | Alert Status | 🚨 Triggered |
 
-> Rolling-window degradation detected (-8.4 pts, window=5)
+> Latest health score 52.0 is below threshold 75
 
 ---
 
 ## 🔄 Stage Execution Details
 
-### 1. `DEVELOP`
+### 1. `TEST`
 
 | Metric | Value |
 |--------|-------|
 | Status | ⏳ Running... |
 | Metrics Gate | ⬜ N/A (Node Orchestrator mode) |
 
-**📥 Input:** experiment-core.js, physics-utils.js, template-registry.ts, concept-to-template.ts
+**📥 Input:** 5 chemistry templates, 1 physics template, registry refactored, page.tsx split
 
-**Input Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 90, Hash: `7275-#EGPSpaceBatch-2ExecutionPla`
+**Input Artifact:** `C:\workspace\EGPSpace\output\code.diff`
+- Lines: 224, Hash: `9078-#DEVELOPStageOutput—Triple-`
 
 **Output Artifact:** ⚠️ Not captured
 
@@ -135,7 +135,7 @@
 | Field | Value |
 |-------|-------|
 | Protocol Version | `evidence-v1` |
-| Session | `wf-20260424-213025` |
+| Session | `wf-20260426-225458` |
 | Run Category | `prod` |
 | Missing Stage Artifacts | 0 |
 
@@ -143,13 +143,13 @@
 
 | Stage | Exists | Size(bytes) | SHA256 (prefix) |
 |-------|--------|-------------|------------------|
-| ANALYSE | ✅ | 13264 | `4daae23cd7131186...` |
-| ARCHITECT | ✅ | 11529 | `40bddfc7d5e28fda...` |
-| PLAN | ✅ | 7363 | `5109efbc48a33ccd...` |
-| CODE | ✅ | 10483 | `a9349c735f24e0c5...` |
-| TEST | ✅ | 6595 | `99e710655b2680a4...` |
+| ANALYSE | ✅ | 20836 | `1f40dbc2efa63a5f...` |
+| ARCHITECT | ✅ | 14206 | `c898e80a976ae7be...` |
+| PLAN | ✅ | 10405 | `371e914318702fef...` |
+| CODE | ✅ | 12580 | `19cb4531afc1be75...` |
+| TEST | ✅ | 4143 | `da5b719fcde86917...` |
 
-- **Trace Hash**: `06cfd7b0ea4898b6c7dc912af7c884c91578c1386f6672caa32ef1e3d6a165ac`
+- **Trace Hash**: `b89af6e0586eaf40e220a202e29e67ba8404f17b2a9420031a7ae2750b7565f2`
 - **Quality Report Hash**: N/A
 - **Evolution Log Hash**: N/A
 

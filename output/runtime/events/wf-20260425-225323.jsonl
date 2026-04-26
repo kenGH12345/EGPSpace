@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-225323","createdAt":"2026-04-25T14:53:23.697Z"}
+{"seq":1,"ts":"2026-04-25T14:53:23.697Z","sessionId":"wf-20260425-225323","kind":"stage_started","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageInput":"执行计划文件, 任务T-3生物引擎, T-4数学引擎, T-5地理引擎"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

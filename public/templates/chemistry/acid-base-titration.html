@@ -1,3 +1,11 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>酸碱滴定实验</title>
+</head>
+<body>
 <!-- chemistry/acid-base-titration.html — Acid-Base Titration Experiment -->
 <!-- Subject: Chemistry | Form: acid-base-titration | Level: junior-high -->
 <!-- Language: zh-CN | engines: chemistry/acid-base, chemistry/titration -->
@@ -144,8 +152,8 @@
   // ── Canvas Setup ──
   const canvas = document.getElementById('titration-canvas');
   const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
+  let width = canvas.width;
+  let height = canvas.height;
 
   // ── Buffers ──
   let backBuffer = document.createElement('canvas');
@@ -570,3 +578,5 @@
     }
   });
 </script>
+</body>
+</html>

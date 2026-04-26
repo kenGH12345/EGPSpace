@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260426-225458","createdAt":"2026-04-26T14:54:59.188Z"}
+{"seq":1,"ts":"2026-04-26T14:54:59.188Z","sessionId":"wf-20260426-225458","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"5 chemistry templates, 1 physics template, registry refactored, page.tsx split"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

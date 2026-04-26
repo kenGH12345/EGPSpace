@@ -179,3 +179,45 @@ npx eslint src/lib/template-registry.ts src/lib/concept-to-template.ts \
 ---
 
 **DEVELOP 阶段已完成。等待进入 TEST 阶段进行完整的 lint / test / cve / entropy 检查。**
+
+{
+  "filesChanged": [
+    "public/templates/physics/sound.html",
+    "public/templates/physics/motion.html"
+  ],
+  "summary": "T-1: sound.html 添加介质选择功能（空气/水/钢铁），声速动态更新，波形和公式展示适配; T-2: motion.html 添加运动类型选择（匀速/匀变速/匀变速带初速度），参数可用性控制，v-t和s-t图Y轴动态缩放",
+  "implementedReqs": [
+    "REQ-1: sound.html 介质选择缺失 → 添加 eureka-segmented 介质选择控件（空气343/水1482/钢铁5960 m/s）",
+    "REQ-2: motion.html 运动模式缺失 → 添加 eureka-segmented 运动类型选择控件（匀速/匀变速/匀变速带初速度）"
+  ],
+  "changes": [
+    {
+      "file": "public/templates/physics/sound.html",
+      "action": "modified",
+      "details": [
+        "添加介质选择 segmented 控件（空气/水/钢铁）",
+        "SPEED_OF_SOUND 常量 → speedOfSound 动态变量 + MEDIUMS 映射表",
+        "添加声速 statV 显示",
+        "公式展示区动态更新介质名称和声速值",
+        "质点振动标签动态显示（空气质点/水质点/钢铁质点）",
+        "emitResultUpdate 添加 medium 和 speedOfSound 字段",
+        "emitReady supportedParams 添加 medium 参数声明",
+        "onHostCommand 支持 set_param medium 和 reset 介质重置"
+      ]
+    },
+    {
+      "file": "public/templates/physics/motion.html",
+      "action": "modified",
+      "details": [
+        "添加运动类型 segmented 控件（匀速/匀变速/匀变速带初速度）",
+        "MOTION_MODES 映射表定义三种模式参数和公式",
+        "applyMode() 函数控制参数控件可见性和预设值",
+        "公式展示区动态更新标题和公式表达式",
+        "drawVT 和 drawST 函数 Y 轴范围动态计算（vMin/vMax/sMin/sMax + padding）",
+        "emitResultUpdate 添加 motionMode 字段",
+        "emitReady 添加 mode 参数声明",
+        "onHostCommand 支持 set_param/set_params mode 和 reset 运动模式重置"
+      ]
+    }
+  ]
+}

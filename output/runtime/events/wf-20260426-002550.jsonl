@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260426-002550","createdAt":"2026-04-25T16:25:50.274Z"}
+{"seq":1,"ts":"2026-04-25T16:25:50.274Z","sessionId":"wf-20260426-002550","kind":"stage_started","stage":"DEVELOP","taskId":null,"attempt":null,"payload":{"stageInput":"Implementing T-1: pressure.html experiment template with Canvas simulation, sliders, postMessage communication, and physics formula display"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

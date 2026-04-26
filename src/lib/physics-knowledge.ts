@@ -368,6 +368,7 @@ export const PARAM_RANGE_RULES: Record<PhysicsEngineType, ParamRangeRule[]> = {
   electrolysis: ELECTROLYSIS_RULES,
   reaction_rate: REACTION_RATE_RULES,
   titration: TITRATION_RULES,
+  combustion: [],
   // Biology
   osmosis: OSMOSIS_RULES,
   enzyme: ENZYME_RULES,
@@ -418,6 +419,7 @@ export const FORMULA_KNOWLEDGE: Record<PhysicsEngineType, FormulaKnowledge[]> = 
     { name: '中和反应', keyVariables: ['concentration', 'volume'], resultVariable: 'moles', canonicalExpression: 'n = c × V' },
     { name: '滴定终点', keyVariables: ['titrantConc', 'titrantVolume', 'analyteVolume'], resultVariable: 'analyteConc', canonicalExpression: 'c₁V₁ = c₂V₂' },
   ],
+  combustion: [],
   // ── Biology ──
   osmosis: [
     { name: '渗透压公式', keyVariables: ['concentration', 'temperature'], resultVariable: 'osmoticPressure', canonicalExpression: 'π = iMRT' },

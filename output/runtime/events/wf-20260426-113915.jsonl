@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260426-113915","createdAt":"2026-04-26T03:39:15.208Z"}
+{"seq":1,"ts":"2026-04-26T03:39:15.208Z","sessionId":"wf-20260426-113915","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"public/templates/chemistry/*.html, src/lib/engines/chemistry/*.ts, src/lib/engines/registry.ts, src/lib/engines/chemistry/index.ts, src/lib/template-registry.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

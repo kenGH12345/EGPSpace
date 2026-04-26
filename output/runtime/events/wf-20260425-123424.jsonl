@@ -1,0 +1,3 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-123424","createdAt":"2026-04-25T04:34:24.458Z"}
+{"seq":1,"ts":"2026-04-25T04:34:24.458Z","sessionId":"wf-20260425-123424","kind":"stage_started","stage":"DEVELOP","taskId":null,"attempt":null,"payload":{"stageInput":"T-1: sound.html介质选择; T-2: motion.html运动模式"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":2,"ts":"2026-04-25T04:38:30.541Z","sessionId":"wf-20260425-123424","kind":"stage_completed","stage":"DEVELOP","taskId":null,"attempt":null,"payload":{"stageOutput":"output/code.diff"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

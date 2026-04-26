@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-013200","createdAt":"2026-04-24T17:32:00.532Z"}
+{"seq":1,"ts":"2026-04-24T17:32:00.532Z","sessionId":"wf-20260425-013200","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"审查heat.html,waves.html,sound.html,motion.html,energy.html,electromagnetism.html,reflection.html,lens.html,circuit.html的物理正确性、功能完整性、可用性"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

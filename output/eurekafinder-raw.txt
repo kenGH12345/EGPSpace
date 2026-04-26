@@ -1,0 +1,30 @@
+﻿
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : 
+                    <!DOCTYPE html>
+                    <html>
+                      <head>
+                        <meta charset="UTF-8" />
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                        <meta name="referrer" content="no-referrer" />
+                        <title...
+RawContent        : HTTP/1.1 200 OK
+                    Connection: keep-alive
+                    Vary: Accept-Encoding
+                    Pragma: no-cache
+                    Accept-Ranges: bytes
+                    Content-Length: 3895
+                    Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-...
+Forms             : 
+Headers           : {[Connection, keep-alive], [Vary, Accept-Encoding], [Pragma, no-cache], [Accept-Rang
+                    es, bytes]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : 
+RawContentLength  : 3895
+
+
+

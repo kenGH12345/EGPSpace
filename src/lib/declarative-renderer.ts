@@ -65,7 +65,7 @@ export function resolveDynamicExpression(
   try {
     const keys = Object.keys(allValues);
     const vals = keys.map(k => allValues[k]);
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+     
     const result = new Function(...keys, `return (${expr});`)(...vals);
     return String(result ?? '');
   } catch {

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260425-215748","createdAt":"2026-04-25T13:57:48.633Z"}
+{"seq":1,"ts":"2026-04-25T13:57:48.633Z","sessionId":"wf-20260425-215748","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"学科实验模板(化学/生物/数学/地理) + 知识图谱可视化融合方案"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
