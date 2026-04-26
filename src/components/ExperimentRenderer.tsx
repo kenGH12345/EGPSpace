@@ -19,6 +19,7 @@ export interface PresetExperiment {
   subject: string;
   templateId?: string;
   defaultKnowledge?: string[];
+  steps?: string[];
 }
 
 interface ExperimentRendererProps {
@@ -58,7 +59,7 @@ export function ExperimentRenderer({
 }: ExperimentRendererProps) {
   // PRIMARY PATH — Triple-Lock approved template via iframe
   if (resolvedTemplateId) {
-    return <IframeExperiment templateId={resolvedTemplateId} height={780} />;
+    return <IframeExperiment templateId={resolvedTemplateId} height={900} />;
   }
 
   // SECONDARY — Unified Schema (declarative framework)

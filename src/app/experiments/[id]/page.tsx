@@ -19,6 +19,7 @@ const experiments: Record<string, PresetExperiment & { component: 'buoyancy' | '
     icon: '🌊', gradient: 'from-blue-400 to-cyan-500', color: 'blue', subject: '物理',
     component: 'buoyancy', templateId: 'physics/buoyancy',
     defaultKnowledge: ['阿基米德原理', '物体的浮沉条件', '公式：F浮 = ρ液 × g × V排', '浸入体积比 = ρ物 / ρ液'],
+    steps: ['拖动"物体密度"滑块，观察物体浮沉状态变化', '调整"液体密度"滑块，比较不同液体中的浮力', '改变"物体体积"，观察浮力数值变化', '当物体下沉时，尝试施加"外力"观察浸入深度变化'],
   },
   lever: {
     name: '杠杆原理',
@@ -37,12 +38,14 @@ const experiments: Record<string, PresetExperiment & { component: 'buoyancy' | '
     icon: '⚡', gradient: 'from-emerald-500 to-teal-500', color: 'emerald', subject: '物理',
     component: 'circuit', templateId: 'physics/circuit',
     defaultKnowledge: ['欧姆定律 I=U/R', '串联分压不分流', '并联分流不分压', '公式：I = U/R', '串联：R总 = R1 + R2', '并联：1/R总 = 1/R1 + 1/R2'],
+    steps: ['调整"电源电压"滑块，观察电流表示数变化', '改变"电阻 R₁"阻值，观察各支路电流分配', '切换"电阻 R₂"阻值，对比串并联电路差异', '观察电压表读数，验证串联分压、并联等压规律'],
   },
   'acid-base': {
     name: '酸碱滴定',
     icon: '🧪', gradient: 'from-red-500 to-orange-500', color: 'red', subject: '化学',
     component: 'acid-base', templateId: 'chemistry/acid-base-titration',
     defaultKnowledge: ['酸碱中和反应', '指示剂变色原理', '滴定终点判断', '公式：HCl + NaOH → NaCl + H₂O', '等当点：C酸V酸 = C碱V碱'],
+    steps: ['设置酸浓度、碱浓度和酸体积参数', '选择一种指示剂（酚酞/甲基橙/石蕊）', '拖动"已加碱体积"滑块模拟滴定过程', '观察 pH 变化和溶液颜色变化，找到等当点'],
   },
   'acid-base-titration': {
     name: '酸碱中和滴定',
@@ -239,6 +242,7 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
             errors={errorInfo ? { concept: errorInfo.concept } : undefined}
             discussion={discussion}
             knowledge={displayKnowledge}
+            steps={exp?.steps}
           />
 
           {/* 右侧实验区 */}

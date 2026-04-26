@@ -18,6 +18,7 @@ interface ExperimentKnowledgePanelProps {
   errors?: TeachingErrors;
   discussion?: string[];
   knowledge?: string[];
+  steps?: string[];
 }
 
 export function ExperimentKnowledgePanel({
@@ -26,6 +27,7 @@ export function ExperimentKnowledgePanel({
   errors,
   discussion,
   knowledge,
+  steps,
 }: ExperimentKnowledgePanelProps) {
   return (
     <div className="space-y-4">
@@ -100,6 +102,24 @@ export function ExperimentKnowledgePanel({
               <li key={i} className="text-xs text-gray-600">• {item}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* 实验步骤 */}
+      {steps && steps.length > 0 && (
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-200">
+          <h3 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+            <span className="text-xl">📝</span>
+            实验步骤
+          </h3>
+          <ol className="space-y-2 text-sm text-gray-700">
+            {steps.map((s, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center text-xs shrink-0 mt-0.5">{i + 1}</span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 

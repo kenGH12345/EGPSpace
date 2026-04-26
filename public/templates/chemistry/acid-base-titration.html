@@ -36,7 +36,7 @@
   </div>
 
   <div class="eureka-canvas-wrapper titration-canvas-wrapper">
-    <canvas id="canvas" class="eureka-canvas" width="560" height="320"></canvas>
+    <canvas id="canvas" class="eureka-canvas" width="560" height="260"></canvas>
     <div style="margin-top:8px;text-align:center;">
       <span id="status-badge" class="eureka-badge info">滴定进行中</span>
     </div>
@@ -186,6 +186,12 @@
     ctx.fillStyle = '#F3E8FF';
     ctx.fillRect(0, 0, w, h);
 
+    // Scale all drawing by 0.85 to fit smaller canvas
+    const s = 0.85;
+    ctx.save();
+    ctx.translate(w * (1 - s) / 2, h * (1 - s) / 2 + 10);
+    ctx.scale(s, s);
+
     // Flask
     const fx = w / 2, fy = h - 40;
     const flaskW = 80, flaskH = 100, neckW = 30, neckH = 40;
@@ -273,6 +279,8 @@
     ctx.font = '12px system-ui';
     ctx.fillText('指示剂: ' + indicators[state.indicator].name, 20, h - 60);
     ctx.fillText('等当点体积: ' + eqVol.toFixed(1) + ' mL', 20, h - 45);
+
+    ctx.restore();
   }
 
   function setupSlider(id, key, digits) {
