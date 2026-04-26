@@ -58,7 +58,7 @@ export function ExperimentRenderer({
 }: ExperimentRendererProps) {
   // PRIMARY PATH — Triple-Lock approved template via iframe
   if (resolvedTemplateId) {
-    return <IframeExperiment templateId={resolvedTemplateId} height={560} />;
+    return <IframeExperiment templateId={resolvedTemplateId} height={780} />;
   }
 
   // SECONDARY — Unified Schema (declarative framework)

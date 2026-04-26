@@ -38,7 +38,7 @@ export interface IframeExperimentProps {
   initialParams?: Record<string, number>;
   /** Extra CSS class for outer wrapper. */
   className?: string;
-  /** Height in px (default 520). */
+  /** Height in px (default 780). */
   height?: number;
 }
 
@@ -50,7 +50,7 @@ export function IframeExperiment({
   onMessage,
   initialParams,
   className,
-  height = 520,
+  height = 780,
 }: IframeExperimentProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');

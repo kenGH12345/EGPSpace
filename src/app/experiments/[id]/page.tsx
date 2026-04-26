@@ -226,8 +226,8 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* 主体内容 */}
-      <div className="max-w-4xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* 左侧知识区 */}
           <ExperimentKnowledgePanel
             coreQuestion={coreQuestion}
@@ -242,7 +242,7 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
           />
 
           {/* 右侧实验区 */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <ExperimentWithChat experimentName={displayName} experimentTopic={aiConfig?.topic ?? exp?.subject}>
               <ExperimentRenderer experiment={exp} aiSchema={aiSchema} aiConfig={aiConfig} resolvedTemplateId={resolvedTemplateId} />
             </ExperimentWithChat>
