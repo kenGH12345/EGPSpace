@@ -331,65 +331,67 @@
   }
 
   function drawParallel(p) {
-    // 标准并联电路：电源在左侧，上下两条平行导线，两个电阻垂直放置在中间
-    const left = 30;
-    const right = cssW - 30;
-    const topRail = 40;
-    const bottomRail = cssH - 40;
+    // 正确并联电路：电池在中间，R1/R2 分别并联在电池两侧
+    //      +──R1──+
+    //  [+]─+      +─[−]
+    //      +──R2──+
+    const midX = cssW / 2;
     const midY = cssH / 2;
-    const rWidth = 100, rHeight = 16;
-    const r1Y = topRail + 6;
-    const r2Y = bottomRail - 6 - rHeight;
+    const rWidth = 90;
+    const left = midX - 90;
+    const right = midX + 90;
+    const topY = midY - 55;
+    const botY = midY + 55;
 
-    // 电池
-    drawBattery(left, midY);
+    // 电池在中间
+    drawBattery(midX, midY);
 
-    // 电池正极 -> 左侧分支点 -> 上导线
-    drawWire(left, midY - 15, left, topRail, p.I);
+    // 正极 → 上左分支点
+    drawWire(midX, midY - 18, midX, topY, p.I);
+    drawWire(midX, topY, left + 30, topY, p.I1);
 
-    // 电池负极 <- 下导线 <- 右侧汇合点
-    drawWire(left, midY + 15, left, bottomRail, p.I);
+    // 负极 ← 下左分支点
+    drawWire(midX, midY + 18, midX, botY, p.I);
+    drawWire(midX, botY, left + 30, botY, p.I2);
 
-    // 左侧分支点（圆点）
+    // R1 - 上支路（左到右）
+    drawResistor(left + 30, topY - 8, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+
+    // R2 - 下支路（左到右）
+    drawResistor(left + 30, botY - 8, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+
+    // R1 右端 → 汇合 → 负极
+    drawWire(left + 30 + rWidth, topY, right, topY, p.I1);
+    drawWire(right, topY, right, botY, p.I);
+    drawWire(right, botY, left + 30 + rWidth, botY, p.I2);
+
+    // 右侧汇合点
     ctx.fillStyle = '#1F2937';
     ctx.beginPath();
-    ctx.arc(left, topRail, 4, 0, Math.PI * 2);
+    ctx.arc(right, topY, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(left, bottomRail, 4, 0, Math.PI * 2);
+    ctx.arc(right, botY, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // 上导线：分支点 -> R1 -> 汇合点
-    drawWire(left, topRail, left + 40, topRail, p.I1);
-    drawWire(left + 40 + rWidth, topRail, right, topRail, p.I1);
-
-    // 下导线：分支点 -> R2 -> 汇合点
-    drawWire(left, bottomRail, left + 40, bottomRail, p.I2);
-    drawWire(left + 40 + rWidth, bottomRail, right, bottomRail, p.I2);
-
-    // 右侧汇合点（圆点）
-    ctx.fillStyle = '#1F2937';
+    // 左侧分支点
     ctx.beginPath();
-    ctx.arc(right, topRail, 4, 0, Math.PI * 2);
+    ctx.arc(left + 30, topY, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(right, bottomRail, 4, 0, Math.PI * 2);
+    ctx.arc(left + 30, botY, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // 右侧垂直导线连接上下汇合点
-    drawWire(right, topRail, right, bottomRail, p.I);
-
-    // R1 - 上支路
-    drawResistor(left + 40, r1Y, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-
-    // R2 - 下支路
-    drawResistor(left + 40, r2Y, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    // 总电流标签（电池处）
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillText('I总=' + p.I.toFixed(2) + 'A', midX + 12, midY - 5);
 
     // 电流流动动画
-    drawCurrentDots(left + 6, topRail, left + 30, topRail, p.I);
-    drawCurrentDots(left + 40 + rWidth + 5, topRail, right - 6, topRail, p.I1);
-    drawCurrentDots(left + 6, bottomRail, left + 30, bottomRail, p.I);
-    drawCurrentDots(left + 40 + rWidth + 5, bottomRail, right - 6, bottomRail, p.I2);
+    drawCurrentDots(midX, topY, left + 30, topY, p.I1);
+    drawCurrentDots(left + 30 + rWidth + 5, topY, right - 5, topY, p.I1);
+    drawCurrentDots(midX, botY, left + 30, botY, p.I2);
+    drawCurrentDots(left + 30 + rWidth + 5, botY, right - 5, botY, p.I2);
   }
 
   function update(emitParam) {
