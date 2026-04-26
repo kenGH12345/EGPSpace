@@ -6,71 +6,163 @@
 <title>电路串并联</title>
 <link rel="stylesheet" href="/templates/_shared/ui-core.css">
 <style>
+  .circuit-layout {
+    display: flex;
+    gap: 12px;
+  }
+  .circuit-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .circuit-main {
+    flex: 1;
+    min-width: 0;
+  }
   .circuit-canvas-wrapper {
     background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%);
+  }
+  .circuit-canvas-wrapper canvas {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  .circuit-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .circuit-stats .eureka-stat {
+    flex: 1;
+    padding: 8px;
+    margin-bottom: 0;
+  }
+  .circuit-stats .eureka-stat-value {
+    font-size: 18px;
+  }
+  .circuit-stats .eureka-stat-label {
+    font-size: 11px;
+  }
+  .eureka-card {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .eureka-card:last-child {
+    margin-bottom: 0;
+  }
+  .eureka-card-title {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .eureka-control {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--eureka-border);
+  }
+  .eureka-control:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  .eureka-control-header {
+    margin-bottom: 3px;
+  }
+  .eureka-formula {
+    padding: 10px;
+  }
+  .eureka-formula-title {
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+  .eureka-formula-expression {
+    font-size: 13px;
+  }
+  .eureka-formula-note {
+    font-size: 9px;
   }
 </style>
 </head>
 <body>
 <div class="eureka-root">
 
-  <div class="eureka-grid-3">
-    <div class="eureka-stat">
-      <p class="eureka-stat-label">总电阻 R</p>
-      <p class="eureka-stat-value primary" id="stat-r">20 Ω</p>
-    </div>
-    <div class="eureka-stat">
-      <p class="eureka-stat-label">总电流 I</p>
-      <p class="eureka-stat-value success" id="stat-i">0.300 A</p>
-    </div>
-    <div class="eureka-stat">
-      <p class="eureka-stat-label">总功率 P</p>
-      <p class="eureka-stat-value warning" id="stat-p">1.80 W</p>
-    </div>
-  </div>
-
-  <div class="eureka-canvas-wrapper circuit-canvas-wrapper">
-    <canvas id="canvas" class="eureka-canvas" width="680" height="340"></canvas>
-    <div style="margin-top: 8px;">
-      <div class="eureka-segmented">
-        <button class="eureka-segmented-item active" data-topology="0">串联</button>
-        <button class="eureka-segmented-item" data-topology="1">并联</button>
+  <div class="circuit-layout">
+    <!-- 左侧边栏：AI 教学助手 -->
+    <div class="circuit-sidebar">
+      <div class="eureka-card">
+        <h3 class="eureka-card-title">🤖 AI 教学助手</h3>
+        <div style="font-size: 11px; color: var(--eureka-text-muted); line-height: 1.5;">
+          <p style="margin-bottom: 6px;"><strong>串联电路：</strong></p>
+          <p>电流处处相等</p>
+          <p>总电压 = 各电压之和</p>
+          <p>R<sub>总</sub> = R₁ + R₂</p>
+          <p style="margin-top: 6px; margin-bottom: 6px;"><strong>并联电路：</strong></p>
+          <p>各支路电压相等</p>
+          <p>总电流 = 各电流之和</p>
+          <p>1/R<sub>总</sub> = 1/R₁ + 1/R₂</p>
+        </div>
+      </div>
+      <div class="eureka-formula">
+        <p class="eureka-formula-title">核心公式</p>
+        <div class="eureka-formula-expression">I = U / R</div>
+        <p class="eureka-formula-note">欧姆定律是电路基础</p>
       </div>
     </div>
-  </div>
 
-  <div class="eureka-card">
-    <h3 class="eureka-card-title">参数调节</h3>
-
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">电源电压 U</span>
-        <span class="eureka-control-value"><span id="v-u">6.0</span> V</span>
+    <!-- 右侧主区域 -->
+    <div class="circuit-main">
+      <div class="circuit-stats">
+        <div class="eureka-stat">
+          <p class="eureka-stat-label">总电阻 R</p>
+          <p class="eureka-stat-value primary" id="stat-r">20 Ω</p>
+        </div>
+        <div class="eureka-stat">
+          <p class="eureka-stat-label">总电流 I</p>
+          <p class="eureka-stat-value success" id="stat-i">0.300 A</p>
+        </div>
+        <div class="eureka-stat">
+          <p class="eureka-stat-label">总功率 P</p>
+          <p class="eureka-stat-value warning" id="stat-p">1.80 W</p>
+        </div>
       </div>
-      <input id="ctl-u" class="eureka-slider" type="range" min="1" max="24" step="0.1" value="6">
-    </div>
 
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">电阻 R₁</span>
-        <span class="eureka-control-value"><span id="v-r1">10</span> Ω</span>
+      <div class="eureka-canvas-wrapper circuit-canvas-wrapper">
+        <canvas id="canvas" class="eureka-canvas" width="520" height="200"></canvas>
+        <div style="margin-top: 4px; text-align: center;">
+          <div class="eureka-segmented" style="display: inline-flex;">
+            <button class="eureka-segmented-item active" data-topology="0" style="padding: 5px 14px; font-size: 11px;">串联</button>
+            <button class="eureka-segmented-item" data-topology="1" style="padding: 5px 14px; font-size: 11px;">并联</button>
+          </div>
+        </div>
       </div>
-      <input id="ctl-r1" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
-    </div>
 
-    <div class="eureka-control">
-      <div class="eureka-control-header">
-        <span class="eureka-control-label">电阻 R₂</span>
-        <span class="eureka-control-value"><span id="v-r2">10</span> Ω</span>
+      <div class="eureka-card" style="margin-top: 8px;">
+        <h3 class="eureka-card-title">参数调节</h3>
+
+        <div class="eureka-control">
+          <div class="eureka-control-header">
+            <span class="eureka-control-label">电源电压 U</span>
+            <span class="eureka-control-value"><span id="v-u">6.0</span> V</span>
+          </div>
+          <input id="ctl-u" class="eureka-slider" type="range" min="1" max="24" step="0.1" value="6">
+        </div>
+
+        <div class="eureka-control">
+          <div class="eureka-control-header">
+            <span class="eureka-control-label">电阻 R₁</span>
+            <span class="eureka-control-value"><span id="v-r1">10</span> Ω</span>
+          </div>
+          <input id="ctl-r1" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
+        </div>
+
+        <div class="eureka-control">
+          <div class="eureka-control-header">
+            <span class="eureka-control-label">电阻 R₂</span>
+            <span class="eureka-control-value"><span id="v-r2">10</span> Ω</span>
+          </div>
+          <input id="ctl-r2" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
+        </div>
       </div>
-      <input id="ctl-r2" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
     </div>
-  </div>
-
-  <div class="eureka-formula">
-    <p class="eureka-formula-title">欧姆定律与串并联公式</p>
-    <div class="eureka-formula-expression">I = U / R　　R<sub>串</sub> = R₁+R₂　　1/R<sub>并</sub> = 1/R₁ + 1/R₂</div>
-    <p class="eureka-formula-note">串联分压不分流，并联分流不分压</p>
   </div>
 </div>
 
@@ -84,7 +176,7 @@
   const state = { voltage: 6, r1: 10, r2: 10, topology: 0 }; // 0=series 1=parallel
 
   const canvas = document.getElementById('canvas');
-  const cssW = 680, cssH = 340;
+  const cssW = 520, cssH = 200;
   const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
 
   const ctlU = document.getElementById('ctl-u');
@@ -134,49 +226,52 @@
 
   function drawBattery(x, y) {
     ctx.strokeStyle = '#1F2937';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     // Long line (positive terminal)
     ctx.beginPath();
-    ctx.moveTo(x, y - 20);
-    ctx.lineTo(x, y + 20);
+    ctx.moveTo(x, y - 15);
+    ctx.lineTo(x, y + 15);
     ctx.stroke();
     // Short line (negative terminal)
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(x - 10, y - 12);
-    ctx.lineTo(x - 10, y + 12);
+    ctx.moveTo(x - 8, y - 10);
+    ctx.lineTo(x - 8, y + 10);
     ctx.stroke();
     ctx.fillStyle = '#1F2937';
-    ctx.font = 'bold 13px system-ui';
-    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 24, y + 40);
-    ctx.fillText('+', x + 6, y - 24);
-    ctx.fillText('−', x - 24, y - 24);
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 22, y + 35);
+    ctx.fillStyle = '#DC2626';
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText('+', x + 6, y - 18);
+    ctx.fillStyle = '#2563EB';
+    ctx.fillText('−', x - 22, y - 18);
   }
 
   function drawResistor(x, y, width, label, voltage, current) {
-    const h = 24;
+    const h = 16;
     // Zigzag resistor symbol
     ctx.strokeStyle = '#1F2937';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo(x, y + h / 2);
     const segments = 6;
     for (let i = 0; i <= segments; i++) {
       const sx = x + (width * i) / segments;
-      const sy = y + (i % 2 === 0 ? -h / 2 : h / 2);
+      const sy = y + h / 2 + (i % 2 === 0 ? -h / 2 : h / 2);
       ctx.lineTo(sx, sy);
     }
-    ctx.lineTo(x + width, y);
+    ctx.lineTo(x + width, y + h / 2);
     ctx.stroke();
 
     ctx.fillStyle = '#1F2937';
-    ctx.font = 'bold 12px system-ui';
-    ctx.fillText(label, x + width / 2 - 12, y - 18);
-    ctx.font = '11px system-ui';
-    ctx.fillStyle = '#1D4ED8';
-    ctx.fillText('U=' + voltage.toFixed(2) + 'V', x + width / 2 - 22, y + 30);
-    ctx.fillStyle = '#047857';
-    ctx.fillText('I=' + current.toFixed(3) + 'A', x + width / 2 - 24, y + 44);
+    ctx.font = 'bold 10px system-ui';
+    ctx.fillText(label, x + width / 2 - 14, y - 4);
+    ctx.font = '9px system-ui';
+    ctx.fillStyle = '#DC2626';
+    ctx.fillText('U=' + voltage.toFixed(1) + 'V', x + width / 2 - 16, y + h + 10);
+    ctx.fillStyle = '#2563EB';
+    ctx.fillText('I=' + current.toFixed(2) + 'A', x + width / 2 - 14, y + h + 20);
   }
 
   function drawWire(x1, y1, x2, y2) {
@@ -206,81 +301,98 @@
   }
 
   function drawSeries(p) {
-    const left = 80, right = cssW - 80;
-    const top = 80, bottom = cssH - 60;
-    drawBattery(left, (top + bottom) / 2);
+    const left = 30, right = cssW - 30;
+    const top = 40, bottom = cssH - 40;
+    const midY = (top + bottom) / 2;
+    const rWidth = 70;
+    drawBattery(left, midY);
 
-    // Top wire with R1 and R2
-    drawWire(left, top, left + 120, top);
-    drawResistor(left + 120, top, 120, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-    drawWire(left + 240, top, left + 360, top);
-    drawResistor(left + 360, top, 120, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
-    drawWire(left + 480, top, right, top);
+    // Top wire: battery+ -> R1 -> R2 -> right
+    drawWire(left, top, left + 25, top);
+    drawResistor(left + 25, top, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    drawWire(left + 25 + rWidth, top, left + 25 + rWidth + 50, top);
+    drawResistor(left + 25 + rWidth + 50, top, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawWire(left + 25 + rWidth * 2 + 50, top, right, top);
+
+    // Right wire down
     drawWire(right, top, right, bottom);
-    drawWire(right, bottom, left, bottom);
-    drawWire(left, bottom, left, (top + bottom) / 2 + 20);
-    drawWire(left, (top + bottom) / 2 - 20, left, top);
 
-    // Current flow (single loop)
-    drawCurrentDots(left, top, left + 120, top, p.I);
-    drawCurrentDots(left + 240, top, left + 360, top, p.I);
-    drawCurrentDots(left + 480, top, right, top, p.I);
-    drawCurrentDots(right, bottom, left, bottom, p.I);
+    // Bottom wire: right -> left
+    drawWire(right, bottom, left, bottom);
+
+    // Left wire up to battery-
+    drawWire(left, bottom, left, midY + 15);
+
+    // Left wire from battery+ up to top
+    drawWire(left, midY - 15, left, top);
+
+    // Current flow arrows
+    drawCurrentDots(left + 15, top, left + 30, top, p.I);
+    drawCurrentDots(left + 30 + rWidth + 8, top, left + 30 + rWidth + 40, top, p.I);
+    drawCurrentDots(left + 30 + rWidth * 2 + 45, top, right - 10, top, p.I);
+    drawCurrentDots(right - 10, bottom, left + 15, bottom, p.I);
   }
 
   function drawParallel(p) {
-    const left = 80, right = cssW - 80;
-    const top = 55, mid = cssH / 2, bottom = cssH - 55;
-    const splitX = left + 40;   // left split junction
-    const mergeX = right - 40;  // right merge junction
+    // 标准并联电路：电源在左侧，上下两条平行导线，两个电阻垂直放置在中间
+    const left = 30;
+    const right = cssW - 30;
+    const topRail = 40;
+    const bottomRail = cssH - 40;
+    const midY = cssH / 2;
+    const rWidth = 100, rHeight = 16;
+    const r1Y = topRail + 6;
+    const r2Y = bottomRail - 6 - rHeight;
 
-    drawBattery(left, mid);
+    // 电池
+    drawBattery(left, midY);
 
-    // Left rail: battery + terminal to split junction
-    drawWire(left, mid - 20, left, top);
-    drawWire(left, top, splitX, top);
+    // 电池正极 -> 左侧分支点 -> 上导线
+    drawWire(left, midY - 15, left, topRail);
 
-    // Top branch: split → R1 → merge
-    drawWire(splitX, top, splitX + 30, top);
-    drawResistor(splitX + 30, top, 120, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-    drawWire(splitX + 150, top, mergeX, top);
+    // 电池负极 <- 下导线 <- 右侧汇合点
+    drawWire(left, midY + 15, left, bottomRail);
 
-    // Bottom branch: split → R2 → merge
-    drawWire(splitX, bottom, splitX + 30, bottom);
-    drawResistor(splitX + 30, bottom, 120, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
-    drawWire(splitX + 150, bottom, mergeX, bottom);
-
-    // Left vertical rail connecting both branches at split point
-    drawWire(splitX, top, splitX, bottom);
-
-    // Right vertical rail connecting both branches at merge point
-    drawWire(mergeX, top, mergeX, bottom);
-
-    // Right rail: merge → right edge → bottom → back to battery − terminal
-    drawWire(mergeX, mid, right, mid);
-    drawWire(right, mid, right, bottom + 30);
-    drawWire(right, bottom + 30, left, bottom + 30);
-    drawWire(left, bottom + 30, left, mid + 20);
-
-    // Junction dots at split and merge points
+    // 左侧分支点（圆点）
     ctx.fillStyle = '#1F2937';
-    [splitX, mergeX].forEach(jx => {
-      [top, bottom].forEach(jy => {
-        ctx.beginPath();
-        ctx.arc(jx, jy, 4, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    });
+    ctx.beginPath();
+    ctx.arc(left, topRail, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(left, bottomRail, 4, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Current dots — top branch (I1)
-    drawCurrentDots(left, top, splitX, top, p.I);
-    drawCurrentDots(splitX + 150, top, mergeX, top, p.I1);
-    // Current dots — bottom branch (I2)
-    drawCurrentDots(splitX, bottom, splitX + 30, bottom, p.I2);
-    drawCurrentDots(splitX + 150, bottom, mergeX, bottom, p.I2);
-    // Current dots — return path (total I)
-    drawCurrentDots(mergeX, mid, right, mid, p.I);
-    drawCurrentDots(right, bottom + 30, left, bottom + 30, p.I);
+    // 上导线：分支点 -> R1 -> 汇合点
+    drawWire(left, topRail, left + 40, topRail);
+    drawWire(left + 40 + rWidth, topRail, right, topRail);
+
+    // 下导线：分支点 -> R2 -> 汇合点
+    drawWire(left, bottomRail, left + 40, bottomRail);
+    drawWire(left + 40 + rWidth, bottomRail, right, bottomRail);
+
+    // 右侧汇合点（圆点）
+    ctx.fillStyle = '#1F2937';
+    ctx.beginPath();
+    ctx.arc(right, topRail, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(right, bottomRail, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 右侧垂直导线连接上下汇合点
+    drawWire(right, topRail, right, bottomRail);
+
+    // R1 - 上支路
+    drawResistor(left + 40, r1Y, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+
+    // R2 - 下支路
+    drawResistor(left + 40, r2Y, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+
+    // 电流流动动画
+    drawCurrentDots(left + 6, topRail, left + 30, topRail, p.I);
+    drawCurrentDots(left + 40 + rWidth + 5, topRail, right - 6, topRail, p.I1);
+    drawCurrentDots(left + 6, bottomRail, left + 30, bottomRail, p.I);
+    drawCurrentDots(left + 40 + rWidth + 5, bottomRail, right - 6, bottomRail, p.I2);
   }
 
   function update(emitParam) {
