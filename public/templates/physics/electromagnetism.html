@@ -197,14 +197,15 @@
 
   function updateT() {
     const p = getP();
-    simPhase += p.v * 0.03;
+    const dt = 1 / 60;  // real time step (seconds)
+    simPhase += p.v * dt * 2;
     if (simPhase > 2 * Math.PI) simPhase -= 2 * Math.PI;
 
     const B = p.B, A = p.A, v = p.v;
     const phi = B * A * Math.cos(simPhase);
-    const prevPhi = B * A * Math.cos(simPhase - 0.03);
+    const prevPhi = B * A * Math.cos(simPhase - p.v * dt * 2);
     const dPhi = phi - prevPhi;
-    const emf = EurekaPhysics.faradayEMF(dPhi, 0.03 / p.v || 0.01) * p.N;
+    const emf = EurekaPhysics.faradayEMF(dPhi, dt) * p.N;
     const dir = dPhi < 0 ? 'clockwise' : 'anticlockwise';
 
     const magnetY = 0.5 + 0.5 * Math.sin(simPhase);

@@ -29,6 +29,73 @@ const mathFunctions = {
   ceil: Math.ceil,
 };
 
+// =============================================================================
+// Chemistry helpers
+// =============================================================================
+
+/**
+ * Calculate pH from hydrogen ion concentration (mol/L).
+ * pH = -log10([H+])
+ */
+export function phFromHPlus(hPlusConc: number): number {
+  if (hPlusConc <= 0) return 14;
+  return -Math.log10(hPlusConc);
+}
+
+/**
+ * Calculate [H+] from pH.
+ * [H+] = 10^(-pH)
+ */
+export function hPlusFromPh(pH: number): number {
+  return Math.pow(10, -pH);
+}
+
+/**
+ * Calculate pOH from hydroxide ion concentration.
+ */
+export function pohFromOHMinus(ohMinusConc: number): number {
+  if (ohMinusConc <= 0) return 14;
+  return -Math.log10(ohMinusConc);
+}
+
+/**
+ * Convert between pH and pOH at 25°C.
+ */
+export function phFromPoh(pOH: number): number {
+  return 14 - pOH;
+}
+
+/**
+ * Henderson-Hasselbalch buffer equation.
+ * pH = pKa + log([base]/[acid])
+ */
+export function hendersonHasselbalch(
+  pKa: number,
+  baseConc: number,
+  acidConc: number
+): number {
+  if (acidConc <= 0 || baseConc < 0) return pKa;
+  return pKa + Math.log10(baseConc / acidConc);
+}
+
+/**
+ * Ideal gas law — moles from P, V, T.
+ * n = PV / RT, R = 0.0821 L·atm/(mol·K)
+ */
+export function idealGasMoles(
+  pressureAtm: number,
+  volumeL: number,
+  tempK: number
+): number {
+  const R = 0.08206;
+  if (tempK <= 0) return 0;
+  return (pressureAtm * volumeL) / (R * tempK);
+}
+
+// =============================================================================
+// Original evaluateExpression
+// =============================================================================
+
 // 计算表达式
 export function evaluateExpression(
   expression: string,
@@ -233,6 +300,142 @@ export const calculationTemplates = {
     return {
       reactionRate: { value: rate, unit: 'mol/(L·s)' },
       halfLife: { value: 1 / Math.max(rate, 0.001), unit: 's' },
+    };
+  },
+
+  // ─── Phase 2: Biology templates ─────────────────────────
+
+  // 渗透作用 (Osmosis)
+  osmosis: (params: Record<string, number>) => {
+    const { external_concentration = 0.3, cell_concentration = 0.3, temperature = 298 } = params;
+    const R = 0.0821;
+    const pressure = Math.abs(cell_concentration - external_concentration) * R * temperature;
+    const diff = cell_concentration - external_concentration;
+    let state = '等渗';
+    if (diff > 0.01) state = '低渗（细胞吸水）';
+    else if (diff < -0.01) state = '高渗（细胞失水）';
+    return {
+      osmoticPressure: { value: pressure, unit: 'atm' },
+      waterFlowDirection: { value: state, unit: '' },
+    };
+  },
+
+  // Michaelis-Menten 酶动力学
+  enzymeKinetics: (params: Record<string, number>) => {
+    const { substrate = 10, vmax = 100, km = 50 } = params;
+    const rate = (vmax * substrate) / (km + substrate);
+    const saturation = substrate / (km + substrate);
+    return {
+      reactionRate: { value: rate, unit: '\u03BCM/s' },
+      saturation: { value: saturation, unit: '' },
+      catalyticEfficiency: { value: (vmax / km), unit: 's\u207B\u00B9' },
+    };
+  },
+
+  // Logistic 种群增长
+  logisticGrowth: (params: Record<string, number>) => {
+    const { initial = 100, capacity = 1000, rate = 0.1, time = 10 } = params;
+    const pop = capacity / (1 + ((capacity - initial) / initial) * Math.exp(-rate * time));
+    return {
+      population: { value: pop, unit: 'individuals' },
+      growthRate: { value: rate, unit: 'per time unit' },
+      isStable: { value: (pop / capacity) > 0.95, unit: '' },
+    };
+  },
+
+  // ─── Phase 2: Math templates ─────────────────────────
+
+  // 函数求值
+  functionEvaluate: (params: Record<string, number>) => {
+    const { x = 0, amplitude = 1, frequency = 1, phase = 0, type = 0 } = params;
+    let y = 0;
+    if (type === 0) y = amplitude * Math.sin(frequency * x + phase);
+    else if (type === 1) y = amplitude * Math.cos(frequency * x + phase);
+    else if (type === 2) y = amplitude * x * x + frequency * x + phase;
+    else if (type === 3) y = amplitude * Math.exp(frequency * x);
+    return {
+      y: { value: y, unit: '' },
+      derivative: { value: amplitude * frequency * Math.cos(frequency * x + phase), unit: '' },
+    };
+  },
+
+  // 线段/圆几何计算
+  geometryCompute: (params: Record<string, number>) => {
+    const { x1 = 0, y1 = 0, x2 = 4, y2 = 3 } = params;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    return {
+      length: { value: length, unit: '' },
+      midpoint: { value: `(${midX.toFixed(2)}, ${midY.toFixed(2)})`, unit: '' },
+      slope: { value: dx !== 0 ? dy / dx : Infinity, unit: '' },
+    };
+  },
+
+  // 正态分布概率密度
+  normalDistribution: (params: Record<string, number>) => {
+    const { x = 0, mean = 0, std = 1 } = params;
+    const coeff = 1 / (std * Math.sqrt(2 * Math.PI));
+    const z = (x - mean) / std;
+    const pdf = coeff * Math.exp(-0.5 * z * z);
+    // Approximate CDF using Abramowitz & Stegun formula for erf
+    const absZ = Math.abs(z / Math.sqrt(2));
+    const t = 1 / (1 + 0.3275911 * absZ);
+    const erfApprox = 1 - (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t) * Math.exp(-absZ * absZ);
+    const cdf = 0.5 * (1 + Math.sign(z) * erfApprox);
+    return {
+      pdf: { value: pdf, unit: '' },
+      zScore: { value: z, unit: '' },
+      percentile: { value: cdf, unit: '' },
+    };
+  },
+
+  // ─── Phase 2: Geography templates ─────────────────────────
+
+  // 板块构造
+  plateTectonics: (params: Record<string, number>) => {
+    const { plate_speed = 5, density1 = 3.0, density2 = 2.8 } = params;
+    const isConvergent = params.boundary_type === 0;
+    const trench = isConvergent && density1 > density2 ? 2 + params.oceanic_age * 0.1 + plate_speed * 0.3 : 0;
+    const mountain = !isConvergent || Math.abs(density1 - density2) < 0.2 ? 0 : (Math.abs(density1 - density2) * 10 + plate_speed * 0.5);
+    return {
+      trenchDepth: { value: trench, unit: 'km' },
+      mountainHeight: { value: mountain, unit: 'km' },
+      stress: { value: plate_speed * Math.abs(density1 - density2) * 10, unit: 'MPa' },
+    };
+  },
+
+  // 洋流速度
+  oceanCurrent: (params: Record<string, number>) => {
+    const { wind_speed = 10, latitude = 30 } = params;
+    const speed = wind_speed * 0.03;
+    const omega = 7.292e-5;
+    const f = 2 * omega * Math.sin((latitude * Math.PI) / 180);
+    const ekmanDepth = f !== 0 ? 7.6 / Math.sqrt(Math.abs(f)) : 100;
+    return {
+      currentSpeed: { value: speed, unit: 'm/s' },
+      ekmanDepth: { value: ekmanDepth, unit: 'm' },
+      transport: { value: wind_speed * 0.0127 / (Math.abs(f) + 1e-10), unit: 'm\u00B2/s' },
+    };
+  },
+
+  // 地震波传播
+  seismicWave: (params: Record<string, number>) => {
+    const { epicenter_distance = 100, magnitude = 5 } = params;
+    const vp = 6.5;
+    const vs = 3.7;
+    const pTime = epicenter_distance / vp;
+    const sTime = epicenter_distance / vs;
+    const mmi = Math.min(12, 1.5 * magnitude - 3.0 * Math.log10(epicenter_distance) + 3.0);
+    const energy = Math.pow(10, 1.5 * magnitude + 4.8);
+    return {
+      pWaveArrival: { value: pTime, unit: 's' },
+      sWaveArrival: { value: sTime, unit: 's' },
+      spDelay: { value: sTime - pTime, unit: 's' },
+      intensity: { value: mmi, unit: 'MMI' },
+      energy: { value: energy, unit: 'J' },
     };
   },
 };

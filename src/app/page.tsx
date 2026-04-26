@@ -28,8 +28,13 @@ const subjectExperiments: Record<string, typeof physicsExperiments> = {
   ],
   chemistry: [
     { id: 'acid-base', title: '酸碱滴定', description: '滴定操作、指示剂变色', icon: '🧪', gradient: 'from-red-500 to-orange-500' },
+    { id: 'acid-base-titration', title: '酸碱中和滴定', description: 'NaOH 滴定 HCl，实时 pH 曲线与指示剂变色可视化', icon: '🧪', gradient: 'from-purple-500 to-indigo-600' },
     { id: 'electrolyte', title: '电解原理', description: '电解池反应、金属析出', icon: '⚗️', gradient: 'from-yellow-500 to-amber-500' },
+    { id: 'electrolysis', title: '电解水实验', description: '电解水产生氢气与氧气，验证 2H₂O → 2H₂↑ + O₂↑', icon: '⚡', gradient: 'from-cyan-500 to-teal-600' },
+    { id: 'iron-rusting', title: '铁生锈条件探究', description: '对比干燥空气、水、盐水三种条件下铁钉的锈蚀程度', icon: '🔩', gradient: 'from-orange-500 to-red-600' },
     { id: 'combustion', title: '燃烧反应', description: '燃烧条件、灭火原理', icon: '🔥', gradient: 'from-orange-500 to-red-500' },
+    { id: 'combustion-conditions', title: '燃烧条件探究', description: '验证燃烧三条件：可燃物、助燃物、达到着火点', icon: '🔥', gradient: 'from-red-500 to-orange-600' },
+    { id: 'reaction-rate', title: '化学反应速率', description: '探究浓度、温度、催化剂对反应速率的影响', icon: '⏱️', gradient: 'from-emerald-500 to-green-600' },
   ],
   biology: [
     { id: 'cell', title: '细胞结构', description: '细胞器功能、物质运输', icon: '🧬', gradient: 'from-pink-500 to-rose-500' },
@@ -79,7 +84,7 @@ export default function HomePage() {
 
   const currentExperiments = subjectExperiments[activeSubject] || physicsExperiments;
 
-  const presetExperimentIds = new Set(['buoyancy', 'lever', 'refraction', 'circuit', 'acid-base']);
+  const presetExperimentIds = new Set(['buoyancy', 'lever', 'refraction', 'circuit', 'acid-base', 'acid-base-titration', 'iron-rusting', 'electrolysis', 'reaction-rate', 'combustion-conditions']);
 
   const handleExperimentClick = (id: string, title?: string, description?: string) => {
     if (presetExperimentIds.has(id)) {

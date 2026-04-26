@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>物态变化实验</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .phase-canvas-wrapper {
+    position: relative;
+    background: linear-gradient(180deg, #DBEAFE 0%, #BFDBFE 100%);
+  }
+  .phase-substance-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .phase-substance-chip {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 2px solid #D1D5DB;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4B5563;
+  }
+  .phase-substance-chip.active {
+    border-color: #3B82F6;
+    background: #EFF6FF;
+    color: #1D4ED8;
+  }
+  .phase-btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .phase-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #3B82F6;
+    color: #fff;
+  }
+  .phase-btn:disabled { background: #93C5FD; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <!-- Substance selector -->
+  <div class="eureka-card" style="padding-bottom:8px;">
+    <h3 class="eureka-card-title">选择物质</h3>
+    <div class="phase-substance-row" id="substance-row">
+      <div class="phase-substance-chip active" data-sub="ice">冰 (H₂O)</div>
+      <div class="phase-substance-chip" data-sub="thiosulfate">海波 (Na₂S₂O₃)</div>
+    </div>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">温度 T</p>
+      <p class="eureka-stat-value primary" id="stat-temp">-10 °C</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">相态</p>
+      <p class="eureka-stat-value info" id="stat-phase">固态</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">吸收热量 Q</p>
+      <p class="eureka-stat-value danger" id="stat-heat">0 J</p>
+    </div>
+  </div>
+
+  <!-- Canvas visualization -->
+  <div class="eureka-canvas-wrapper phase-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="680" height="420"></canvas>
+    <span class="eureka-badge" id="status-badge">固态 · 加热中</span>
+  </div>
+
+  <!-- Playback controls -->
+  <div class="phase-btn-row">
+    <button class="phase-btn" id="btn-play">▶ 加热</button>
+    <button class="phase-btn" id="btn-pause" disabled>⏸ 暂停</button>
+    <button class="phase-btn" id="btn-reset" style="background:#6B7280;">⟲ 重置</button>
+  </div>
+
+  <!-- Parameter controls -->
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">加热功率 P</span>
+        <span class="eureka-control-value"><span id="v-power">50</span> W</span>
+      </div>
+      <input id="ctl-power" class="eureka-slider" type="range" min="10" max="200" step="10" value="50">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">初始温度</span>
+        <span class="eureka-control-value"><span id="v-init">-10</span> °C</span>
+      </div>
+      <input id="ctl-init" class="eureka-slider" type="range" min="-30" max="80" step="5" value="-10">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">物质质量 m</span>
+        <span class="eureka-control-value"><span id="v-mass">0.1</span> kg</span>
+      </div>
+      <input id="ctl-mass" class="eureka-slider" type="range" min="0.05" max="0.5" step="0.05" value="0.1">
+    </div>
+  </div>
+
+  <!-- Formula card -->
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">热量公式</p>
+    <div class="eureka-formula-expression">Q = cmΔT　　Q = mL</div>
+    <p class="eureka-formula-note" id="formula-note">升温吸热 = 比热容 × 质量 × 温差 · 相变吸热 = 质量 × 潜热</p>
+  </div>
+</div>
+
+<script src="/templates/_shared/physics-core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const TEMPLATE_ID = 'physics/phase-change';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  const SUBSTANCES = {
+    ice: {
+      name: '冰', mp: 0, bp: 100,
+      cSolid: 2100, cLiquid: 4200,
+      Lm: 334000, Lv: 2260000,
+      colorSolid: '#93C5FD', colorLiquid: '#3B82F6', colorGas: '#CBD5E1',
+    },
+    thiosulfate: {
+      name: '海波', mp: 48, bp: null,
+      cSolid: 1700, cLiquid: 2400,
+      Lm: 227000, Lv: null,
+      colorSolid: '#FBBF24', colorLiquid: '#F59E0B', colorGas: '#FDE68A',
+    },
+  };
+
+  const state = {
+    substance: 'ice',
+    power: 50,        // W
+    initTemp: -10,    // °C
+    mass: 0.1,        // kg
+    simulating: false,
+    time: 0,          // s
+    temp: -10,        // °C
+    heat: 0,          // J
+    curvePoints: [],  // {t, T}
+    lastTs: 0,
+  };
+
+  const canvas = document.getElementById('canvas');
+  const cssW = 680, cssH = 420;
+  const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
+
+  const statTemp = document.getElementById('stat-temp');
+  const statPhase = document.getElementById('stat-phase');
+  const statHeat = document.getElementById('stat-heat');
+  const statusBadge = document.getElementById('status-badge');
+  const formulaNote = document.getElementById('formula-note');
+
+  const btnPlay = document.getElementById('btn-play');
+  const btnPause = document.getElementById('btn-pause');
+  const btnReset = document.getElementById('btn-reset');
+
+  const ctlPower = document.getElementById('ctl-power');
+  const ctlInit = document.getElementById('ctl-init');
+  const ctlMass = document.getElementById('ctl-mass');
+
+  const substanceRow = document.getElementById('substance-row');
+
+  function getPhase() {
+    const sub = SUBSTANCES[state.substance];
+    if (state.temp < sub.mp) return 'solid';
+    if (Math.abs(state.temp - sub.mp) < 0.1) {
+      const heatToMelt = sub.Lm * state.mass;
+      const plateauProgress = (state.heat - state.mass * sub.cSolid * (sub.mp - state.initTemp)) / heatToMelt;
+      if (plateauProgress < 1 && plateauProgress >= 0) return 'melting';
+      return state.heat > state.mass * sub.cSolid * (sub.mp - state.initTemp) + heatToMelt ? 'liquid' : 'solid';
+    }
+    if (sub.bp === null) return 'liquid';
+    if (state.temp < sub.bp) return 'liquid';
+    if (Math.abs(state.temp - sub.bp) < 0.1) {
+      const heatToBoil = (sub.Lm + sub.cLiquid * (sub.bp - sub.mp)) * state.mass;
+      const heatToVaporize = sub.Lv * state.mass;
+      const plateauProgress = (state.heat - heatToBoil) / heatToVaporize;
+      if (plateauProgress < 1 && plateauProgress >= 0) return 'boiling';
+      return state.heat > heatToBoil + heatToVaporize ? 'gas' : 'liquid';
+    }
+    return 'gas';
+  }
+
+  function phaseLabel(ph) {
+    const labels = { solid: '固态', melting: '固液共存', liquid: '液态', boiling: '液气共存', gas: '气态' };
+    return labels[ph] || ph;
+  }
+
+  function stepPhysics(dt) {
+    const sub = SUBSTANCES[state.substance];
+    const Q = state.power * dt;
+    state.heat += Q;
+
+    let T = state.initTemp;
+    let remainingQ = state.heat;
+
+    // Solid heating
+    const Q1 = state.mass * sub.cSolid * (sub.mp - state.initTemp);
+    if (remainingQ <= Q1 || state.initTemp >= sub.mp) {
+      if (state.initTemp >= sub.mp) { T = state.initTemp + remainingQ / (state.mass * sub.cSolid); }
+      else { T = state.initTemp + remainingQ / (state.mass * sub.cSolid); }
+    } else {
+      remainingQ -= Q1;
+      // Melting
+      const Q2 = sub.Lm * state.mass;
+      if (remainingQ <= Q2) { T = sub.mp; }
+      else {
+        remainingQ -= Q2;
+        if (sub.bp === null) {
+          T = sub.mp + remainingQ / (state.mass * sub.cLiquid);
+        } else {
+          const Q3 = state.mass * sub.cLiquid * (sub.bp - sub.mp);
+          if (remainingQ <= Q3) { T = sub.mp + remainingQ / (state.mass * sub.cLiquid); }
+          else {
+            remainingQ -= Q3;
+            const Q4 = sub.Lv * state.mass;
+            if (remainingQ <= Q4) { T = sub.bp; }
+            else { T = sub.bp + remainingQ / (state.mass * 2000); }
+          }
+        }
+      }
+    }
+    state.temp = T;
+    state.time += dt;
+  }
+
+  function renderParticles(px, py, pw, ph, phase, sub) {
+    const count = 30;
+    const cols = 6;
+    const rows = 5;
+
+    let color, jitter, spreadY;
+    if (phase === 'solid') { color = sub.colorSolid; jitter = 2; spreadY = 0.3; }
+    else if (phase === 'melting') { color = sub.colorLiquid; jitter = 6; spreadY = 0.5; }
+    else if (phase === 'liquid') { color = sub.colorLiquid; jitter = 10; spreadY = 0.7; }
+    else if (phase === 'boiling') { color = sub.colorGas; jitter = 14; spreadY = 0.85; }
+    else { color = sub.colorGas; jitter = 18; spreadY = 1.0; }
+
+    ctx.fillStyle = color;
+    for (let i = 0; i < count; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const baseX = px + (col / (cols - 1)) * pw * 0.9 + pw * 0.05;
+      const baseY = py + ph * 0.9 - (row / (rows - 1)) * ph * 0.8 * spreadY;
+      const jx = (Math.random() - 0.5) * jitter;
+      const jy = (Math.random() - 0.5) * jitter;
+      ctx.beginPath();
+      ctx.arc(baseX + jx, baseY + jy, phase === 'gas' ? 3.5 : 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function render() {
+    EurekaCanvas.clear(ctx, cssW, cssH);
+    const sub = SUBSTANCES[state.substance];
+    const phase = getPhase();
+
+    // Graph area (top-left)
+    const gx = 50, gy = 20, gw = 360, gh = 200;
+    const maxT = 120;
+    const maxTime = 120;
+
+    // Background
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillRect(gx, gy, gw, gh);
+    ctx.strokeStyle = '#9CA3AF';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(gx, gy, gw, gh);
+
+    // Labels
+    ctx.fillStyle = '#374151';
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText('T-°C', gx - 30, gy + 10);
+    ctx.fillText('t-s', gx + gw - 20, gy + gh + 16);
+
+    // Y ticks and grid
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '10px system-ui';
+    for (let t = -20; t <= maxT; t += 20) {
+      const y = gy + gh - ((t + 30) / (maxT + 30)) * gh;
+      if (y < gy || y > gy + gh) continue;
+      ctx.fillText(t + '', gx - 22, y + 3);
+      ctx.strokeStyle = '#E5E7EB';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(gx, y); ctx.lineTo(gx + gw, y); ctx.stroke();
+    }
+
+    // X ticks
+    for (let s = 0; s <= maxTime; s += 20) {
+      const x = gx + (s / maxTime) * gw;
+      ctx.fillText(s + '', x - 5, gy + gh + 14);
+    }
+
+    // Phase plateau annotations
+    const mpY = gy + gh - ((sub.mp + 30) / (maxT + 30)) * gh;
+    if (mpY > gy && mpY < gy + gh) {
+      ctx.strokeStyle = '#3B82F6';
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(gx, mpY); ctx.lineTo(gx + gw, mpY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#3B82F6';
+      ctx.font = '10px system-ui';
+      ctx.fillText('熔点', gx + gw - 28, mpY - 4);
+    }
+
+    if (sub.bp !== null) {
+      const bpY = gy + gh - ((sub.bp + 30) / (maxT + 30)) * gh;
+      if (bpY > gy && bpY < gy + gh) {
+        ctx.strokeStyle = '#EF4444';
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(gx, bpY); ctx.lineTo(gx + gw, bpY); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#EF4444';
+        ctx.fillText('沸点', gx + gw - 28, bpY - 4);
+      }
+    }
+
+    // Heating curve
+    if (state.curvePoints.length > 1) {
+      ctx.strokeStyle = '#EF4444';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      state.curvePoints.forEach((pt, i) => {
+        const x = gx + (pt.t / maxTime) * gw;
+        const y = gy + gh - ((pt.T + 30) / (maxT + 30)) * gh;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    // Current point
+    const curX = gx + (state.time / maxTime) * gw;
+    const curY = gy + gh - ((state.temp + 30) / (maxT + 30)) * gh;
+    ctx.fillStyle = '#1F2937';
+    ctx.beginPath();
+    ctx.arc(curX, curY, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Particle visualization (right side)
+    const px = gx + gw + 30;
+    const py = gy;
+    const pw = 200;
+    const ph = 200;
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeStyle = '#D1D5DB';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px, py, pw, ph);
+    ctx.fillStyle = '#6B7280';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText('粒子模型 · ' + phaseLabel(phase), px + 8, py + 16);
+
+    renderParticles(px + 10, py + 24, pw - 20, ph - 34, phase, sub);
+
+    // Current temp label
+    ctx.fillStyle = '#1F2937';
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText('T=' + EurekaFormat.num(state.temp, 1) + '°C', gx + 8, gy + gh - 8);
+  }
+
+  function updateAll() {
+    const sub = SUBSTANCES[state.substance];
+    const phase = getPhase();
+
+    statTemp.textContent = EurekaFormat.num(state.temp, 1) + ' °C';
+    statPhase.textContent = phaseLabel(phase);
+    statHeat.textContent = EurekaFormat.num(state.heat, 0) + ' J';
+
+    statusBadge.textContent = phaseLabel(phase) + ' · T=' + EurekaFormat.num(state.temp, 1) + '°C';
+    statusBadge.className = 'eureka-badge ' + (phase === 'melting' || phase === 'boiling' ? 'warning' : 'info');
+
+    formulaNote.textContent = sub.name + ' 熔点' + sub.mp + '°C' + (sub.bp !== null ? ' 沸点' + sub.bp + '°C' : '');
+
+    document.getElementById('v-power').textContent = state.power;
+    document.getElementById('v-init').textContent = state.initTemp;
+    document.getElementById('v-mass').textContent = state.mass;
+
+    render();
+
+    EurekaHost.emitResultUpdate({
+      temperature: Number(state.temp.toFixed(2)),
+      phase: phase,
+      heatAbsorbed: Number(state.heat.toFixed(2)),
+      time: Number(state.time.toFixed(2)),
+    });
+  }
+
+  function animate(ts) {
+    if (!state.simulating) return;
+    if (!state.lastTs) state.lastTs = ts;
+    const dt = Math.min((ts - state.lastTs) / 1000, 0.5); // cap dt
+    state.lastTs = ts;
+    stepPhysics(dt);
+    state.curvePoints.push({ t: state.time, T: state.temp });
+    if (state.curvePoints.length > 800) state.curvePoints.shift();
+    updateAll();
+    if (state.simulating) requestAnimationFrame(animate);
+  }
+
+  btnPlay.addEventListener('click', () => {
+    state.simulating = true;
+    state.lastTs = 0;
+    btnPlay.disabled = true;
+    btnPause.disabled = false;
+    requestAnimationFrame(animate);
+    EurekaHost.emitInteraction('play', {});
+  });
+
+  btnPause.addEventListener('click', () => {
+    state.simulating = false;
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    updateAll();
+    EurekaHost.emitInteraction('pause', {});
+  });
+
+  btnReset.addEventListener('click', () => {
+    state.simulating = false;
+    state.time = 0;
+    state.temp = state.initTemp;
+    state.heat = 0;
+    state.curvePoints = [];
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    updateAll();
+    EurekaHost.emitInteraction('reset-simulation', {});
+  });
+
+  function wireSlider(el, stateKey, paramName) {
+    el.addEventListener('input', () => {
+      const val = parseFloat(el.value);
+      state[stateKey] = val;
+      document.getElementById('v-' + stateKey).textContent = val;
+      if (stateKey === 'init') { state.temp = val; state.initTemp = val; }
+      updateAll();
+      EurekaHost.emitParamChange(paramName, val);
+    });
+  }
+
+  wireSlider(ctlPower, 'power', 'power');
+  wireSlider(ctlInit, 'init', 'initialTemperature');
+  wireSlider(ctlMass, 'mass', 'mass');
+
+  function selectSubstance(key) {
+    state.substance = key;
+    substanceRow.querySelectorAll('.phase-substance-chip').forEach(c => c.classList.remove('active'));
+    substanceRow.querySelector('[data-sub="' + key + '"]').classList.add('active');
+    state.time = 0;
+    state.temp = state.initTemp;
+    state.heat = 0;
+    state.curvePoints = [];
+    state.simulating = false;
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    updateAll();
+  }
+
+  substanceRow.addEventListener('click', (e) => {
+    const chip = e.target.closest('.phase-substance-chip');
+    if (!chip) return;
+    selectSubstance(chip.dataset.sub);
+  });
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param' && typeof cmd.param === 'string' && typeof cmd.value === 'number') {
+      applyParam(cmd.param, cmd.value);
+      updateAll();
+    } else if (cmd.type === 'set_params' && cmd.params && typeof cmd.params === 'object') {
+      for (const k in cmd.params) {
+        if (Object.prototype.hasOwnProperty.call(cmd.params, k)) applyParam(k, cmd.params[k]);
+      }
+      updateAll();
+    } else if (cmd.type === 'reset') {
+      state.power = 50; state.initTemp = -10; state.mass = 0.1;
+      state.time = 0; state.temp = -10; state.heat = 0; state.curvePoints = []; state.simulating = false;
+      ctlPower.value = 50; ctlInit.value = -10; ctlMass.value = 0.1;
+      document.getElementById('v-power').textContent = '50';
+      document.getElementById('v-init').textContent = '-10';
+      document.getElementById('v-mass').textContent = '0.1';
+      btnPlay.disabled = false; btnPause.disabled = true;
+      selectSubstance(state.substance);
+    }
+  });
+
+  function applyParam(name, value) {
+    switch (name) {
+      case 'power': state.power = EurekaFormat.clamp(value, 10, 200); ctlPower.value = state.power; break;
+      case 'initialTemperature': state.initTemp = EurekaFormat.clamp(value, -30, 80); state.temp = state.initTemp; ctlInit.value = state.initTemp; break;
+      case 'mass': state.mass = EurekaFormat.clamp(value, 0.05, 0.5); ctlMass.value = state.mass; break;
+      case 'substance': selectSubstance(value); break;
+    }
+  }
+
+  updateAll();
+
+  setTimeout(() => {
+    try { EurekaHints.show(canvas, '👆 点击"加热"开始模拟温度变化曲线', 6000); } catch {}
+  }, 600);
+
+  EurekaHost.emitReady(['power', 'initialTemperature', 'mass', 'substance']);
+})();
+</script>
+</body>
+</html>

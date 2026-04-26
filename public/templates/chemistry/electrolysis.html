@@ -1,0 +1,402 @@
+<!-- chemistry/electrolysis.html — Water Electrolysis Experiment -->
+<!-- Subject: Chemistry | Form: electrolysis | Level: junior-high -->
+<!-- Language: zh-CN | engines: chemistry/electrolysis -->
+
+<template-metadata>
+{
+  "experimentName": "电解水实验",
+  "subjectDomain": "chemistry",
+  "gradeLevel": "junior-high",
+  "formFactor": "electrolysis",
+  "parameters": [
+    {"id": "current", "label": "电流", "unit": "A", "min": 0.1, "max": 2.0, "default": 0.5, "step": 0.1, "type": "float"},
+    {"id": "time", "label": "通电时间", "unit": "s", "min": 0, "max": 600, "default": 60, "step": 10, "type": "int"},
+    {"id": "electrolyteConc", "label": "电解质浓度", "unit": "M", "min": 0.1, "max": 1.0, "default": 0.5, "step": 0.1, "type": "float"},
+    {"id": "electrodeMaterial", "label": "电极材料", "unit": "", "min": 0, "max": 1, "default": 0, "step": 1, "type": "enum", "options": ["铂电极", "石墨电极"]}
+  ],
+  "resultMetrics": [
+    {"id": "h2Volume", "label": "氢气体积", "unit": "mL"},
+    {"id": "o2Volume", "label": "氧气体积", "unit": "mL"},
+    {"id": "ratio", "label": "体积比 H₂:O₂", "unit": ""}
+  ],
+  "dependencies": ["../_shared/physics-core.js"]
+}
+</template-metadata>
+
+<template-body>
+  <div class="exp-title">电解水实验</div>
+  <p class="exp-desc">电解水产生氢气与氧气，验证 2H₂O → 2H₂↑ + O₂↑。</p>
+
+  <canvas id="electrolysis-canvas" width="800" height="520" tabindex="0" aria-label="电解水实验画布"></canvas>
+
+  <div class="param-panel">
+    <div class="param-group">
+      <h4>实验参数</h4>
+
+      <label for="current">电流 (A)</label>
+      <input type="range" id="current" min="0.1" max="2.0" step="0.1" value="0.5"
+             oninput="handleSlider(this)" aria-label="电流">
+      <span class="readout" id="readout-current">0.5</span>
+
+      <label for="time">通电时间 (s)</label>
+      <input type="range" id="time" min="0" max="600" step="10" value="60"
+             oninput="handleSlider(this)" aria-label="通电时间">
+      <span class="readout" id="readout-time">60</span>
+
+      <label for="electrolyteConc">电解质浓度 (M)</label>
+      <input type="range" id="electrolyteConc" min="0.1" max="1.0" step="0.1" value="0.5"
+             oninput="handleSlider(this)" aria-label="电解质浓度">
+      <span class="readout" id="readout-electrolyteConc">0.5</span>
+
+      <label for="electrodeMaterial">电极材料</label>
+      <select id="electrodeMaterial" onchange="handleSlider({id:'electrodeMaterial',value:+this.value});" aria-label="电极材料">
+        <option value="0" selected>铂电极</option>
+        <option value="1">石墨电极</option>
+      </select>
+    </div>
+  </div>
+</template-body>
+
+<script type="module">
+  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/physics-core.js';
+
+  const state = {
+    current: 0.5,
+    time: 60,
+    electrolyteConc: 0.5,
+    electrodeMaterial: 0,
+  };
+
+  const canvas = document.getElementById('electrolysis-canvas');
+  const ctx = canvas.getContext('2d');
+  let width = canvas.width, height = canvas.height;
+
+  let needRedraw = true;
+  let animationTime = 0;
+
+  const F = 96485;
+
+  function calculateGas(current, time) {
+    const molesElectrons = (current * time) / F;
+    const molesH2 = molesElectrons / 2;
+    const molesO2 = molesElectrons / 4;
+    const volH2 = molesH2 * 22400;
+    const volO2 = molesO2 * 22400;
+    const ratio = volO2 > 0.001 ? volH2 / volO2 : 0;
+    return { volH2, volO2, ratio, molesH2, molesO2 };
+  }
+
+  function drawCell(g, w, h, animT) {
+    const MARGIN = 40;
+    const cellW = 200;
+    const cellH = 260;
+    const cellX = (w - cellW) / 2 - 80;
+    const cellY = MARGIN + 60;
+
+    g.fillStyle = '#1a1a2e';
+    g.fillRect(0, 0, w, h);
+
+    // Title
+    g.fillStyle = '#e0e0ff';
+    g.font = 'bold 18px system-ui, sans-serif';
+    g.textAlign = 'left';
+    g.fillText('电解水实验', MARGIN, MARGIN);
+
+    g.fillStyle = '#aaaaaa';
+    g.font = '13px system-ui, sans-serif';
+    g.fillText(`${state.current}A · ${state.time}s · ${state.electrolyteConc}M ${state.electrodeMaterial === 0 ? '铂' : '石墨'}电极`, MARGIN, MARGIN + 22);
+
+    // ── Electrolysis cell ──
+    // Container
+    g.strokeStyle = '#cccccc';
+    g.lineWidth = 2;
+    g.strokeRect(cellX, cellY, cellW, cellH);
+
+    // Liquid (electrolyte)
+    const liquidLevel = cellH * 0.6;
+    g.fillStyle = 'rgba(200,230,255,0.15)';
+    g.fillRect(cellX + 2, cellY + cellH - liquidLevel, cellW - 4, liquidLevel);
+
+    // Water surface
+    g.strokeStyle = 'rgba(200,230,255,0.5)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(cellX, cellY + cellH - liquidLevel);
+    g.lineTo(cellX + cellW, cellY + cellH - liquidLevel);
+    g.stroke();
+
+    // Diaphragm (center)
+    const diaphragmX = cellX + cellW / 2;
+    g.strokeStyle = '#888888';
+    g.setLineDash([3, 3]);
+    g.beginPath();
+    g.moveTo(diaphragmX, cellY + 10);
+    g.lineTo(diaphragmX, cellY + cellH - liquidLevel);
+    g.stroke();
+    g.setLineDash([]);
+
+    // ── Electrodes ──
+    const electrodeW = 8;
+    const electrodeH = 80;
+    const electrodeY = cellY + cellH - liquidLevel + 10;
+
+    // Cathode (-) — left side, produces H₂
+    const cathodeX = cellX + cellW / 4 - electrodeW / 2;
+    g.fillStyle = '#cccccc';
+    g.fillRect(cathodeX, electrodeY, electrodeW, electrodeH);
+    // Wire
+    g.strokeStyle = '#aaaaaa';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(cathodeX + electrodeW / 2, electrodeY);
+    g.lineTo(cathodeX + electrodeW / 2, cellY - 15);
+    g.stroke();
+    // Battery negative
+    g.fillStyle = '#4488ff';
+    g.font = 'bold 14px system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.fillText('−', cathodeX + electrodeW / 2, cellY - 20);
+    // Label
+    g.fillStyle = '#aaccff';
+    g.font = '11px system-ui, sans-serif';
+    g.fillText('阴极(−)', cathodeX + electrodeW / 2, electrodeY + electrodeH + 12);
+
+    // Anode (+) — right side, produces O₂
+    const anodeX = cellX + cellW * 3 / 4 - electrodeW / 2;
+    g.fillStyle = '#cccccc';
+    g.fillRect(anodeX, electrodeY, electrodeW, electrodeH);
+    g.strokeStyle = '#aaaaaa';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(anodeX + electrodeW / 2, electrodeY);
+    g.lineTo(anodeX + electrodeW / 2, cellY - 15);
+    g.stroke();
+    // Battery positive
+    g.fillStyle = '#ff4444';
+    g.font = 'bold 14px system-ui, sans-serif';
+    g.fillText('+', anodeX + electrodeW / 2, cellY - 20);
+    g.fillStyle = '#ffaaaa';
+    g.font = '11px system-ui, sans-serif';
+    g.fillText('阳极(+)', anodeX + electrodeW / 2, electrodeY + electrodeH + 12);
+
+    // ── Battery symbol ──
+    const batX = cellX + cellW / 2;
+    const batY = cellY - 35;
+    g.fillStyle = '#ffcc44';
+    g.fillRect(batX - 20, batY - 8, 40, 16);
+    g.fillStyle = '#aa8800';
+    g.fillRect(batX + 18, batY - 4, 6, 8);
+    g.fillStyle = '#333333';
+    g.font = 'bold 11px system-ui, sans-serif';
+    g.fillText('直流电源', batX, batY + 4);
+
+    // ── Gas tubes ──
+    const gas = calculateGas(state.current, state.time);
+    const maxVol = gas.volH2 > 0 ? gas.volH2 : 20;
+    const tubeW = 40;
+    const tubeMaxH = 120;
+
+    // H₂ tube (left)
+    const h2Ratio = Math.min(1, gas.volH2 / Math.max(maxVol, 20));
+    const h2H = tubeMaxH * h2Ratio;
+    const h2X = cellX + cellW / 4 - tubeW / 2;
+    const h2Y = cellY - tubeMaxH - 5;
+
+    // Tube outline
+    g.strokeStyle = 'rgba(200,230,255,0.6)';
+    g.lineWidth = 1.5;
+    g.strokeRect(h2X, h2Y, tubeW, tubeMaxH);
+    // Gas fill
+    g.fillStyle = 'rgba(220,180,255,0.3)';
+    g.fillRect(h2X + 1, h2Y + tubeMaxH - h2H, tubeW - 2, h2H);
+
+    // H₂ bubbles (animated)
+    if (gas.volH2 > 0) {
+      const bubbleCount = Math.min(20, Math.floor(gas.volH2 / 3));
+      for (let i = 0; i < bubbleCount; i++) {
+        const bx = h2X + 5 + (i % 4) * 9;
+        const by = electrodeY + electrodeH - (animT * 30 + i * 15) % (electrodeY + electrodeH - h2Y - h2H);
+        g.fillStyle = `rgba(220,180,255,${0.3 + Math.random() * 0.2})`;
+        g.beginPath();
+        g.arc(bx, by, 3, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+
+    // H₂ label
+    g.fillStyle = '#ccaaff';
+    g.font = 'bold 12px system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.fillText('H₂', h2X + tubeW / 2, h2Y - 6);
+    g.font = '10px system-ui, sans-serif';
+    g.fillText(`${gas.volH2.toFixed(1)} mL`, h2X + tubeW / 2, h2Y + tubeMaxH + 12);
+
+    // O₂ tube (right)
+    const o2Ratio = Math.min(1, gas.volO2 / Math.max(maxVol / 2, 10));
+    const o2H = tubeMaxH * o2Ratio;
+    const o2X = cellX + cellW * 3 / 4 - tubeW / 2;
+    const o2Y = cellY - tubeMaxH - 5;
+
+    g.strokeStyle = 'rgba(200,230,255,0.6)';
+    g.strokeRect(o2X, o2Y, tubeW, tubeMaxH);
+    g.fillStyle = 'rgba(150,220,255,0.3)';
+    g.fillRect(o2X + 1, o2Y + tubeMaxH - o2H, tubeW - 2, o2H);
+
+    // O₂ bubbles
+    if (gas.volO2 > 0) {
+      const bubbleCount = Math.min(12, Math.floor(gas.volO2 / 3));
+      for (let i = 0; i < bubbleCount; i++) {
+        const bx = o2X + 5 + (i % 4) * 9;
+        const by = electrodeY + electrodeH - (animT * 25 + i * 20) % (electrodeY + electrodeH - o2Y - o2H);
+        g.fillStyle = `rgba(150,220,255,${0.3 + Math.random() * 0.2})`;
+        g.beginPath();
+        g.arc(bx, by, 3, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+
+    // O₂ label
+    g.fillStyle = '#aaddff';
+    g.font = 'bold 12px system-ui, sans-serif';
+    g.fillText('O₂', o2X + tubeW / 2, o2Y - 6);
+    g.font = '10px system-ui, sans-serif';
+    g.fillText(`${gas.volO2.toFixed(1)} mL`, o2X + tubeW / 2, o2Y + tubeMaxH + 12);
+
+    // ── Water level arrows ──
+    g.strokeStyle = 'rgba(200,230,255,0.4)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(h2X + tubeW + 5, cellY);
+    g.lineTo(h2X + tubeW + 5, cellY + cellH - liquidLevel);
+    g.stroke();
+    // Arrow head
+    g.beginPath();
+    g.moveTo(h2X + tubeW + 2, cellY + 5);
+    g.lineTo(h2X + tubeW + 5, cellY);
+    g.lineTo(h2X + tubeW + 8, cellY + 5);
+    g.stroke();
+
+    // ── Reaction equations ──
+    const eqX = w - 200;
+    const eqY = MARGIN + 40;
+
+    g.fillStyle = '#ccccff';
+    g.font = 'bold 13px system-ui, sans-serif';
+    g.textAlign = 'left';
+    g.fillText('电极反应', eqX, eqY);
+
+    g.fillStyle = '#aaaaaa';
+    g.font = '12px system-ui, sans-serif';
+    g.fillText('阴极(−): 4H⁺ + 4e⁻ → 2H₂↑', eqX, eqY + 22);
+    g.fillText('阳极(+): 2H₂O → O₂ + 4H⁺ + 4e⁻', eqX, eqY + 42);
+    g.fillStyle = '#ccccff';
+    g.font = 'bold 12px system-ui, sans-serif';
+    g.fillText('总反应: 2H₂O → 2H₂↑ + O₂↑', eqX, eqY + 68);
+
+    // ── Data table ──
+    const tableX = eqX;
+    const tableY = eqY + 95;
+    const colW = [100, 70];
+    const rowH = 22;
+
+    g.fillStyle = 'rgba(255,255,255,0.05)';
+    g.fillRect(tableX, tableY, colW[0] + colW[1] + 10, rowH * 5 + 10);
+    g.strokeStyle = '#444466';
+    g.strokeRect(tableX, tableY, colW[0] + colW[1] + 10, rowH * 5 + 10);
+
+    g.fillStyle = '#ccccff';
+    g.font = 'bold 11px system-ui, sans-serif';
+    g.fillText('参数', tableX + 8, tableY + 16);
+    g.fillText('数值', tableX + colW[0] + 8, tableY + 16);
+
+    const rows = [
+      ['H₂ 体积', `${gas.volH2.toFixed(2)} mL`],
+      ['O₂ 体积', `${gas.volO2.toFixed(2)} mL`],
+      ['体积比 H₂:O₂', `${gas.ratio.toFixed(2)}:1`],
+      ['H₂ 物质的量', `${gas.molesH2.toExponential(3)} mol`],
+      ['O₂ 物质的量', `${gas.molesO2.toExponential(3)} mol`],
+    ];
+
+    rows.forEach((row, i) => {
+      const ry = tableY + rowH * (i + 1);
+      g.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)';
+      g.fillRect(tableX, ry, colW[0] + colW[1] + 10, rowH);
+      g.fillStyle = '#bbbbdd';
+      g.font = '11px system-ui, sans-serif';
+      g.fillText(row[0], tableX + 8, ry + 15);
+      g.fillText(row[1], tableX + colW[0] + 8, ry + 15);
+    });
+
+    // ── Conclusion ──
+    const conY = tableY + rowH * 5 + 25;
+    g.fillStyle = 'rgba(255,255,255,0.05)';
+    g.fillRect(tableX, conY, colW[0] + colW[1] + 10, 40);
+    g.strokeStyle = '#444466';
+    g.strokeRect(tableX, conY, colW[0] + colW[1] + 10, 40);
+
+    g.fillStyle = '#ccccff';
+    g.font = 'bold 12px system-ui, sans-serif';
+    g.fillText('结论', tableX + 8, conY + 16);
+
+    g.fillStyle = '#bbbbdd';
+    g.font = '11px system-ui, sans-serif';
+    const conclusion = state.time === 0
+      ? '未通电。调节时间观察气体产生。'
+      : gas.ratio > 1.8 && gas.ratio < 2.2
+        ? '✓ H₂:O₂ ≈ 2:1，验证电解水产物比。'
+        : gas.ratio > 0
+          ? `H₂:O₂ = ${gas.ratio.toFixed(2)}:1，${gas.ratio > 2 ? '误差偏大' : '接近理论值'}`
+          : '';
+    g.fillText(conclusion, tableX + 8, conY + 34);
+  }
+
+  function renderLoop(ts) {
+    animationTime = ts / 1000;
+    if (needRedraw || (state.time > 0 && state.current > 0)) {
+      drawCell(ctx, width, height, animationTime);
+      needRedraw = false;
+    }
+    requestAnimationFrame(renderLoop);
+  }
+  requestAnimationFrame(renderLoop);
+
+  function handleSlider(el) {
+    const id = el.id;
+    state[id] = parseFloat(el.value);
+    const r = document.getElementById('readout-' + id);
+    if (r) {
+      if (id === 'current' || id === 'electrolyteConc') r.textContent = state[id].toFixed(1);
+      else r.textContent = Math.round(state[id]);
+    }
+    needRedraw = true;
+  }
+  window.handleSlider = handleSlider;
+
+  window.onHostCommand = function (name, payload) {
+    if (name === 'updateParams') {
+      ['current', 'time', 'electrolyteConc', 'electrodeMaterial'].forEach(k => {
+        if (payload[k] !== undefined) {
+          state[k] = parseFloat(payload[k]);
+          const el = document.getElementById(k);
+          if (el) el.value = state[k];
+          const r = document.getElementById('readout-' + k);
+          if (r) {
+            if (k === 'current' || k === 'electrolyteConc') r.textContent = state[k].toFixed(1);
+            else r.textContent = Math.round(state[k]);
+          }
+        }
+      });
+      needRedraw = true;
+    }
+  };
+
+  function emitResult() {
+    const g = calculateGas(state.current, state.time);
+    EurekaHost.emitResultUpdate({
+      h2Volume: { value: EurekaFormat.format(g.volH2, 2), label: 'H₂ 体积 (mL)' },
+      o2Volume: { value: EurekaFormat.format(g.volO2, 2), label: 'O₂ 体积 (mL)' },
+      ratio: { value: `H₂:O₂ ≈ ${g.ratio.toFixed(2)}:1`, label: '体积比' },
+    });
+  }
+  emitResult();
+</script>

@@ -27,6 +27,15 @@
 </head>
 <body>
 <div class="eureka-root">
+  <div style="text-align:center; margin: 8px 0;">
+    <span style="font-size:12px; color:#6B7280; margin-right:8px;">运动类型</span>
+    <div class="eureka-segmented">
+      <button class="eureka-segmented-item" data-mode="uniform">匀速</button>
+      <button class="eureka-segmented-item" data-mode="accelerated">匀变速</button>
+      <button class="eureka-segmented-item active" data-mode="accelerated-v0">匀变速带初速度</button>
+    </div>
+  </div>
+
   <div class="eureka-grid-3">
     <div class="eureka-stat">
       <p class="eureka-stat-label">位移 s</p>
@@ -62,8 +71,8 @@
   </div>
 
   <div class="eureka-formula">
-    <p class="eureka-formula-title">匀变速直线运动</p>
-    <div class="eureka-formula-expression">s = v₀t + ½at² &nbsp;&nbsp;&nbsp; v = v₀ + at</div>
+    <p class="eureka-formula-title" id="formula-title">匀变速直线运动</p>
+    <div class="eureka-formula-expression" id="formula-main">s = v₀t + ½at² &nbsp;&nbsp;&nbsp; v = v₀ + at</div>
   </div>
 </div>
 
@@ -75,12 +84,19 @@
   const TEMPLATE_ID = 'physics/motion';
   EurekaHost.setTemplateId(TEMPLATE_ID);
 
-  bindParam('v0', {
+  const MOTION_MODES = {
+    uniform:        { label: '匀速直线运动',     v0: true,  a: false, formulaTitle: '匀速直线运动',       formulaMain: 's = vt &nbsp;&nbsp;&nbsp; v = v₀ (恒定)' },
+    accelerated:    { label: '匀变速直线运动',    v0: false, a: true,  formulaTitle: '匀变速直线运动',     formulaMain: 's = ½at² &nbsp;&nbsp;&nbsp; v = at' },
+    'accelerated-v0': { label: '匀变速带初速度',  v0: true,  a: true,  formulaTitle: '匀变速直线运动',     formulaMain: 's = v₀t + ½at² &nbsp;&nbsp;&nbsp; v = v₀ + at' },
+  };
+  let currentMode = 'accelerated-v0';
+
+  const v0Control = bindParam('v0', {
     min: 0, max: 50, step: 1, defaultValue: 10,
     label: '初速度 v₀', unit: 'm/s',
     container: document.getElementById('params-root'),
   });
-  bindParam('acceleration', {
+  const aControl = bindParam('acceleration', {
     min: -10, max: 10, step: 0.5, defaultValue: 2,
     label: '加速度 a', unit: 'm/s²',
     container: document.getElementById('params-root'),
@@ -94,6 +110,27 @@
     min: 0.1, max: 10, step: 0.1, defaultValue: 1,
     label: '质量 m', unit: 'kg',
     container: document.getElementById('params-root'),
+  });
+
+  function applyMode(mode) {
+    currentMode = mode;
+    const cfg = MOTION_MODES[mode];
+    v0Control.element.style.display = cfg.v0 ? '' : 'none';
+    aControl.element.style.display = cfg.a ? '' : 'none';
+    if (!cfg.v0) setParam('v0', 0, false);
+    if (!cfg.a) setParam('acceleration', 0, false);
+    document.getElementById('formula-title').textContent = cfg.formulaTitle;
+    document.getElementById('formula-main').innerHTML = cfg.formulaMain;
+  }
+
+  document.querySelectorAll('.eureka-segmented-item').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.eureka-segmented-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyMode(btn.dataset.mode);
+      simT = 0;
+      EurekaHost.emitInteraction('mode-switch', { mode: currentMode });
+    });
   });
 
   const vtCanvas = document.getElementById('vt-canvas');
@@ -139,10 +176,24 @@
     const ch = cssH - margin.top - margin.bottom;
     const ox = margin.left, oy = cssH - margin.bottom;
 
+    const vEnd = EurekaPhysics.finalVelocity(v0, a, tMax);
+    const vMin = Math.min(0, v0, vEnd);
+    const vMax = Math.max(0, v0, vEnd);
+    const vPad = Math.max(10, (vMax - vMin) * 0.15);
+    const yMin = Math.floor(vMin - vPad);
+    const yMax = Math.ceil(vMax + vPad);
+    const yRange = yMax - yMin || 1;
+
+    const yTickCount = 5;
+    const yLabels = [];
+    for (let i = 0; i <= yTickCount; i++) {
+      yLabels.push(String(Math.round(yMin + (yRange * i / yTickCount))));
+    }
+
     EurekaCanvas2D.drawAxis(vtCtx, ox, oy, cw, ch, {
       tickSpacing: cw / 5,
       xLabels: ['0', '4', '8', '12', '16', '20'],
-      yLabels: ['-60', '-30', '0', '30', '60'],
+      yLabels: yLabels,
     });
 
     vtCtx.fillStyle = '#374151';
@@ -157,19 +208,19 @@
 
     vtCtx.strokeStyle = '#3B82F6'; vtCtx.lineWidth = 2.5;
     vtCtx.beginPath();
-    const vScale = ch / 120, tScale = cw / 20;
+    const vScale = ch / yRange, tScale = cw / 20;
     for (let i = 0; i <= 100; i++) {
       const t = (i / 100) * tMax;
       const v = EurekaPhysics.finalVelocity(v0, a, t);
       const px = ox + t * tScale;
-      const py = oy - (v + 60) * vScale;
+      const py = oy - (v - yMin) * vScale;
       if (i === 0) vtCtx.moveTo(px, py); else vtCtx.lineTo(px, py);
     }
     vtCtx.stroke();
 
     const curV = EurekaPhysics.finalVelocity(v0, a, simT);
     const px = ox + simT * tScale;
-    const py = oy - (curV + 60) * vScale;
+    const py = oy - (curV - yMin) * vScale;
     vtCtx.fillStyle = '#EF4444';
     vtCtx.beginPath(); vtCtx.arc(px, py, 5, 0, Math.PI * 2); vtCtx.fill();
   }
@@ -180,10 +231,24 @@
     const ch = cssH - margin.top - margin.bottom;
     const ox = margin.left, oy = cssH - margin.bottom;
 
+    const sEnd = EurekaPhysics.displacement(v0, a, tMax);
+    const sMin = Math.min(0, sEnd);
+    const sMax = Math.max(0, sEnd);
+    const sPad = Math.max(10, (sMax - sMin) * 0.15);
+    const syMin = Math.floor(sMin - sPad);
+    const syMax = Math.ceil(sMax + sPad);
+    const syRange = syMax - syMin || 1;
+
+    const yTickCount = 5;
+    const yLabels = [];
+    for (let i = 0; i <= yTickCount; i++) {
+      yLabels.push(String(Math.round(syMin + (syRange * i / yTickCount))));
+    }
+
     EurekaCanvas2D.drawAxis(stCtx, ox, oy, cw, ch, {
       tickSpacing: cw / 5,
       xLabels: ['0', '4', '8', '12', '16', '20'],
-      yLabels: ['0', '500', '1000', '1500', '2000'],
+      yLabels: yLabels,
     });
 
     stCtx.fillStyle = '#374151';
@@ -198,19 +263,19 @@
 
     stCtx.strokeStyle = '#10B981'; stCtx.lineWidth = 2.5;
     stCtx.beginPath();
-    const sScale = ch / 2000, tScale = cw / 20;
+    const sScale = ch / syRange, tScale = cw / 20;
     for (let i = 0; i <= 100; i++) {
       const t = (i / 100) * tMax;
       const s = EurekaPhysics.displacement(v0, a, t);
       const px = ox + t * tScale;
-      const py = oy - s * sScale;
+      const py = oy - (s - syMin) * sScale;
       if (i === 0) stCtx.moveTo(px, py); else stCtx.lineTo(px, py);
     }
     stCtx.stroke();
 
     const curS = EurekaPhysics.displacement(v0, a, simT);
     const px = ox + simT * tScale;
-    const py = oy - curS * sScale;
+    const py = oy - (curS - syMin) * sScale;
     stCtx.fillStyle = '#EF4444';
     stCtx.beginPath(); stCtx.arc(px, py, 5, 0, Math.PI * 2); stCtx.fill();
   }
@@ -238,24 +303,46 @@
       velocity: Number(r.v.toFixed(3)),
       averageVelocity: Number(r.avg.toFixed(3)),
       kineticEnergy: Number(r.ke.toFixed(3)),
-      parameters: { v0: p.v0, a: p.a, t: simT, mass: p.mass },
+      motionMode: currentMode,
+      parameters: { v0: p.v0, a: p.a, t: simT, mass: p.mass, mode: currentMode },
     });
   }
 
   EurekaHost.onHostCommand((cmd) => {
     if (cmd.type === 'set_param') {
-      try { setParam(cmd.param, cmd.value); }
-      catch (e) { EurekaHost.emitError('Unknown param: ' + cmd.param); }
+      if (cmd.param === 'mode' && MOTION_MODES[cmd.value]) {
+        document.querySelectorAll('.eureka-segmented-item').forEach(b => {
+          b.classList.toggle('active', b.dataset.mode === cmd.value);
+        });
+        applyMode(cmd.value);
+        simT = 0;
+      } else {
+        try { setParam(cmd.param, cmd.value); }
+        catch (e) { EurekaHost.emitError('Unknown param: ' + cmd.param); }
+      }
     } else if (cmd.type === 'set_params' && cmd.params) {
       for (const k in cmd.params) {
-        try { setParam(k, cmd.params[k]); }
-        catch (e) { EurekaHost.emitError('Param update failed: ' + e.message); }
+        if (k === 'mode' && MOTION_MODES[cmd.params[k]]) {
+          document.querySelectorAll('.eureka-segmented-item').forEach(b => {
+            b.classList.toggle('active', b.dataset.mode === cmd.params[k]);
+          });
+          applyMode(cmd.params[k]);
+          simT = 0;
+        } else {
+          try { setParam(k, cmd.params[k]); }
+          catch (e) { EurekaHost.emitError('Param update failed: ' + e.message); }
+        }
       }
     } else if (cmd.type === 'reset') {
       setParam('v0', 10, false);
       setParam('acceleration', 2, false);
       setParam('time', 5, false);
       setParam('mass', 1, false);
+      currentMode = 'accelerated-v0';
+      document.querySelectorAll('.eureka-segmented-item').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === 'accelerated-v0');
+      });
+      applyMode('accelerated-v0');
       simT = 0;
     }
   });
@@ -267,7 +354,7 @@
   drawVT(initP.v0, initP.a, initP.tMax);
   drawST(initP.v0, initP.a, initP.tMax);
   updateUI(initP, initR);
-  EurekaHost.emitReady(['v0', 'acceleration', 'time', 'mass']);
+  EurekaHost.emitReady(['v0', 'acceleration', 'time', 'mass', 'mode']);
 })();
 </script>
 </body>

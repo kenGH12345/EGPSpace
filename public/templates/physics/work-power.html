@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>功与功率实验</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .work-canvas-wrapper {
+    position: relative;
+    background: linear-gradient(180deg, #EDE9FE 0%, #DDD6FE 100%);
+  }
+  .work-progress-bar {
+    height: 8px;
+    background: #E5E7EB;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .work-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8B5CF6, #A78BFA);
+    border-radius: 4px;
+    transition: width 0.1s linear;
+  }
+  .work-btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .work-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #8B5CF6;
+    color: #fff;
+  }
+  .work-btn:disabled { background: #C4B5FD; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <!-- Summary stats -->
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">总功 W<sub>总</sub></p>
+      <p class="eureka-stat-value primary" id="stat-work">0 J</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">功率 P</p>
+      <p class="eureka-stat-value danger" id="stat-power">0 W</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">机械效率 η</p>
+      <p class="eureka-stat-value success" id="stat-eff">0%</p>
+    </div>
+  </div>
+
+  <!-- Extra stats row -->
+  <div class="eureka-grid-3" style="margin-top:8px;">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">有用功 W<sub>有</sub></p>
+      <p class="eureka-stat-value" id="stat-useful">0 J</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">提升高度 h</p>
+      <p class="eureka-stat-value" id="stat-height">0 m</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">状态</p>
+      <p class="eureka-stat-value" id="stat-status">静止</p>
+    </div>
+  </div>
+
+  <!-- Canvas visualization -->
+  <div class="eureka-canvas-wrapper work-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="680" height="380"></canvas>
+    <span class="eureka-badge" id="status-badge">准备就绪</span>
+  </div>
+
+  <!-- Animation controls -->
+  <div class="work-btn-row">
+    <button class="work-btn" id="btn-play">▶ 开始</button>
+    <button class="work-btn" id="btn-pause" disabled>⏸ 暂停</button>
+    <button class="work-btn" id="btn-reset" style="background:#6B7280;">⟲ 重置</button>
+  </div>
+  <div class="work-progress-bar"><div class="work-progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+  <!-- Parameter controls -->
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">拉力 F</span>
+        <span class="eureka-control-value"><span id="v-force">50</span> N</span>
+      </div>
+      <input id="ctl-force" class="eureka-slider" type="range" min="10" max="200" step="5" value="50">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">斜面角度 θ</span>
+        <span class="eureka-control-value"><span id="v-angle">30</span> °</span>
+      </div>
+      <input id="ctl-angle" class="eureka-slider" type="range" min="5" max="60" step="1" value="30">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">移动距离 s</span>
+        <span class="eureka-control-value"><span id="v-distance">2.0</span> m</span>
+      </div>
+      <input id="ctl-distance" class="eureka-slider" type="range" min="0.5" max="5.0" step="0.1" value="2.0">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">时间 t</span>
+        <span class="eureka-control-value"><span id="v-time">4.0</span> s</span>
+      </div>
+      <input id="ctl-time" class="eureka-slider" type="range" min="1" max="10" step="0.5" value="4.0">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">物块质量 m</span>
+        <span class="eureka-control-value"><span id="v-mass">10</span> kg</span>
+      </div>
+      <input id="ctl-mass" class="eureka-slider" type="range" min="1" max="50" step="1" value="10">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">重力加速度 g</span>
+        <span class="eureka-control-value"><span id="v-g">9.8</span> m/s²</span>
+      </div>
+      <input id="ctl-g" class="eureka-slider" type="range" min="1" max="20" step="0.1" value="9.8">
+    </div>
+  </div>
+
+  <!-- Formula card -->
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">功与功率公式</p>
+    <div class="eureka-formula-expression">W = F · s　　P = W / t</div>
+    <p class="eureka-formula-note" id="formula-note">总功 = 拉力 × 距离　　功率 = 总功 ÷ 时间</p>
+  </div>
+</div>
+
+<script src="/templates/_shared/physics-core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const TEMPLATE_ID = 'physics/work-power';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  const state = {
+    force: 50,      // N
+    angle: 30,      // degrees
+    distance: 2.0,  // m
+    time: 4.0,      // s
+    mass: 10,       // kg
+    g: 9.8,         // m/s²
+    animating: false,
+    progress: 0,    // 0..1
+    lastTs: 0,
+  };
+
+  const canvas = document.getElementById('canvas');
+  const cssW = 680, cssH = 380;
+  const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
+
+  const statWork = document.getElementById('stat-work');
+  const statPower = document.getElementById('stat-power');
+  const statEff = document.getElementById('stat-eff');
+  const statUseful = document.getElementById('stat-useful');
+  const statHeight = document.getElementById('stat-height');
+  const statStatus = document.getElementById('stat-status');
+  const statusBadge = document.getElementById('status-badge');
+  const progressFill = document.getElementById('progress-fill');
+  const formulaNote = document.getElementById('formula-note');
+
+  const btnPlay = document.getElementById('btn-play');
+  const btnPause = document.getElementById('btn-pause');
+  const btnReset = document.getElementById('btn-reset');
+
+  const ctlForce = document.getElementById('ctl-force');
+  const ctlAngle = document.getElementById('ctl-angle');
+  const ctlDistance = document.getElementById('ctl-distance');
+  const ctlTime = document.getElementById('ctl-time');
+  const ctlMass = document.getElementById('ctl-mass');
+  const ctlG = document.getElementById('ctl-g');
+
+  function toRad(deg) { return deg * Math.PI / 180; }
+
+  function computePhysics() {
+    const rad = toRad(state.angle);
+    const h = state.distance * Math.sin(rad);
+    const W_total = state.force * state.distance;
+    const W_useful = state.mass * state.g * h;
+    const P = W_total / state.time;
+    const eff = W_total > 0 ? (W_useful / W_total) * 100 : 0;
+    const F_needed = state.mass * state.g * Math.sin(rad); // minimum force to move
+    return { h, W_total, W_useful, P, eff, F_needed };
+  }
+
+  function render() {
+    EurekaCanvas.clear(ctx, cssW, cssH);
+    const p = computePhysics();
+    const rad = toRad(state.angle);
+
+    const originX = 80;
+    const originY = 320;
+    const slopeLen = 280;
+
+    // Ground
+    ctx.strokeStyle = '#9CA3AF';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, originY);
+    ctx.lineTo(cssW, originY);
+    ctx.stroke();
+
+    // Slope
+    const topX = originX + slopeLen * Math.cos(rad);
+    const topY = originY - slopeLen * Math.sin(rad);
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(originX, originY);
+    ctx.lineTo(topX, topY);
+    ctx.stroke();
+
+    // Height line (dashed)
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = '#6B7280';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(topX, topY);
+    ctx.lineTo(topX, originY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Height label
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '12px system-ui';
+    ctx.fillText('h=' + EurekaFormat.num(p.h, 2) + 'm', topX + 6, originY - p.h * slopeLen * Math.sin(rad) / 2 + 5);
+
+    // Angle arc
+    ctx.strokeStyle = '#F59E0B';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(originX, originY, 30, -rad, 0);
+    ctx.stroke();
+    ctx.fillStyle = '#F59E0B';
+    ctx.font = '12px system-ui';
+    ctx.fillText('θ=' + state.angle + '°', originX + 35, originY - 8);
+
+    // Block position along slope
+    const currentDist = state.distance * state.progress;
+    const blockLen = 30;
+    const blockCx = originX + currentDist * (slopeLen / state.distance) * Math.cos(rad);
+    const blockCy = originY - currentDist * (slopeLen / state.distance) * Math.sin(rad) - blockLen / 2;
+
+    // Block (rotated to match slope)
+    ctx.save();
+    ctx.translate(blockCx, blockCy);
+    ctx.rotate(-rad);
+    ctx.fillStyle = state.force >= p.F_needed ? '#10B981' : '#EF4444';
+    ctx.fillRect(-blockLen / 2, -blockLen / 2, blockLen, blockLen);
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-blockLen / 2, -blockLen / 2, blockLen, blockLen);
+    ctx.fillStyle = '#1F2937';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText(state.mass + 'kg', -18, 4);
+    ctx.restore();
+
+    // Force arrow (parallel to slope, upward)
+    const arrowLen = EurekaFormat.clamp(state.force * 0.6, 20, 80);
+    const arrowStartX = blockCx + (blockLen / 2) * Math.sin(rad);
+    const arrowStartY = blockCy - (blockLen / 2) * Math.cos(rad);
+    const arrowEndX = arrowStartX + arrowLen * Math.cos(rad);
+    const arrowEndY = arrowStartY - arrowLen * Math.sin(rad);
+    EurekaCanvas.drawArrow(ctx, arrowStartX, arrowStartY, arrowEndX, arrowEndY, '#8B5CF6', 'F=' + state.force + 'N');
+
+    // Status on canvas
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '13px system-ui';
+    ctx.fillText('需要最小拉力: ' + EurekaFormat.num(p.F_needed, 1) + ' N', cssW - 220, 30);
+
+    progressFill.style.width = (state.progress * 100) + '%';
+  }
+
+  function updateAll(emitParamChange) {
+    const p = computePhysics();
+    statWork.textContent = EurekaFormat.num(p.W_total, 1) + ' J';
+    statPower.textContent = EurekaFormat.num(p.P, 1) + ' W';
+    statEff.textContent = EurekaFormat.num(p.eff, 1) + '%';
+    statUseful.textContent = EurekaFormat.num(p.W_useful, 1) + ' J';
+    statHeight.textContent = EurekaFormat.num(p.h, 2) + ' m';
+
+    if (state.animating) {
+      statStatus.textContent = '运动';
+      statStatus.className = 'eureka-stat-value success';
+      statusBadge.textContent = '运动中… ' + EurekaFormat.num(state.progress * 100, 0) + '%';
+      statusBadge.className = 'eureka-badge success';
+    } else if (state.progress >= 1) {
+      statStatus.textContent = '完成';
+      statStatus.className = 'eureka-stat-value info';
+      statusBadge.textContent = '已完成 · W=' + EurekaFormat.num(p.W_total, 1) + 'J';
+      statusBadge.className = 'eureka-badge info';
+    } else {
+      statStatus.textContent = '静止';
+      statStatus.className = 'eureka-stat-value';
+      statusBadge.textContent = state.force >= p.F_needed ? '准备就绪' : '拉力不足！';
+      statusBadge.className = state.force >= p.F_needed ? 'eureka-badge success' : 'eureka-badge danger';
+    }
+
+    formulaNote.textContent = 'h = s·sin(' + state.angle + '°) = ' + EurekaFormat.num(p.h, 2) + 'm · 效率=' + EurekaFormat.num(p.eff, 1) + '%';
+
+    render();
+
+    EurekaHost.emitResultUpdate({
+      workTotal: Number(p.W_total.toFixed(2)),
+      workUseful: Number(p.W_useful.toFixed(2)),
+      power: Number(p.P.toFixed(2)),
+      efficiency: Number(p.eff.toFixed(2)),
+      progress: Number(state.progress.toFixed(3)),
+    });
+
+    if (emitParamChange) {
+      EurekaHost.emitParamChange(emitParamChange.param, emitParamChange.value);
+    }
+  }
+
+  function wireSlider(el, stateKey, paramName, decimals) {
+    el.addEventListener('input', () => {
+      const val = parseFloat(el.value);
+      state[stateKey] = val;
+      document.getElementById('v-' + stateKey).textContent = decimals !== undefined ? EurekaFormat.num(val, decimals) : val;
+      updateAll({ param: paramName, value: val });
+    });
+  }
+
+  wireSlider(ctlForce, 'force', 'force', 0);
+  wireSlider(ctlAngle, 'angle', 'angle', 0);
+  wireSlider(ctlDistance, 'distance', 'distance', 1);
+  wireSlider(ctlTime, 'time', 'time', 1);
+  wireSlider(ctlMass, 'mass', 'mass', 0);
+  wireSlider(ctlG, 'g', 'gravity', 1);
+
+  // Animation
+  function animate(ts) {
+    if (!state.animating) return;
+    if (!state.lastTs) state.lastTs = ts;
+    const dt = (ts - state.lastTs) / 1000;
+    state.lastTs = ts;
+    state.progress += dt / state.time;
+    if (state.progress >= 1) {
+      state.progress = 1;
+      state.animating = false;
+      btnPlay.disabled = false;
+      btnPause.disabled = true;
+    }
+    updateAll();
+    if (state.animating) requestAnimationFrame(animate);
+  }
+
+  btnPlay.addEventListener('click', () => {
+    const p = computePhysics();
+    if (state.force < p.F_needed) return;
+    if (state.progress >= 1) state.progress = 0;
+    state.animating = true;
+    state.lastTs = 0;
+    btnPlay.disabled = true;
+    btnPause.disabled = false;
+    requestAnimationFrame(animate);
+    EurekaHost.emitInteraction('play', {});
+  });
+
+  btnPause.addEventListener('click', () => {
+    state.animating = false;
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    EurekaHost.emitInteraction('pause', {});
+  });
+
+  btnReset.addEventListener('click', () => {
+    state.animating = false;
+    state.progress = 0;
+    state.lastTs = 0;
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    updateAll();
+    EurekaHost.emitInteraction('reset-animation', {});
+  });
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param' && typeof cmd.param === 'string' && typeof cmd.value === 'number') {
+      applyParam(cmd.param, cmd.value);
+      updateAll();
+    } else if (cmd.type === 'set_params' && cmd.params && typeof cmd.params === 'object') {
+      for (const k in cmd.params) {
+        if (Object.prototype.hasOwnProperty.call(cmd.params, k)) applyParam(k, cmd.params[k]);
+      }
+      updateAll();
+    } else if (cmd.type === 'reset') {
+      state.force = 50; state.angle = 30; state.distance = 2.0; state.time = 4.0; state.mass = 10; state.g = 9.8;
+      state.animating = false; state.progress = 0;
+      ctlForce.value = 50; ctlAngle.value = 30; ctlDistance.value = 2.0; ctlTime.value = 4.0; ctlMass.value = 10; ctlG.value = 9.8;
+      ['force', 'angle', 'distance', 'time', 'mass', 'g'].forEach(k => document.getElementById('v-' + k).textContent = ctlForce.value);
+      document.getElementById('v-force').textContent = '50';
+      document.getElementById('v-angle').textContent = '30';
+      document.getElementById('v-distance').textContent = '2.0';
+      document.getElementById('v-time').textContent = '4.0';
+      document.getElementById('v-mass').textContent = '10';
+      document.getElementById('v-g').textContent = '9.8';
+      btnPlay.disabled = false; btnPause.disabled = true;
+      updateAll();
+    }
+  });
+
+  function applyParam(name, value) {
+    switch (name) {
+      case 'force': state.force = EurekaFormat.clamp(value, 10, 200); ctlForce.value = state.force; document.getElementById('v-force').textContent = state.force; break;
+      case 'angle': state.angle = EurekaFormat.clamp(value, 5, 60); ctlAngle.value = state.angle; document.getElementById('v-angle').textContent = state.angle; break;
+      case 'distance': state.distance = EurekaFormat.clamp(value, 0.5, 5); ctlDistance.value = state.distance; document.getElementById('v-distance').textContent = state.distance; break;
+      case 'time': state.time = EurekaFormat.clamp(value, 1, 10); ctlTime.value = state.time; document.getElementById('v-time').textContent = state.time; break;
+      case 'mass': state.mass = EurekaFormat.clamp(value, 1, 50); ctlMass.value = state.mass; document.getElementById('v-mass').textContent = state.mass; break;
+      case 'gravity': state.g = EurekaFormat.clamp(value, 1, 20); ctlG.value = state.g; document.getElementById('v-g').textContent = state.g; break;
+    }
+  }
+
+  updateAll();
+
+  setTimeout(() => {
+    try { EurekaHints.show(canvas, '👆 调节参数后点击"开始"观看物体沿斜面运动', 6000); } catch {}
+  }, 600);
+
+  EurekaHost.emitReady(['force', 'angle', 'distance', 'time', 'mass', 'gravity']);
+})();
+</script>
+</body>
+</html>

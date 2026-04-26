@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>密度实验</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .density-canvas-wrapper {
+    position: relative;
+    background: linear-gradient(180deg, #FEF3C7 0%, #FDE68A 100%);
+  }
+  .density-substance-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .density-substance-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 2px solid #D1D5DB;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4B5563;
+    transition: all 0.2s;
+  }
+  .density-substance-chip.active {
+    border-color: #F59E0B;
+    background: #FFFBEB;
+    color: #B45309;
+  }
+  .density-guess-panel {
+    display: none;
+    padding: 12px;
+    background: #F3F4F6;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+  .density-guess-panel.visible { display: block; }
+  .density-result-correct { color: #10B981; font-weight: 700; }
+  .density-result-wrong { color: #EF4444; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <!-- Substance selector -->
+  <div class="eureka-card" style="padding-bottom:8px;">
+    <h3 class="eureka-card-title">选择物质</h3>
+    <div class="density-substance-row" id="substance-row">
+      <div class="density-substance-chip active" data-sub="iron" data-rho="7870" data-m="787" data-v="100">铁块</div>
+      <div class="density-substance-chip" data-sub="aluminum" data-rho="2700" data-m="270" data-v="100">铝块</div>
+      <div class="density-substance-chip" data-sub="wood" data-rho="600" data-m="60" data-v="100">木块</div>
+      <div class="density-substance-chip" data-sub="water" data-rho="1000" data-m="100" data-v="100">水</div>
+      <div class="density-substance-chip" data-sub="custom" data-rho="0" data-m="200" data-v="100">自定义</div>
+    </div>
+    <button class="eureka-btn" id="btn-guess" style="margin-top:4px;">未知物质鉴别 🎲</button>
+  </div>
+
+  <!-- Guess panel -->
+  <div class="density-guess-panel" id="guess-panel">
+    <p style="margin:0 0 8px;font-size:14px;color:#374151;">已知：质量 <b id="guess-mass">0</b>g，体积 <b id="guess-volume">0</b>cm³。请猜测这是哪种物质：</p>
+    <select id="guess-select" style="padding:6px 10px;border-radius:6px;border:1px solid #D1D5DB;font-size:14px;">
+      <option value="">请选择…</option>
+      <option value="iron">铁块</option>
+      <option value="aluminum">铝块</option>
+      <option value="wood">木块</option>
+      <option value="water">水</option>
+    </select>
+    <button class="eureka-btn" id="btn-check" style="margin-left:8px;">确认</button>
+    <p id="guess-result" style="margin:8px 0 0;"></p>
+    <button class="eureka-btn" id="btn-reveal" style="margin-top:8px;display:none;">揭示答案</button>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">质量 m</p>
+      <p class="eureka-stat-value primary" id="stat-mass">0 g</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">体积 V</p>
+      <p class="eureka-stat-value" id="stat-volume">0 cm³</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">密度 ρ</p>
+      <p class="eureka-stat-value danger" id="stat-density">0 kg/m³</p>
+    </div>
+  </div>
+
+  <!-- Canvas visualization -->
+  <div class="eureka-canvas-wrapper density-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="680" height="380"></canvas>
+    <span class="eureka-badge" id="status-badge">计算中…</span>
+  </div>
+
+  <!-- Parameter controls -->
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">质量 m</span>
+        <span class="eureka-control-value"><span id="v-mass">787</span> g</span>
+      </div>
+      <input id="ctl-mass" class="eureka-slider" type="range" min="10" max="2000" step="10" value="787">
+    </div>
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">体积 V</span>
+        <span class="eureka-control-value"><span id="v-volume">100</span> cm³</span>
+      </div>
+      <input id="ctl-volume" class="eureka-slider" type="range" min="10" max="500" step="10" value="100">
+    </div>
+  </div>
+
+  <!-- Formula card -->
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">密度公式</p>
+    <div class="eureka-formula-expression">ρ = m / V</div>
+    <p class="eureka-formula-note" id="formula-note">密度 = 质量 ÷ 体积</p>
+  </div>
+</div>
+
+<script src="/templates/_shared/physics-core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const TEMPLATE_ID = 'physics/density';
+  EurekaHost.setTemplateId(TEMPLATE_ID);
+
+  const SUBSTANCES = {
+    iron: { name: '铁块', rho: 7870, color: '#6B7280', mass: 787, volume: 100 },
+    aluminum: { name: '铝块', rho: 2700, color: '#D1D5DB', mass: 270, volume: 100 },
+    wood: { name: '木块', rho: 600, color: '#92400E', mass: 60, volume: 100 },
+    water: { name: '水', rho: 1000, color: '#3B82F6', mass: 100, volume: 100 },
+    custom: { name: '自定义', rho: 0, color: '#10B981', mass: 200, volume: 100 },
+  };
+
+  const state = {
+    substance: 'iron',
+    mass: 787,     // g
+    volume: 100,   // cm³
+    guessMode: false,
+    guessTarget: null,
+  };
+
+  const canvas = document.getElementById('canvas');
+  const cssW = 680, cssH = 380;
+  const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
+
+  const statMass = document.getElementById('stat-mass');
+  const statVolume = document.getElementById('stat-volume');
+  const statDensity = document.getElementById('stat-density');
+  const statusBadge = document.getElementById('status-badge');
+  const formulaNote = document.getElementById('formula-note');
+
+  const ctlMass = document.getElementById('ctl-mass');
+  const ctlVolume = document.getElementById('ctl-volume');
+  const vMass = document.getElementById('v-mass');
+  const vVolume = document.getElementById('v-volume');
+
+  const substanceRow = document.getElementById('substance-row');
+  const btnGuess = document.getElementById('btn-guess');
+  const guessPanel = document.getElementById('guess-panel');
+  const guessMass = document.getElementById('guess-mass');
+  const guessVolume = document.getElementById('guess-volume');
+  const guessSelect = document.getElementById('guess-select');
+  const btnCheck = document.getElementById('btn-check');
+  const guessResult = document.getElementById('guess-result');
+  const btnReveal = document.getElementById('btn-reveal');
+
+  function computeDensity() {
+    if (state.volume <= 0) return 0;
+    return state.mass / state.volume; // g/cm³
+  }
+
+  function render() {
+    EurekaCanvas.clear(ctx, cssW, cssH);
+    const cx = cssW / 2;
+    const baseY = 280;
+
+    // Balance scale base
+    ctx.fillStyle = '#4B5563';
+    ctx.fillRect(cx - 80, baseY, 160, 10);
+    ctx.fillRect(cx - 6, baseY - 60, 12, 60);
+    ctx.beginPath();
+    ctx.arc(cx, baseY - 60, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Beam
+    const leftPanX = cx - 130;
+    const rightPanX = cx + 130;
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(leftPanX, baseY - 60);
+    ctx.lineTo(rightPanX, baseY - 60);
+    ctx.stroke();
+
+    // Left pan (substance)
+    ctx.strokeStyle = '#9CA3AF';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(leftPanX, baseY - 60);
+    ctx.lineTo(leftPanX, baseY - 30);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(leftPanX, baseY - 20, 35, 10, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const sub = SUBSTANCES[state.substance] || SUBSTANCES.custom;
+    const blockSize = 20 + Math.min(state.volume / 10, 40);
+    ctx.fillStyle = sub.color;
+    ctx.fillRect(leftPanX - blockSize / 2, baseY - 30 - blockSize, blockSize, blockSize);
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(leftPanX - blockSize / 2, baseY - 30 - blockSize, blockSize, blockSize);
+
+    // Right pan (counterweight representation)
+    ctx.strokeStyle = '#9CA3AF';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(rightPanX, baseY - 60);
+    ctx.lineTo(rightPanX, baseY - 30);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(rightPanX, baseY - 20, 35, 10, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Counterweight block
+    const cwSize = 20 + Math.min(state.mass / 30, 40);
+    ctx.fillStyle = '#6B7280';
+    ctx.fillRect(rightPanX - cwSize / 2, baseY - 30 - cwSize, cwSize, cwSize);
+    ctx.strokeStyle = '#1F2937';
+    ctx.strokeRect(rightPanX - cwSize / 2, baseY - 30 - cwSize, cwSize, cwSize);
+
+    // Measuring cylinder on the right side
+    const cylX = cx + 200;
+    const cylW = 60;
+    const cylH = 140;
+    const cylTop = baseY - cylH;
+
+    // Cylinder body
+    ctx.strokeStyle = '#9CA3AF';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cylX, cylTop);
+    ctx.lineTo(cylX, baseY);
+    ctx.lineTo(cylX + cylW, baseY);
+    ctx.lineTo(cylX + cylW, cylTop);
+    ctx.stroke();
+
+    // Liquid (water) fill
+    const liquidH = (state.volume / 500) * cylH;
+    ctx.fillStyle = 'rgba(6,182,212,0.3)';
+    ctx.fillRect(cylX + 2, baseY - liquidH, cylW - 4, liquidH);
+
+    // Submerged object in cylinder (if not water)
+    if (state.substance !== 'water') {
+      const objH = Math.min(blockSize * 0.6, liquidH * 0.8);
+      ctx.fillStyle = sub.color;
+      ctx.globalAlpha = 0.7;
+      ctx.fillRect(cylX + 8, baseY - liquidH / 2 - objH / 2, cylW - 16, objH);
+      ctx.globalAlpha = 1;
+    }
+
+    // Scale marks
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '10px system-ui';
+    for (let i = 0; i <= 5; i++) {
+      const y = baseY - (i / 5) * cylH;
+      ctx.fillRect(cylX + cylW - 8, y, 6, 1);
+      ctx.fillText((i * 100) + '', cylX + cylW + 4, y + 3);
+    }
+  }
+
+  function updateAll(emitParamChange) {
+    const density = computeDensity(); // g/cm³
+    const densityKgm3 = density * 1000;
+
+    statMass.textContent = state.mass + ' g';
+    statVolume.textContent = state.volume + ' cm³';
+    statDensity.textContent = EurekaFormat.num(densityKgm3, 1) + ' kg/m³ (' + EurekaFormat.num(density, 2) + ' g/cm³)';
+
+    const sub = SUBSTANCES[state.substance];
+    if (sub && state.substance !== 'custom') {
+      const expected = sub.rho / 1000;
+      const diff = Math.abs(density - expected) / expected;
+      if (diff < 0.05) {
+        statusBadge.textContent = sub.name + ' · 密度匹配 ✓';
+        statusBadge.className = 'eureka-badge success';
+      } else {
+        statusBadge.textContent = sub.name + ' · 密度偏差 ' + EurekaFormat.num(diff * 100, 1) + '%';
+        statusBadge.className = 'eureka-badge warning';
+      }
+      formulaNote.textContent = sub.name + ' 的标准密度 = ' + sub.rho + ' kg/m³';
+    } else {
+      statusBadge.textContent = '自定义物质 · ρ = ' + EurekaFormat.num(densityKgm3, 1) + ' kg/m³';
+      statusBadge.className = 'eureka-badge info';
+      formulaNote.textContent = '密度 = 质量 ÷ 体积';
+    }
+
+    vMass.textContent = state.mass;
+    vVolume.textContent = state.volume;
+
+    render();
+
+    if (state.guessMode) {
+      guessMass.textContent = state.mass;
+      guessVolume.textContent = state.volume;
+    }
+
+    EurekaHost.emitResultUpdate({
+      density: Number(densityKgm3.toFixed(2)),
+      mass: state.mass,
+      volume: state.volume,
+      substance: state.substance,
+    });
+
+    if (emitParamChange) {
+      EurekaHost.emitParamChange(emitParamChange.param, emitParamChange.value);
+    }
+  }
+
+  function selectSubstance(key) {
+    state.substance = key;
+    const sub = SUBSTANCES[key];
+    if (sub && key !== 'custom') {
+      state.mass = sub.mass;
+      state.volume = sub.volume;
+      ctlMass.value = sub.mass;
+      ctlVolume.value = sub.volume;
+    }
+    substanceRow.querySelectorAll('.density-substance-chip').forEach(c => c.classList.remove('active'));
+    substanceRow.querySelector('[data-sub="' + key + '"]').classList.add('active');
+    updateAll();
+  }
+
+  substanceRow.addEventListener('click', (e) => {
+    const chip = e.target.closest('.density-substance-chip');
+    if (!chip) return;
+    selectSubstance(chip.dataset.sub);
+  });
+
+  function wireSlider(el, stateKey, paramName) {
+    el.addEventListener('input', () => {
+      const val = parseInt(el.value, 10);
+      state[stateKey] = val;
+      if (state.substance !== 'custom') {
+        state.substance = 'custom';
+        substanceRow.querySelectorAll('.density-substance-chip').forEach(c => c.classList.remove('active'));
+        substanceRow.querySelector('[data-sub="custom"]').classList.add('active');
+      }
+      updateAll({ param: paramName, value: val });
+    });
+  }
+
+  wireSlider(ctlMass, 'mass', 'mass');
+  wireSlider(ctlVolume, 'volume', 'volume');
+
+  // Guess mode
+  btnGuess.addEventListener('click', () => {
+    const keys = Object.keys(SUBSTANCES).filter(k => k !== 'custom');
+    state.guessTarget = keys[Math.floor(Math.random() * keys.length)];
+    const target = SUBSTANCES[state.guessTarget];
+    state.mass = target.mass;
+    state.volume = target.volume;
+    state.guessMode = true;
+    ctlMass.value = state.mass;
+    ctlVolume.value = state.volume;
+    guessPanel.classList.add('visible');
+    guessResult.textContent = '';
+    guessSelect.value = '';
+    btnReveal.style.display = 'none';
+    updateAll();
+  });
+
+  btnCheck.addEventListener('click', () => {
+    const sel = guessSelect.value;
+    if (!sel) { guessResult.textContent = '请先选择一个物质'; guessResult.className = ''; return; }
+    if (sel === state.guessTarget) {
+      guessResult.innerHTML = '<span class="density-result-correct">✓ 正确！这就是 ' + SUBSTANCES[sel].name + '</span>';
+    } else {
+      guessResult.innerHTML = '<span class="density-result-wrong">✗ 不对，答案是 ' + SUBSTANCES[state.guessTarget].name + '</span>';
+    }
+    btnReveal.style.display = 'none';
+  });
+
+  btnReveal.addEventListener('click', () => {
+    guessResult.innerHTML = '<span class="density-result-wrong">答案是 ' + SUBSTANCES[state.guessTarget].name + '</span>';
+  });
+
+  EurekaHost.onHostCommand((cmd) => {
+    if (cmd.type === 'set_param' && typeof cmd.param === 'string' && typeof cmd.value === 'number') {
+      applyParam(cmd.param, cmd.value);
+      updateAll();
+    } else if (cmd.type === 'set_params' && cmd.params && typeof cmd.params === 'object') {
+      for (const k in cmd.params) {
+        if (Object.prototype.hasOwnProperty.call(cmd.params, k)) applyParam(k, cmd.params[k]);
+      }
+      updateAll();
+    } else if (cmd.type === 'reset') {
+      state.substance = 'iron'; state.mass = 787; state.volume = 100; state.guessMode = false;
+      ctlMass.value = 787; ctlVolume.value = 100;
+      selectSubstance('iron');
+      guessPanel.classList.remove('visible');
+    }
+  });
+
+  function applyParam(name, value) {
+    switch (name) {
+      case 'mass': state.mass = EurekaFormat.clamp(value, 10, 2000); ctlMass.value = state.mass; break;
+      case 'volume': state.volume = EurekaFormat.clamp(value, 10, 500); ctlVolume.value = state.volume; break;
+      case 'substance': selectSubstance(value); break;
+    }
+  }
+
+  updateAll();
+
+  setTimeout(() => {
+    try { EurekaHints.show(canvas, '👆 点击不同物质按钮切换实验对象', 5000); } catch {}
+  }, 600);
+
+  EurekaHost.emitReady(['mass', 'volume', 'substance']);
+})();
+</script>
+</body>
+</html>

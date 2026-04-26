@@ -1,0 +1,333 @@
+<!-- chemistry/iron-rusting.html — Iron Rusting Conditions Experiment -->
+<!-- Subject: Chemistry | Form: iron-rusting | Level: junior-high -->
+<!-- Language: zh-CN | engines: chemistry/iron-rusting -->
+
+<template-metadata>
+{
+  "experimentName": "铁生锈条件探究",
+  "subjectDomain": "chemistry",
+  "gradeLevel": "junior-high",
+  "formFactor": "iron-rusting",
+  "parameters": [
+    {"id": "days", "label": "天数", "unit": "天", "min": 0, "max": 30, "default": 7, "step": 1, "type": "int"},
+    {"id": "oxygenConcentration", "label": "氧气浓度", "unit": "%", "min": 0, "max": 100, "default": 21, "step": 1, "type": "int"},
+    {"id": "hasWater", "label": "加水", "unit": "", "min": 0, "max": 1, "default": 1, "step": 1, "type": "enum"},
+    {"id": "hasSalt", "label": "加盐", "unit": "", "min": 0, "max": 1, "default": 0, "step": 1, "type": "enum"},
+    {"id": "temperature", "label": "温度", "unit": "°C", "min": 10, "max": 60, "default": 25, "step": 1, "type": "int"}
+  ],
+  "resultMetrics": [
+    {"id": "rustLevel", "label": "锈蚀程度", "unit": "%"},
+    {"id": "rustDry", "label": "干燥试管", "unit": "%"},
+    {"id": "rustWater", "label": "水试管", "unit": "%"},
+    {"id": "rustSalt", "label": "盐水试管", "unit": "%"}
+  ],
+  "dependencies": ["../_shared/physics-core.js"]
+}
+</template-metadata>
+
+<template-body>
+  <div class="exp-title">铁生锈条件探究</div>
+  <p class="exp-desc">对比干燥空气、水、盐水三种条件下铁钉的锈蚀程度。</p>
+
+  <canvas id="rust-canvas" width="800" height="520" tabindex="0" aria-label="铁生锈实验画布"></canvas>
+
+  <div class="param-panel">
+    <div class="param-group">
+      <h4>实验参数</h4>
+
+      <label for="days">天数</label>
+      <input type="range" id="days" min="0" max="30" step="1" value="7"
+             oninput="handleSlider(this)" aria-label="天数">
+      <span class="readout" id="readout-days">7</span>
+
+      <label for="oxygenConcentration">氧气浓度 (%)</label>
+      <input type="range" id="oxygenConcentration" min="0" max="100" step="1" value="21"
+             oninput="handleSlider(this)" aria-label="氧气浓度">
+      <span class="readout" id="readout-oxygenConcentration">21</span>
+
+      <label for="temperature">温度 (°C)</label>
+      <input type="range" id="temperature" min="10" max="60" step="1" value="25"
+             oninput="handleSlider(this)" aria-label="温度">
+      <span class="readout" id="readout-temperature">25</span>
+    </div>
+  </div>
+</template-body>
+
+<script type="module">
+  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/physics-core.js';
+
+  const state = {
+    days: 7,
+    oxygenConcentration: 21,
+    hasWater: 1,
+    hasSalt: 0,
+    temperature: 25,
+  };
+
+  const canvas = document.getElementById('rust-canvas');
+  const ctx = canvas.getContext('2d');
+  let width = canvas.width, height = canvas.height;
+
+  let needRedraw = true;
+
+  // ── Rust model (same as engine, recalculated in template) ──
+  function calcRust(days, o2Pct, temp, hasWater, hasSalt) {
+    const o2 = o2Pct / 100;
+    let baseRate = 0.5;
+    if (!hasWater) baseRate = 0.02;
+    if (hasSalt) baseRate *= 2.5;
+    const tempFactor = Math.pow(2, (temp - 25) / 10);
+    const o2Factor = o2 / 0.21;
+    const rate = baseRate * tempFactor * o2Factor;
+    const rustDry = Math.min(100, 0.02 * tempFactor * o2Factor * days);
+    const rustWater = Math.min(100, 0.5 * tempFactor * o2Factor * days);
+    const rustSalt = Math.min(100, 1.25 * tempFactor * o2Factor * days);
+    const rustLevel = Math.min(100, rate * days);
+    return { rustLevel, rustDry, rustWater, rustSalt, rate };
+  }
+
+  function drawRust(g, w, h) {
+    const MARGIN = 40;
+    const tubeW = 120;
+    const tubeH = 200;
+    const tubeGap = 40;
+    const startX = (w - (tubeW * 3 + tubeGap * 2)) / 2;
+    const tubeY = MARGIN + 80;
+
+    g.fillStyle = '#1a1a2e';
+    g.fillRect(0, 0, w, h);
+
+    // Title
+    g.fillStyle = '#e0e0ff';
+    g.font = 'bold 18px system-ui, sans-serif';
+    g.textAlign = 'left';
+    g.fillText('铁生锈条件对比实验', MARGIN, MARGIN);
+
+    g.fillStyle = '#aaaaaa';
+    g.font = '13px system-ui, sans-serif';
+    g.fillText(`条件: ${state.temperature}°C, O₂ ${state.oxygenConcentration}%, ${state.days}天`, MARGIN, MARGIN + 22);
+
+    const rust = calcRust(state.days, state.oxygenConcentration, state.temperature, state.hasWater, state.hasSalt);
+    const tubes = [
+      { label: '干燥空气', rustPct: rust.rustDry, desc: '无水', hasWater: false, hasSalt: false },
+      { label: '水 + 空气', rustPct: rust.rustWater, desc: '有水', hasWater: true, hasSalt: false },
+      { label: '盐水 + 空气', rustPct: rust.rustSalt, desc: '有盐水', hasWater: true, hasSalt: true },
+    ];
+
+    tubes.forEach((tube, i) => {
+      const x = startX + i * (tubeW + tubeGap);
+
+      // Test tube outline
+      g.strokeStyle = '#cccccc';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(x, tubeY);
+      g.lineTo(x, tubeY + tubeH);
+      g.arc(x + tubeW / 2, tubeY + tubeH, tubeW / 2, Math.PI, 0, true);
+      g.lineTo(x + tubeW, tubeY);
+      g.stroke();
+
+      // Candle/flame (seal representation)
+      const sealX = x + tubeW / 2;
+      const sealY = tubeY - 10;
+      g.fillStyle = '#555555';
+      g.beginPath();
+      g.arc(sealX, sealY, 6, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#cccccc';
+      g.font = '9px system-ui, sans-serif';
+      g.textAlign = 'center';
+      g.fillText('密封', sealX, sealY - 10);
+
+      // Water layer (if applicable)
+      if (tube.hasWater) {
+        const waterH = tubeH * 0.25;
+        g.fillStyle = tube.hasSalt ? 'rgba(200,220,255,0.4)' : 'rgba(200,230,255,0.3)';
+        g.fillRect(x + 2, tubeY + tubeH - waterH, tubeW - 4, waterH);
+        // Water surface
+        g.strokeStyle = 'rgba(200,230,255,0.6)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(x, tubeY + tubeH - waterH);
+        g.lineTo(x + tubeW, tubeY + tubeH - waterH);
+        g.stroke();
+      }
+
+      // Cotton/cgi (at bottom)
+      g.fillStyle = 'rgba(220,220,210,0.6)';
+      g.fillRect(x + 2, tubeY + tubeH - 15, tubeW - 4, 10);
+
+      // Iron nail
+      const nailW = 6;
+      const nailH = 60;
+      const nailX = x + tubeW / 2 - nailW / 2;
+      const nailY = tubeY + tubeH - 65;
+
+      // Rust overlay (based on percentage)
+      const rustAlpha = tube.rustPct / 100;
+      const baseColor = 'rgba(180,180,180,1)';
+      const rustColor = `rgba(${160 + rustAlpha * 80}, ${80 + rustAlpha * 40}, ${20 + rustAlpha * 20}, 1)`;
+
+      // Nail body
+      g.fillStyle = baseColor;
+      g.fillRect(nailX, nailY, nailW, nailH);
+      // Rust overlay
+      g.fillStyle = rustColor;
+      g.globalAlpha = 0.7;
+      g.fillRect(nailX, nailY, nailW, nailH);
+      g.globalAlpha = 1;
+
+      // Nail head
+      g.fillStyle = baseColor;
+      g.beginPath();
+      g.arc(nailX + nailW / 2, nailY - 3, nailW * 1.5, 0, Math.PI, true);
+      g.fill();
+      g.fillStyle = rustColor;
+      g.globalAlpha = 0.7;
+      g.beginPath();
+      g.arc(nailX + nailW / 2, nailY - 3, nailW * 1.5, 0, Math.PI, true);
+      g.fill();
+      g.globalAlpha = 1;
+
+      // Rust bubbles / flakes (visual effect)
+      if (tube.rustPct > 5) {
+        const flakeCount = Math.floor(tube.rustPct / 5);
+        for (let f = 0; f < flakeCount; f++) {
+          const fx = nailX + Math.random() * (tubeW - nailW) + nailW / 2;
+          const fy = nailY + Math.random() * nailH + 15;
+          g.fillStyle = `rgba(${170 + f * 3}, ${60 + f * 2}, 10, ${0.3 + rustAlpha * 0.5})`;
+          g.beginPath();
+          g.arc(fx, fy, 2 + Math.random() * 2, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+
+      // Label
+      g.fillStyle = '#e0e0ff';
+      g.font = 'bold 13px system-ui, sans-serif';
+      g.textAlign = 'center';
+      g.fillText(tube.label, x + tubeW / 2, tubeY + tubeH + 22);
+
+      // Description
+      g.fillStyle = '#aaaaaa';
+      g.font = '11px system-ui, sans-serif';
+      g.fillText(tube.desc, x + tubeW / 2, tubeY + tubeH + 38);
+
+      // Rust percentage
+      g.fillStyle = rustAlpha > 0.3 ? '#ff8c42' : '#aaaaaa';
+      g.font = 'bold 14px system-ui, sans-serif';
+      g.fillText(`${tube.rustPct.toFixed(1)}%`, x + tubeW / 2, tubeY + tubeH + 55);
+
+      // Rust bar
+      const barH = 8;
+      const barY = tubeY + tubeH + 65;
+      g.fillStyle = '#333355';
+      g.fillRect(x, barY, tubeW, barH);
+      g.fillStyle = rustAlpha > 0.3 ? '#ff8c42' : '#666666';
+      g.fillRect(x, barY, tubeW * (tube.rustPct / 100), barH);
+      g.strokeStyle = '#555577';
+      g.lineWidth = 1;
+      g.strokeRect(x, barY, tubeW, barH);
+    });
+
+    // ── Conclusion panel ──
+    const panelX = MARGIN;
+    const panelY = tubeY + tubeH + 100;
+    const panelW = w - MARGIN * 2;
+
+    g.fillStyle = 'rgba(255,255,255,0.05)';
+    g.fillRect(panelX, panelY, panelW, 70);
+    g.strokeStyle = '#444466';
+    g.lineWidth = 1;
+    g.strokeRect(panelX, panelY, panelW, 70);
+
+    g.fillStyle = '#ccccff';
+    g.font = 'bold 13px system-ui, sans-serif';
+    g.textAlign = 'left';
+    g.fillText('实验结论', panelX + 10, panelY + 20);
+
+    g.fillStyle = '#bbbbdd';
+    g.font = '12px system-ui, sans-serif';
+    const conclusion = state.days === 0
+      ? '铁钉尚未开始锈蚀。拖动“天数”滑块观察变化。'
+      : rust.rustDry > rust.rustWater * 0.8
+        ? '三种条件下锈蚀程度相近。请检查参数设置。'
+        : rust.rustSalt > rust.rustWater
+          ? '盐水条件下锈蚀最快 → 电解质加速电化学腐蚀。'
+          : rust.rustWater > rust.rustDry
+            ? '有水时锈蚀加快 → 铁生锈需要水和氧气。'
+            : '干燥条件下锈蚀最慢。';
+    g.fillText(conclusion, panelX + 10, panelY + 42);
+
+    // ── Data table ──
+    const tableX = w - 220;
+    const tableY = MARGIN;
+    const colW = [80, 60];
+    const rowH = 22;
+
+    g.fillStyle = 'rgba(255,255,255,0.05)';
+    g.fillRect(tableX, tableY, colW[0] + colW[1] + 10, rowH * (tubes.length + 2) + 10);
+    g.strokeStyle = '#444466';
+    g.strokeRect(tableX, tableY, colW[0] + colW[1] + 10, rowH * (tubes.length + 2) + 10);
+
+    g.fillStyle = '#ccccff';
+    g.font = 'bold 11px system-ui, sans-serif';
+    g.textAlign = 'left';
+    g.fillText('条件', tableX + 8, tableY + 16);
+    g.fillText('锈蚀%', tableX + colW[0] + 8, tableY + 16);
+
+    tubes.forEach((t, i) => {
+      const ry = tableY + rowH * (i + 1);
+      g.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)';
+      g.fillRect(tableX, ry, colW[0] + colW[1] + 10, rowH);
+      g.fillStyle = '#bbbbdd';
+      g.font = '11px system-ui, sans-serif';
+      g.fillText(t.label, tableX + 8, ry + 15);
+      g.fillText(`${t.rustPct.toFixed(1)}%`, tableX + colW[0] + 8, ry + 15);
+    });
+  }
+
+  function renderLoop() {
+    if (needRedraw) {
+      drawRust(ctx, width, height);
+      needRedraw = false;
+    }
+    requestAnimationFrame(renderLoop);
+  }
+  requestAnimationFrame(renderLoop);
+
+  function handleSlider(el) {
+    const id = el.id;
+    state[id] = parseFloat(el.value);
+    const r = document.getElementById('readout-' + id);
+    if (r) r.textContent = state[id];
+    needRedraw = true;
+  }
+  window.handleSlider = handleSlider;
+
+  window.onHostCommand = function (name, payload) {
+    if (name === 'updateParams') {
+      ['days', 'oxygenConcentration', 'hasWater', 'hasSalt', 'temperature'].forEach(k => {
+        if (payload[k] !== undefined) {
+          state[k] = parseFloat(payload[k]);
+          const el = document.getElementById(k);
+          if (el) el.value = state[k];
+          const r = document.getElementById('readout-' + k);
+          if (r) r.textContent = state[k];
+        }
+      });
+      needRedraw = true;
+    }
+  };
+
+  function emitResult() {
+    const r = calcRust(state.days, state.oxygenConcentration, state.temperature, state.hasWater, state.hasSalt);
+    EurekaHost.emitResultUpdate({
+      rustLevel: { value: EurekaFormat.format(r.rustLevel, 1), label: '锈蚀程度 (%)' },
+      rustDry:   { value: EurekaFormat.format(r.rustDry, 1),   label: '干燥试管 (%)' },
+      rustWater: { value: EurekaFormat.format(r.rustWater, 1), label: '水试管 (%)' },
+      rustSalt:  { value: EurekaFormat.format(r.rustSalt, 1),  label: '盐水试管 (%)' },
+    });
+  }
+  emitResult();
+</script>
