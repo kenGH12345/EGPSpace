@@ -66,6 +66,8 @@ const experiments: Record<string, {
   component: 'buoyancy' | 'lever' | 'refraction' | 'circuit' | 'acid-base';
   /** Triple-lock: approved HTML template ID. If set and approved, iframe is used. */
   templateId?: string;
+  /** Default knowledge for preset experiments */
+  defaultKnowledge?: string[];
 }> = {
   buoyancy: {
     name: '浮力原理',
@@ -75,6 +77,7 @@ const experiments: Record<string, {
     subject: '物理',
     component: 'buoyancy',
     templateId: 'physics/buoyancy',
+    defaultKnowledge: ['阿基米德原理', '物体的浮沉条件'],
   },
   'lever': {
     name: '杠杆原理',
@@ -84,6 +87,7 @@ const experiments: Record<string, {
     subject: '物理',
     component: 'lever',
     templateId: 'physics/lever',
+    defaultKnowledge: ['杠杆平衡条件', '动力×动力臂 = 阻力×阻力臂'],
   },
   'refraction': {
     name: '光的折射',
@@ -93,6 +97,7 @@ const experiments: Record<string, {
     subject: '物理',
     component: 'refraction',
     templateId: 'physics/refraction',
+    defaultKnowledge: ['折射定律', '光从空气射入水中时折射角小于入射角'],
   },
   'circuit': {
     name: '电路串并联',
@@ -102,6 +107,7 @@ const experiments: Record<string, {
     subject: '物理',
     component: 'circuit',
     templateId: 'physics/circuit',
+    defaultKnowledge: ['欧姆定律 I=U/R', '串联分压不分流', '并联分流不分压'],
   },
   'acid-base': {
     name: '酸碱滴定',
@@ -111,6 +117,7 @@ const experiments: Record<string, {
     subject: '化学',
     component: 'acid-base',
     templateId: 'chemistry/acid-base-titration',
+    defaultKnowledge: ['酸碱中和反应', '指示剂变色原理', '滴定终点判断'],
   },
   'acid-base-titration': {
     name: '酸碱中和滴定',
@@ -520,7 +527,7 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   const gradientStyle = isHexGradient 
     ? { background: `linear-gradient(135deg, ${displayGradient.replace('#', '').split('-').map(c => '#' + c).join(', ')})` }
     : undefined;
-  const displayKnowledge = aiSchema?.teaching?.understanding?.keyConcepts || aiConfig?.teaching?.understanding?.principles || ['阿基米德原理', '物体的浮沉条件'];
+  const displayKnowledge = aiSchema?.teaching?.understanding?.keyConcepts || aiConfig?.teaching?.understanding?.principles || experiment?.defaultKnowledge || ['实验知识点'];
   const displayCoreQuestion = aiConfig?.teaching?.design?.coreQuestion;
   const displayVariables = aiConfig?.teaching?.reasoning;
   const displayErrors = aiConfig?.teaching?.errors;

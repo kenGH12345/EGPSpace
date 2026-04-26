@@ -475,6 +475,7 @@ export function getTemplate(id: string | null | undefined): TemplateMetadata | n
     "physics/convex-lens",
     "physics/force-composition",
     "physics/buoyancy",
+    "physics/circuit",
     "chemistry/acid-base-titration",
     "chemistry/iron-rusting",
     "biology/photosynthesis",
