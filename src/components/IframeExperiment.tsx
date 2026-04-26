@@ -241,6 +241,7 @@ export function IframeExperiment({
         title={template.title}
         sandbox="allow-scripts allow-same-origin"
         referrerPolicy="no-referrer"
+        onLoad={() => setStatus('ready')}
         style={{
           width: '100%',
           height: '100%',
