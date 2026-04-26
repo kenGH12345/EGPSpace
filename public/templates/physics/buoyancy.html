@@ -178,10 +178,27 @@
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Object
-    const objectWidth = 60;
-    const objectHeight = Math.min(objectVolume * 0.8, 150);
-    const containerBottom = height - 20;
+    // Draw beaker/container
+    const beakerLeft = width/2 - 100;
+    const beakerRight = width/2 + 100;
+    const beakerBottom = height - 10;
+    ctx.strokeStyle = '#64748B';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(beakerLeft, liquidLevel - 20);
+    ctx.lineTo(beakerLeft, beakerBottom);
+    ctx.lineTo(beakerRight, beakerBottom);
+    ctx.lineTo(beakerRight, liquidLevel - 20);
+    ctx.stroke();
+    // Beaker labels
+    ctx.font = '11px system-ui';
+    ctx.fillStyle = '#64748B';
+    ctx.fillText('烧杯', width/2 - 12, beakerBottom + 14);
+
+    // Object with size based on volume
+    const objectWidth = Math.max(30, Math.min(objectVolume * 0.5, 90));
+    const objectHeight = Math.max(20, Math.min(objectVolume * 0.6, 120));
+    const containerBottom = beakerBottom - 5;
     const objectX = width / 2 - objectWidth / 2;
     let objectY;
 
@@ -192,71 +209,100 @@
     } else {
       objectY = liquidLevel;
     }
-
     objectY = Math.max(liquidLevel - objectHeight, Math.min(objectY, containerBottom - objectHeight));
 
-    let objectColor = isFloating ? '#10B981' : isSinking ? '#EF4444' : '#3B82F6';
-    ctx.fillStyle = objectColor;
-    ctx.fillRect(objectX, objectY, objectWidth, objectHeight);
+    // Object color based on density (green = light, red = heavy)
+    let objectHue = Math.max(0, Math.min(120, 120 - (objectDensity - 200) / 1800 * 120));
+    let objectColor = 'hsl(' + objectHue + ', 70%, 45%)';
+    let materialName = objectDensity < 500 ? '软木' : objectDensity < 900 ? '塑料' : objectDensity < 1200 ? '木材' : objectDensity < 2500 ? '玻璃' : objectDensity < 5000 ? '铝' : objectDensity < 9000 ? '铜' : '铁';
+
+    // Object body with gradient
+    let grad = ctx.createLinearGradient(objectX, objectY, objectX + objectWidth, objectY);
+    grad.addColorStop(0, 'hsl(' + objectHue + ', 70%, 55%)');
+    grad.addColorStop(1, 'hsl(' + objectHue + ', 70%, 35%)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(objectX + 2, objectY + 2, objectWidth - 4, objectHeight - 4);
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 2;
     ctx.strokeRect(objectX, objectY, objectWidth, objectHeight);
 
-    // Immersed part
+    // Density label ON the object
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillStyle = '#FFF';
+    ctx.textAlign = 'center';
+    ctx.fillText(objectDensity + 'kg/m³', objectX + objectWidth/2, objectY + objectHeight/2);
+    ctx.font = '10px system-ui';
+    ctx.fillText(materialName, objectX + objectWidth/2, objectY + objectHeight/2 + 14);
+    ctx.textAlign = 'left';
+
+    // Immersed highlight
     const immersedHeight = Math.max(0, Math.min(objectHeight, liquidLevel - objectY));
     if (immersedHeight > 0) {
-      ctx.fillStyle = objectColor;
-      ctx.globalAlpha = 0.3;
-      ctx.fillRect(objectX, objectY + objectHeight - immersedHeight, objectWidth, immersedHeight);
-      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(objectX + 2, objectY + objectHeight - immersedHeight, objectWidth - 4, immersedHeight);
     }
 
-    // Buoyancy arrow
+    // Buoyancy arrow (thickness = force magnitude)
     if (buoyantForce > 0) {
+      let arrowLen = Math.min(80, buoyantForce / 3);
+      let arrowThick = Math.max(2, buoyantForce / 15);
       ctx.strokeStyle = '#3B82F6';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = arrowThick;
       ctx.beginPath();
-      ctx.moveTo(objectX + objectWidth / 2, objectY + 10);
-      ctx.lineTo(objectX + objectWidth / 2, objectY - buoyantForce / 5);
+      ctx.moveTo(objectX + objectWidth / 2, objectY + 5);
+      ctx.lineTo(objectX + objectWidth / 2, objectY - arrowLen);
       ctx.stroke();
-
+      // Arrow head
       ctx.beginPath();
-      ctx.moveTo(objectX + objectWidth / 2, objectY - buoyantForce / 5 + 10);
-      ctx.lineTo(objectX + objectWidth / 2 - 8, objectY - buoyantForce / 5 + 20);
-      ctx.lineTo(objectX + objectWidth / 2 + 8, objectY - buoyantForce / 5 + 20);
+      ctx.moveTo(objectX + objectWidth / 2, objectY - arrowLen);
+      ctx.lineTo(objectX + objectWidth / 2 - 10, objectY - arrowLen + 15);
+      ctx.lineTo(objectX + objectWidth / 2 + 10, objectY - arrowLen + 15);
       ctx.closePath();
       ctx.fillStyle = '#3B82F6';
       ctx.fill();
+      // Force value
+      ctx.font = 'bold 12px system-ui';
+      ctx.fillStyle = '#3B82F6';
+      ctx.fillText('↑ F浮 ' + buoyantForce.toFixed(1) + 'N', objectX + objectWidth + 8, objectY - arrowLen/2);
     }
 
-    // Gravity arrow
+    // Gravity arrow (thickness = force magnitude)
+    let gArrowLen = Math.min(80, gravityForce / 3);
+    let gArrowThick = Math.max(2, gravityForce / 15);
     ctx.strokeStyle = '#EF4444';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = gArrowThick;
     ctx.beginPath();
-    ctx.moveTo(objectX + objectWidth / 2, objectY + objectHeight - 10);
-    ctx.lineTo(objectX + objectWidth / 2, objectY + objectHeight + gravityForce / 5);
+    ctx.moveTo(objectX + objectWidth / 2, objectY + objectHeight - 5);
+    ctx.lineTo(objectX + objectWidth / 2, objectY + objectHeight + gArrowLen);
     ctx.stroke();
-
     ctx.beginPath();
-    ctx.moveTo(objectX + objectWidth / 2, objectY + objectHeight - 10);
-    ctx.lineTo(objectX + objectWidth / 2 - 8, objectY + objectHeight - 20);
-    ctx.lineTo(objectX + objectWidth / 2 + 8, objectY + objectHeight - 20);
+    ctx.moveTo(objectX + objectWidth / 2, objectY + objectHeight + gArrowLen);
+    ctx.lineTo(objectX + objectWidth / 2 - 10, objectY + objectHeight + gArrowLen - 15);
+    ctx.lineTo(objectX + objectWidth / 2 + 10, objectY + objectHeight + gArrowLen - 15);
     ctx.closePath();
     ctx.fillStyle = '#EF4444';
     ctx.fill();
-
-    // Labels
-    ctx.font = 'bold 14px system-ui';
-    ctx.fillStyle = '#3B82F6';
-    ctx.fillText('F浮 = ' + buoyantForce.toFixed(1) + 'N', objectX + objectWidth + 10, objectY + objectHeight / 2 - 20);
+    ctx.font = 'bold 12px system-ui';
     ctx.fillStyle = '#EF4444';
-    ctx.fillText('G = ' + gravityForce.toFixed(1) + 'N', objectX + objectWidth + 10, objectY + objectHeight / 2 + 20);
+    ctx.fillText('↓ G ' + gravityForce.toFixed(1) + 'N', objectX + objectWidth + 8, objectY + objectHeight + gArrowLen/2 + 5);
 
-    if (isFloating) {
-      ctx.font = 'bold 12px system-ui';
-      ctx.fillStyle = '#059669';
-      ctx.fillText('浸入比例: ' + (densityRatio * 100).toFixed(0) + '%', objectX, objectY - 10);
-    }
+    // State label above object
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillStyle = isFloating ? '#059669' : isSinking ? '#DC2626' : '#2563EB';
+    let stateText = isFloating ? '▲ 上浮' : isSinking ? '▼ 下沉' : '● 悬浮';
+    ctx.textAlign = 'center';
+    ctx.fillText(stateText, objectX + objectWidth/2, objectY - 18);
+    ctx.textAlign = 'left';
+
+    // Liquid density label on liquid
+    ctx.font = '11px system-ui';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    let liqName = liquidDensity < 900 ? '油' : liquidDensity < 1100 ? '水' : liquidDensity < 3000 ? '盐水' : '水银';
+    ctx.fillText(liqName + ' ρ=' + liquidDensity + 'kg/m³', beakerLeft + 8, (liquidLevel + beakerBottom) / 2);
+
+    // Volume label on beaker
+    ctx.fillStyle = '#64748B';
+    ctx.fillText('V=' + objectVolume + 'cm³', beakerRight + 5, objectY + objectHeight/2);
   }
 
   function setupControl(id, key) {

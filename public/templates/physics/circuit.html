@@ -203,34 +203,46 @@
   }
 
   function drawBattery(x, y) {
+    // Battery symbol scales with voltage (min size, max size)
+    const scale = Math.max(1, Math.min(1.8, state.voltage / 6));
+    const longH = 15 * scale, shortH = 10 * scale;
     ctx.strokeStyle = '#1F2937';
     ctx.lineWidth = 1.5;
     // Long line (positive terminal)
     ctx.beginPath();
-    ctx.moveTo(x, y - 15);
-    ctx.lineTo(x, y + 15);
+    ctx.moveTo(x, y - longH);
+    ctx.lineTo(x, y + longH);
     ctx.stroke();
     // Short line (negative terminal)
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 4 * scale;
     ctx.beginPath();
-    ctx.moveTo(x - 8, y - 10);
-    ctx.lineTo(x - 8, y + 10);
+    ctx.moveTo(x - 8 * scale, y - shortH);
+    ctx.lineTo(x - 8 * scale, y + shortH);
     ctx.stroke();
+    // Voltage label
     ctx.fillStyle = '#1F2937';
     ctx.font = 'bold 12px system-ui';
-    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 22, y + 35);
+    ctx.fillText(state.voltage.toFixed(1) + 'V', x - 22, y + longH + 20);
     ctx.fillStyle = '#DC2626';
     ctx.font = 'bold 14px system-ui';
-    ctx.fillText('+', x + 6, y - 18);
+    ctx.fillText('+', x + 8, y - longH - 4);
     ctx.fillStyle = '#2563EB';
-    ctx.fillText('−', x - 22, y - 18);
+    ctx.fillText('−', x - 22, y - longH - 4);
   }
 
   function drawResistor(x, y, width, label, voltage, current) {
     const h = 16;
+    const power = Math.abs(voltage * current);
+    // Color shifts toward red as power increases (heat)
+    const heatRatio = Math.min(1, power / 5);
+    const r = Math.round(31 + heatRatio * 200);
+    const g = Math.round(41 + heatRatio * 20);
+    const b = Math.round(55 + heatRatio * 10);
+    const heatColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+
     // Zigzag resistor symbol
-    ctx.strokeStyle = '#1F2937';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = heatColor;
+    ctx.lineWidth = 2 + heatRatio * 2;
     ctx.beginPath();
     ctx.moveTo(x, y + h / 2);
     const segments = 6;
@@ -242,9 +254,14 @@
     ctx.lineTo(x + width, y + h / 2);
     ctx.stroke();
 
-    ctx.fillStyle = '#1F2937';
+    // Label ON the resistor
+    ctx.fillStyle = '#FFF';
     ctx.font = 'bold 10px system-ui';
-    ctx.fillText(label, x + width / 2 - 14, y - 4);
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x + width / 2, y + h / 2 + 3);
+    ctx.textAlign = 'left';
+
+    // Voltage & current labels below
     ctx.font = '9px system-ui';
     ctx.fillStyle = '#DC2626';
     ctx.fillText('U=' + voltage.toFixed(1) + 'V', x + width / 2 - 16, y + h + 10);
@@ -252,9 +269,11 @@
     ctx.fillText('I=' + current.toFixed(2) + 'A', x + width / 2 - 14, y + h + 20);
   }
 
-  function drawWire(x1, y1, x2, y2) {
+  function drawWire(x1, y1, x2, y2, current) {
+    // Wire thickness ∝ current (min 1.5px, max 6px)
+    const thickness = current ? Math.max(1.5, Math.min(6, 1.5 + current * 1.5)) : 1.5;
     ctx.strokeStyle = '#1F2937';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = thickness;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -286,23 +305,23 @@
     drawBattery(left, midY);
 
     // Top wire: battery+ -> R1 -> R2 -> right
-    drawWire(left, top, left + 25, top);
+    drawWire(left, top, left + 25, top, p.I);
     drawResistor(left + 25, top, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
-    drawWire(left + 25 + rWidth, top, left + 25 + rWidth + 50, top);
+    drawWire(left + 25 + rWidth, top, left + 25 + rWidth + 50, top, p.I);
     drawResistor(left + 25 + rWidth + 50, top, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
-    drawWire(left + 25 + rWidth * 2 + 50, top, right, top);
+    drawWire(left + 25 + rWidth * 2 + 50, top, right, top, p.I);
 
     // Right wire down
-    drawWire(right, top, right, bottom);
+    drawWire(right, top, right, bottom, p.I);
 
     // Bottom wire: right -> left
-    drawWire(right, bottom, left, bottom);
+    drawWire(right, bottom, left, bottom, p.I);
 
     // Left wire up to battery-
-    drawWire(left, bottom, left, midY + 15);
+    drawWire(left, bottom, left, midY + 15, p.I);
 
     // Left wire from battery+ up to top
-    drawWire(left, midY - 15, left, top);
+    drawWire(left, midY - 15, left, top, p.I);
 
     // Current flow arrows
     drawCurrentDots(left + 15, top, left + 30, top, p.I);
@@ -326,10 +345,10 @@
     drawBattery(left, midY);
 
     // 电池正极 -> 左侧分支点 -> 上导线
-    drawWire(left, midY - 15, left, topRail);
+    drawWire(left, midY - 15, left, topRail, p.I);
 
     // 电池负极 <- 下导线 <- 右侧汇合点
-    drawWire(left, midY + 15, left, bottomRail);
+    drawWire(left, midY + 15, left, bottomRail, p.I);
 
     // 左侧分支点（圆点）
     ctx.fillStyle = '#1F2937';
@@ -341,12 +360,12 @@
     ctx.fill();
 
     // 上导线：分支点 -> R1 -> 汇合点
-    drawWire(left, topRail, left + 40, topRail);
-    drawWire(left + 40 + rWidth, topRail, right, topRail);
+    drawWire(left, topRail, left + 40, topRail, p.I1);
+    drawWire(left + 40 + rWidth, topRail, right, topRail, p.I1);
 
     // 下导线：分支点 -> R2 -> 汇合点
-    drawWire(left, bottomRail, left + 40, bottomRail);
-    drawWire(left + 40 + rWidth, bottomRail, right, bottomRail);
+    drawWire(left, bottomRail, left + 40, bottomRail, p.I2);
+    drawWire(left + 40 + rWidth, bottomRail, right, bottomRail, p.I2);
 
     // 右侧汇合点（圆点）
     ctx.fillStyle = '#1F2937';
@@ -358,7 +377,7 @@
     ctx.fill();
 
     // 右侧垂直导线连接上下汇合点
-    drawWire(right, topRail, right, bottomRail);
+    drawWire(right, topRail, right, bottomRail, p.I);
 
     // R1 - 上支路
     drawResistor(left + 40, r1Y, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);

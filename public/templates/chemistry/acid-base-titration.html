@@ -181,12 +181,9 @@
     const w = canvas.width, h = canvas.height;
 
     ctx.clearRect(0, 0, w, h);
-
-    // Background table
     ctx.fillStyle = '#F3E8FF';
     ctx.fillRect(0, 0, w, h);
 
-    // Scale all drawing by 0.85 to fit smaller canvas
     const s = 0.85;
     ctx.save();
     ctx.translate(w * (1 - s) / 2, h * (1 - s) / 2 + 10);
@@ -203,14 +200,15 @@
     ctx.lineTo(fx + flaskW/2, fy);
     ctx.quadraticCurveTo(fx, fy + 10, fx - flaskW/2, fy);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.fill();
     ctx.strokeStyle = '#7C3AED';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Liquid in flask
-    const liquidLevel = fy - (state.baseAdded / 60) * flaskH * 0.5 - 10;
+    // Liquid in flask (volume increases with base added)
+    const baseVolRatio = state.baseAdded / 60;
+    const liquidLevel = fy - (baseVolRatio + 0.3) * flaskH * 0.6;
     const liquidH = fy - liquidLevel;
     if (liquidH > 0) {
       ctx.save();
@@ -221,16 +219,32 @@
       ctx.quadraticCurveTo(fx, fy + 10, fx - flaskW/2, fy);
       ctx.closePath();
       ctx.clip();
+      // Liquid color based on indicator + pH
       ctx.fillStyle = colorInfo.color;
-      ctx.globalAlpha = 0.7;
+      ctx.globalAlpha = 0.6;
       ctx.fillRect(fx - flaskW/2, liquidLevel, flaskW, liquidH);
       ctx.globalAlpha = 1;
+      // Label ON the liquid
+      ctx.font = 'bold 11px system-ui';
+      ctx.fillStyle = ph < 4 || ph > 10 ? '#FFF' : '#333';
+      ctx.textAlign = 'center';
+      ctx.fillText('V酸=' + state.acidVolume + 'mL', fx, liquidLevel + liquidH/2);
+      ctx.font = '10px system-ui';
+      ctx.fillText('C酸=' + state.acidConc.toFixed(2) + 'M', fx, liquidLevel + liquidH/2 + 14);
+      ctx.textAlign = 'left';
       ctx.restore();
     }
 
+    // Flask label
+    ctx.font = '11px system-ui';
+    ctx.fillStyle = '#7C3AED';
+    ctx.textAlign = 'center';
+    ctx.fillText('锥形瓶', fx, fy + 20);
+    ctx.textAlign = 'left';
+
     // Burette
     const bx = fx + 90, by = 20;
-    ctx.fillStyle = 'rgba(200,200,200,0.5)';
+    ctx.fillStyle = 'rgba(200,200,200,0.4)';
     ctx.fillRect(bx - 6, by, 12, h - 100);
     ctx.strokeStyle = '#666';
     ctx.lineWidth = 1;
@@ -238,47 +252,76 @@
 
     // Scale on burette
     ctx.fillStyle = '#333';
-    ctx.font = '10px system-ui';
+    ctx.font = '9px system-ui';
     for (let i = 0; i <= 50; i += 10) {
       const y = by + 10 + i * 4;
       ctx.fillRect(bx + 6, y, 6, 1);
       ctx.fillText(i + '', bx + 14, y + 3);
     }
 
-    // Burette liquid level
+    // Burette liquid level (goes DOWN as base is added)
+    const totalBuretteHeight = 210;
     const buretteLevel = by + 10 + state.baseAdded * 4;
-    ctx.fillStyle = 'rgba(100,149,237,0.4)';
-    ctx.fillRect(bx - 5, buretteLevel, 10, (by + 210) - buretteLevel);
+    ctx.fillStyle = 'rgba(59,130,246,0.5)';
+    ctx.fillRect(bx - 5, buretteLevel, 10, (by + totalBuretteHeight) - buretteLevel);
+    // Burette label ON the tube
+    ctx.font = 'bold 10px system-ui';
+    ctx.fillStyle = '#1E40AF';
+    ctx.textAlign = 'center';
+    ctx.fillText('NaOH', bx, by + totalBuretteHeight + 16);
+    ctx.fillText(state.baseConc.toFixed(2) + 'M', bx, by + totalBuretteHeight + 28);
+    ctx.textAlign = 'left';
+
+    // Added volume label
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillStyle = '#1E40AF';
+    ctx.fillText('↓ 已加 ' + state.baseAdded.toFixed(1) + ' mL', bx + 16, buretteLevel);
 
     // Stopcock
     ctx.beginPath();
-    ctx.arc(bx, by + 215, 8, 0, Math.PI * 2);
+    ctx.arc(bx, by + totalBuretteHeight + 5, 8, 0, Math.PI * 2);
     ctx.fillStyle = '#666';
     ctx.fill();
 
-    // Drops
+    // Drops animation
     if (state.baseAdded > 0 && state.baseAdded < 50) {
-      ctx.fillStyle = 'rgba(100,149,237,0.6)';
+      let dropY = (Date.now() % 800) / 20;
+      ctx.fillStyle = 'rgba(59,130,246,0.7)';
       ctx.beginPath();
-      ctx.arc(bx, by + 225 + (Date.now() % 500) / 20, 3, 0, Math.PI * 2);
+      ctx.arc(bx, by + totalBuretteHeight + 15 + dropY, 3, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // pH meter
-    ctx.fillStyle = '#FFF';
-    ctx.fillRect(20, 20, 80, 40);
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(20, 20, 80, 40);
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 18px system-ui';
-    ctx.fillText('pH ' + ph.toFixed(2), 28, 46);
+    // pH meter (big digital display)
+    let meterColor = ph < 4 ? '#EF4444' : ph < 8 ? '#F59E0B' : '#10B981';
+    ctx.fillStyle = '#1F2937';
+    ctx.fillRect(20, 20, 100, 50);
+    ctx.strokeStyle = meterColor;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(20, 20, 100, 50);
+    ctx.font = 'bold 24px system-ui';
+    ctx.fillStyle = meterColor;
+    ctx.fillText('pH ' + ph.toFixed(2), 30, 52);
 
-    // Info text
+    // Indicator label
+    ctx.font = 'bold 11px system-ui';
     ctx.fillStyle = '#6B21A8';
-    ctx.font = '12px system-ui';
-    ctx.fillText('指示剂: ' + indicators[state.indicator].name, 20, h - 60);
-    ctx.fillText('等当点体积: ' + eqVol.toFixed(1) + ' mL', 20, h - 45);
+    ctx.fillText('指示剂: ' + indicators[state.indicator].name, 20, h - 55);
+    ctx.fillText('等当点: ' + eqVol.toFixed(1) + ' mL', 20, h - 40);
+
+    // Equivalence point indicator on burette scale
+    const eqY = by + 10 + eqVol * 4;
+    ctx.strokeStyle = '#EF4444';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(bx - 10, eqY);
+    ctx.lineTo(bx + 10, eqY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '10px system-ui';
+    ctx.fillStyle = '#EF4444';
+    ctx.fillText('等当点', bx + 12, eqY + 3);
 
     ctx.restore();
   }
