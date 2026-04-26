@@ -1,0 +1,4 @@
+/assets/css/index-DJpSTsA4.css
+/assets/css/vendor-CWXVPzG4.css
+/assets/js/index-HhZJtxor.js
+https://res.wx.qq.com/open/js/jweixin-1.6.0.js

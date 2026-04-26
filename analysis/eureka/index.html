@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Eureka - 把知识可视化 | Visualize Knowledge AI</title>
+    <meta name="description" content="Eureka 是一个 AI 驱动的无限画布知识探索引擎，将知识可视化为交互式图谱。Turn knowledge into interactive knowledge maps." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- 
+      微信 JSSDK：在小程序 web-view 中使用 wx.miniProgram.reLaunch 等 API 必须引入
+      引入后微信客户端会注入 wx.miniProgram 对象，提供 reLaunch/navigateTo/postMessage 等方法
+      对普通浏览器无影响（只会多一个全局 wx 对象，不会被误用）
+    -->
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+    
+    <!-- 资源预加载优化 - 使用国内镜像 -->
+    <link rel="preconnect" href="https://fonts.loli.net">
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+    <link rel="preconnect" href="https://accounts.google.com">
+    <link rel="preconnect" href="https://aistudiocdn.com">
+    
+    <!-- DNS 预解析 - 使用国内镜像 -->
+    <link rel="dns-prefetch" href="https://fonts.loli.net">
+    <link rel="dns-prefetch" href="https://gstatic.loli.net">
+    <link rel="dns-prefetch" href="https://accounts.google.com">
+    
+    <!-- 字体加载优化 - 使用国内镜像（fonts.loli.net，中国大陆可访问） -->
+    <!-- 
+      Eureka K12 字体方案 -「温暖书房」风格：
+      - 中文标题：Noto Serif SC（书卷气衬线）
+      - 英文标题：Instrument Serif（致敬 HappyCapy）
+      - 品牌/Logo：Playfair Display（精致衬线，高辨识度）
+      - 正文：DM Sans（现代几何无衬线）
+      - 代码：JetBrains Mono
+    -->
+    <link href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Google Identity Services for OAuth -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      body {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        background-color: #f3f4f6;
+        overflow: hidden; /* Prevent native scroll */
+      }
+    </style>
+
+<!-- CSS will be automatically injected by Vite during build -->
+<script>
+  // Inject runtime environment variables for Cloud Run
+  // API Keys are now handled by backend proxy for security
+  if (typeof window !== 'undefined') {
+    // Load Google Client ID (needed for OAuth login)
+    const metaClientId = document.querySelector('meta[name="google-client-id"]');
+    if (metaClientId) {
+      window.__GOOGLE_CLIENT_ID__ = metaClientId.getAttribute('content');
+      console.log('[Runtime] GOOGLE_CLIENT_ID loaded from meta tag');
+    }
+  }
+</script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/js/index-HhZJtxor.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/js/vendor-C9WqxvgN.js">
+  <link rel="stylesheet" crossorigin href="/assets/css/vendor-CWXVPzG4.css">
+  <link rel="stylesheet" crossorigin href="/assets/css/index-DJpSTsA4.css">
+</head>
+  <body>
+    <div id="root"></div>
+</body>
+</html>
