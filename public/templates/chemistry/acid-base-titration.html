@@ -3,580 +3,318 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>酸碱滴定实验</title>
+<title>酸碱中和滴定</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .titration-canvas-wrapper {
+    background: linear-gradient(180deg, #FAF5FF 0%, #F3E8FF 100%);
+  }
+  .indicator-dot {
+    width: 16px; height: 16px; border-radius: 50%; display: inline-block; margin-right: 6px; border: 2px solid #ccc;
+  }
+</style>
 </head>
 <body>
-<!-- chemistry/acid-base-titration.html — Acid-Base Titration Experiment -->
-<!-- Subject: Chemistry | Form: acid-base-titration | Level: junior-high -->
-<!-- Language: zh-CN | engines: chemistry/acid-base, chemistry/titration -->
+<div class="eureka-root">
 
-<template-metadata>
-{
-  "experimentName": "酸碱中和滴定",
-  "subjectDomain": "chemistry",
-  "gradeLevel": "junior-high",
-  "formFactor": "acid-base-titration",
-  "parameters": [
-    {"id": "acidConc", "label": "酸浓度", "unit": "mol/L", "min": 0.01, "max": 1.0, "default": 0.1, "step": 0.01, "type": "float"},
-    {"id": "baseConc", "label": "碱浓度", "unit": "mol/L", "min": 0.01, "max": 1.0, "default": 0.1, "step": 0.01, "type": "float"},
-    {"id": "acidVolume", "label": "酸体积", "unit": "mL", "min": 10, "max": 50, "default": 25, "step": 1, "type": "int"},
-    {"id": "baseAdded", "label": "已加碱体积", "unit": "mL", "min": 0, "max": 50, "default": 0, "step": 0.1, "type": "float"},
-    {"id": "indicator", "label": "指示剂", "unit": "", "min": 0, "max": 2, "default": 0, "step": 1, "type": "enum", "options": ["酚酞", "甲基橙", "石蕊"]},
-    {"id": "temperature", "label": "温度", "unit": "°C", "min": 10, "max": 60, "default": 25, "step": 1, "type": "int"}
-  ],
-  "resultMetrics": [
-    {"id": "pH", "label": "pH", "unit": ""},
-    {"id": "equivalencePoint", "label": "终点体积", "unit": "mL"},
-    {"id": "color", "label": "溶液颜色", "unit": ""}
-  ],
-  "dependencies": ["../_shared/physics-core.js"]
-}
-</template-metadata>
-
-<template-body>
-  <div class="exp-title">酸碱中和滴定实验</div>
-  <p class="exp-desc">用 NaOH 标准溶液滴定 HCl，观察 pH 变化和指示剂变色。</p>
-
-  <canvas id="titration-canvas" width="800" height="520" tabindex="0" aria-label="酸碱滴定实验画布"></canvas>
-
-  <div class="param-panel">
-    <div class="param-group">
-      <h4>实验参数</h4>
-
-      <label for="acidConc">酸浓度 (mol/L)</label>
-      <input type="range" id="acidConc" min="0.01" max="1.00" step="0.01" value="0.10"
-             oninput="handleSlider(this)" aria-label="酸浓度">
-      <span class="readout" id="readout-acidConc">0.10</span>
-
-      <label for="baseConc">碱浓度 (mol/L)</label>
-      <input type="range" id="baseConc" min="0.01" max="1.00" step="0.01" value="0.10"
-             oninput="handleSlider(this)" aria-label="碱浓度">
-      <span class="readout" id="readout-baseConc">0.10</span>
-
-      <label for="acidVolume">酸体积 (mL)</label>
-      <input type="range" id="acidVolume" min="10" max="50" step="1" value="25"
-             oninput="handleSlider(this)" aria-label="酸体积">
-      <span class="readout" id="readout-acidVolume">25</span>
-
-      <label for="baseAdded">已加碱体积 (mL)</label>
-      <input type="range" id="baseAdded" min="0" max="50" step="0.1" value="0"
-             oninput="handleSlider(this)" aria-label="已加碱体积">
-      <span class="readout" id="readout-baseAdded">0.0</span>
-
-      <label for="indicator">指示剂</label>
-      <select id="indicator" onchange="handleSlider({id:'indicator',value:+this.value});" aria-label="指示剂">
-        <option value="0" selected>酚酞</option>
-        <option value="1">甲基橙</option>
-        <option value="2">石蕊</option>
-      </select>
-
-      <label for="temperature">温度 (°C)</label>
-      <input type="range" id="temperature" min="10" max="60" step="1" value="25"
-             oninput="handleSlider(this)" aria-label="温度">
-      <span class="readout" id="readout-temperature">25</span>
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">当前 pH</p>
+      <p class="eureka-stat-value primary" id="stat-ph">1.00</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">已加碱体积</p>
+      <p class="eureka-stat-value" id="stat-volume">0.0 mL</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">溶液颜色</p>
+      <p class="eureka-stat-value" id="stat-color" style="display:flex;align-items:center;justify-content:center;gap:4px;">
+        <span class="indicator-dot" id="color-dot" style="background:#fff;border-color:#999;"></span>
+        <span id="color-name">无色</span>
+      </p>
     </div>
   </div>
-</template-body>
 
-<script type="module">
-  // ── acid-base-titration template script ──
-  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/physics-core.js';
+  <div class="eureka-canvas-wrapper titration-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="560" height="320"></canvas>
+    <div style="margin-top:8px;text-align:center;">
+      <span id="status-badge" class="eureka-badge info">滴定进行中</span>
+    </div>
+  </div>
 
-  // ── State ──
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">酸浓度 (HCl)</span>
+        <span class="eureka-control-value"><span id="v-acidConc">0.10</span> mol/L</span>
+      </div>
+      <input id="ctl-acidConc" class="eureka-slider" type="range" min="0.01" max="1.0" step="0.01" value="0.1">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">碱浓度 (NaOH)</span>
+        <span class="eureka-control-value"><span id="v-baseConc">0.10</span> mol/L</span>
+      </div>
+      <input id="ctl-baseConc" class="eureka-slider" type="range" min="0.01" max="1.0" step="0.01" value="0.1">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">酸体积</span>
+        <span class="eureka-control-value"><span id="v-acidVolume">25</span> mL</span>
+      </div>
+      <input id="ctl-acidVolume" class="eureka-slider" type="range" min="10" max="50" step="1" value="25">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">已加碱体积</span>
+        <span class="eureka-control-value"><span id="v-baseAdded">0.0</span> mL</span>
+      </div>
+      <input id="ctl-baseAdded" class="eureka-slider" type="range" min="0" max="50" step="0.1" value="0">
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">指示剂</span>
+        <span class="eureka-control-value" id="v-indicator">酚酞</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="eureka-btn" data-ind="0" style="flex:1;font-size:12px;">酚酞</button>
+        <button class="eureka-btn" data-ind="1" style="flex:1;font-size:12px;">甲基橙</button>
+        <button class="eureka-btn" data-ind="2" style="flex:1;font-size:12px;">石蕊</button>
+      </div>
+    </div>
+
+    <div class="eureka-control">
+      <div class="eureka-control-header">
+        <span class="eureka-control-label">温度</span>
+        <span class="eureka-control-value"><span id="v-temperature">25</span> °C</span>
+      </div>
+      <input id="ctl-temperature" class="eureka-slider" type="range" min="10" max="60" step="1" value="25">
+    </div>
+  </div>
+
+  <div class="eureka-formula">
+    <p class="eureka-formula-title">核心公式</p>
+    <div class="eureka-formula-expression">HCl + NaOH → NaCl + H<sub>2</sub>O</div>
+    <div class="eureka-formula-expression" style="margin-top:6px;">等当点: C<sub>酸</sub>V<sub>酸</sub> = C<sub>碱</sub>V<sub>碱</sub></div>
+  </div>
+
+</div>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
   const state = {
-    acidConc: 0.10,     // M
-    baseConc: 0.10,     // M
-    acidVolume: 25,     // mL
-    baseAdded: 0,       // mL
-    indicator: 0,       // 0=酚酞, 1=甲基橙, 2=石蕊
-    temperature: 25,    // °C
+    acidConc: 0.1,
+    baseConc: 0.1,
+    acidVolume: 25,
+    baseAdded: 0,
+    indicator: 0, // 0: 酚酞, 1: 甲基橙, 2: 石蕊
+    temperature: 25,
   };
 
-  // Indicator properties: [pH_transition_low, pH_transition_high, acid_color, base_color, transition_color]
-  const INDICATORS = [
-    { name: '酚酞', low: 8.2, high: 10.0, acidColor: 'rgba(255,255,255,0.9)', baseColor: 'rgba(255,20,147,0.7)', midColor: 'rgba(255,182,193,0.6)' },
-    { name: '甲基橙', low: 3.1, high: 4.4, acidColor: 'rgba(255,69,0,0.8)', baseColor: 'rgba(255,215,0,0.8)', midColor: 'rgba(255,140,0,0.6)' },
-    { name: '石蕊', low: 5.0, high: 8.0, acidColor: 'rgba(220,20,60,0.8)', baseColor: 'rgba(30,144,255,0.8)', midColor: 'rgba(128,0,128,0.5)' },
+  const indicators = [
+    { name: '酚酞', ranges: [{min:0, max:8.2, color:'#FFFFFF', name:'无色'},{min:8.2, max:10.0, color:'#FBCFE8', name:'粉红'},{min:10.0, max:14, color:'#DB2777', name:'红'}] },
+    { name: '甲基橙', ranges: [{min:0, max:3.1, color:'#EF4444', name:'红'},{min:3.1, max:4.4, color:'#FB923C', name:'橙'},{min:4.4, max:14, color:'#FDE047', name:'黄'}] },
+    { name: '石蕊', ranges: [{min:0, max:5.0, color:'#EF4444', name:'红'},{min:5.0, max:8.0, color:'#A855F7', name:'紫'},{min:8.0, max:14, color:'#3B82F6', name:'蓝'}] },
   ];
 
-  // ── pH Calculator ──
-  function calculatePH(acidConc, baseConc, acidVol, baseVol) {
-    const na = acidConc * acidVol;      // mmol acid
-    const nb = baseConc * baseVol;      // mmol base
-    const totalVol = acidVol + baseVol;  // mL
+  function getPH() {
+    const { acidConc, baseConc, acidVolume, baseAdded } = state;
+    const acidMoles = acidConc * acidVolume;
+    const baseMoles = baseConc * baseAdded;
+    const totalVolume = acidVolume + baseAdded;
 
-    if (totalVol <= 0) return 7.0;
+    if (baseAdded <= 0) return -Math.log10(acidConc);
+    if (Math.abs(baseMoles - acidMoles) < 1e-10) return 7.0;
+    if (baseMoles < acidMoles) {
+      const h = (acidMoles - baseMoles) / totalVolume;
+      return -Math.log10(Math.max(h, 1e-14));
+    }
+    const oh = (baseMoles - acidMoles) / totalVolume;
+    const pOH = -Math.log10(Math.max(oh, 1e-14));
+    return 14 - pOH;
+  }
 
-    const excessAcid = na - nb;
-    const excessBase = nb - na;
+  function getIndicatorColor(ph) {
+    const ind = indicators[state.indicator];
+    for (const r of ind.ranges) {
+      if (ph >= r.min && ph <= r.max) return r;
+    }
+    return ind.ranges[ind.ranges.length - 1];
+  }
 
-    if (Math.abs(excessAcid) < 1e-9) {
-      return 7.0;
-    } else if (excessAcid > 0) {
-      const hConc = excessAcid / totalVol;
-      // Simple strong acid assumption
-      let ph = -Math.log10(hConc);
-      // Dilution correction for very low concentration
-      if (hConc < 1e-7) ph = 7 - Math.log10(hConc / 1e-7);
-      return Math.max(1, Math.min(14, ph));
+  function getEquivalenceVolume() {
+    return (state.acidConc * state.acidVolume) / state.baseConc;
+  }
+
+  function updateDisplay() {
+    const ph = getPH();
+    const colorInfo = getIndicatorColor(ph);
+    const eqVol = getEquivalenceVolume();
+
+    document.getElementById('stat-ph').textContent = ph.toFixed(2);
+    document.getElementById('stat-volume').textContent = state.baseAdded.toFixed(1) + ' mL';
+    document.getElementById('color-dot').style.background = colorInfo.color;
+    document.getElementById('color-name').textContent = colorInfo.name;
+
+    const badge = document.getElementById('status-badge');
+    if (Math.abs(state.baseAdded - eqVol) < 0.2) {
+      badge.className = 'eureka-badge success';
+      badge.textContent = '等当点！V碱 = ' + eqVol.toFixed(1) + ' mL';
+    } else if (state.baseAdded > eqVol) {
+      badge.className = 'eureka-badge danger';
+      badge.textContent = '碱过量';
     } else {
-      const ohConc = excessBase / totalVol;
-      let poh = -Math.log10(ohConc);
-      if (ohConc < 1e-7) poh = 7 - Math.log10(ohConc / 1e-7);
-      const ph = 14 - Math.max(0, poh);
-      return Math.max(1, Math.min(14, ph));
+      badge.className = 'eureka-badge info';
+      badge.textContent = '滴定进行中';
     }
+
+    return { ph, colorInfo, eqVol };
   }
 
-  // ── Indicator Color at given pH ──
-  function indicatorColor(indIdx, ph) {
-    const ind = INDICATORS[indIdx];
-    if (ph <= ind.low) return ind.acidColor;
-    if (ph >= ind.high) return ind.baseColor;
-    const t = (ph - ind.low) / (ind.high - ind.low);
-    // Interpolate
-    return t > 0.5 ? ind.midColor : ind.acidColor;
-  }
+  function draw() {
+    const { ph, colorInfo, eqVol } = updateDisplay();
+    const w = canvas.width, h = canvas.height;
 
-  // ── Equivalence Point ──
-  function equivalencePoint(acidConc, baseConc, acidVol) {
-    return (acidConc * acidVol) / baseConc;
-  }
+    ctx.clearRect(0, 0, w, h);
 
-  // ── Equation Constants ──
-  const EQUATIONS = [
-    { label: 'HCl + NaOH → NaCl + H₂O', desc: '酸碱中和反应' },
-    { label: 'H₃O⁺ + OH⁻ → 2H₂O', desc: '离子反应本质' },
-  ];
+    // Background table
+    ctx.fillStyle = '#F3E8FF';
+    ctx.fillRect(0, 0, w, h);
 
-  // ── Canvas Setup ──
-  const canvas = document.getElementById('titration-canvas');
-  const ctx = canvas.getContext('2d');
-  let width = canvas.width;
-  let height = canvas.height;
+    // Flask
+    const fx = w / 2, fy = h - 40;
+    const flaskW = 80, flaskH = 100, neckW = 30, neckH = 40;
 
-  // ── Buffers ──
-  let backBuffer = document.createElement('canvas');
-  let backCtx = backBuffer.getContext('2d');
-  backBuffer.width = width;
-  backBuffer.height = height;
-  let needRedraw = true;
+    // Draw flask body
+    ctx.beginPath();
+    ctx.moveTo(fx - neckW/2, fy - flaskH - neckH);
+    ctx.lineTo(fx + neckW/2, fy - flaskH - neckH);
+    ctx.lineTo(fx + flaskW/2, fy);
+    ctx.quadraticCurveTo(fx, fy + 10, fx - flaskW/2, fy);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fill();
+    ctx.strokeStyle = '#7C3AED';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-  // ── DPR handling ──
-  const dpr = window.devicePixelRatio || 1;
-  function applyDPR() {
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    width = rect.width;
-    height = rect.height;
-    backBuffer.width = canvas.width;
-    backBuffer.height = canvas.height;
-    needRedraw = true;
-  }
-  if (dpr > 1) applyDPR();
-
-  // ── Animation Loop ──
-  let lastDrawTime = 0;
-  function drawLoop(ts) {
-    if (ts - lastDrawTime < 16) {
-      requestAnimationFrame(drawLoop);
-      return;
-    }
-    lastDrawTime = ts;
-    if (needRedraw) {
-      drawTitration(backCtx, width, height, ts);
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(backBuffer, 0, 0, width, height);
-      needRedraw = false;
-    }
-    requestAnimationFrame(drawLoop);
-  }
-  requestAnimationFrame(drawLoop);
-
-  // ── Main Renderer ──
-  function drawTitration(g, w, h, ts) {
-    const MARGIN = 50;
-    const graphW = w - MARGIN * 2 - 240;
-    const graphH = h - MARGIN * 2 - 80;
-    const graphLeft = MARGIN;
-    const graphTop = MARGIN;
-    const graphRight = graphLeft + graphW;
-    const graphBottom = graphTop + graphH;
-
-    // Background
-    g.fillStyle = '#1a1a2e';
-    g.fillRect(0, 0, w, h);
-
-    // Title area
-    g.fillStyle = '#e0e0ff';
-    g.font = 'bold 18px system-ui, sans-serif';
-    g.textAlign = 'left';
-    g.fillText('酸碱滴定曲线', graphLeft, graphTop - 10);
-
-    // ── Graph axes ──
-    g.strokeStyle = '#8888aa';
-    g.lineWidth = 1.5;
-    g.beginPath();
-    g.moveTo(graphLeft, graphTop);
-    g.lineTo(graphLeft, graphBottom);
-    g.lineTo(graphRight, graphBottom);
-    g.stroke();
-
-    // X-axis label
-    g.fillStyle = '#aaaacc';
-    g.font = '13px system-ui, sans-serif';
-    g.textAlign = 'center';
-    g.fillText('加入 NaOH 体积 (mL)', graphLeft + graphW / 2, graphBottom + 35);
-
-    // Y-axis label
-    g.save();
-    g.translate(graphLeft - 30, graphTop + graphH / 2);
-    g.rotate(-Math.PI / 2);
-    g.fillText('pH', 0, 0);
-    g.restore();
-
-    // Y-axis ticks (pH 0-14)
-    g.strokeStyle = '#555577';
-    g.lineWidth = 0.5;
-    g.fillStyle = '#9999bb';
-    g.font = '11px system-ui, sans-serif';
-    g.textAlign = 'right';
-    for (let ph = 0; ph <= 14; ph += 1) {
-      const y = graphBottom - (ph / 14) * graphH;
-      g.beginPath();
-      g.moveTo(graphLeft, y);
-      g.lineTo(graphRight, y);
-      g.stroke();
-      g.fillText(ph.toString(), graphLeft - 5, y + 4);
+    // Liquid in flask
+    const liquidLevel = fy - (state.baseAdded / 60) * flaskH * 0.5 - 10;
+    const liquidH = fy - liquidLevel;
+    if (liquidH > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(fx - neckW/2 - (flaskW-neckW)/2 * (liquidH/flaskH), liquidLevel);
+      ctx.lineTo(fx + neckW/2 + (flaskW-neckW)/2 * (liquidH/flaskH), liquidLevel);
+      ctx.lineTo(fx + flaskW/2, fy);
+      ctx.quadraticCurveTo(fx, fy + 10, fx - flaskW/2, fy);
+      ctx.closePath();
+      ctx.clip();
+      ctx.fillStyle = colorInfo.color;
+      ctx.globalAlpha = 0.7;
+      ctx.fillRect(fx - flaskW/2, liquidLevel, flaskW, liquidH);
+      ctx.globalAlpha = 1;
+      ctx.restore();
     }
 
-    // ── X-axis ticks ──
-    g.textAlign = 'center';
-    const maxVol = Math.max(50, state.acidVolume * 2);
-    const volStep = maxVol <= 50 ? 5 : 10;
-    for (let v = 0; v <= maxVol; v += volStep) {
-      const x = graphLeft + (v / maxVol) * graphW;
-      g.beginPath();
-      g.moveTo(x, graphBottom);
-      g.lineTo(x, graphTop);
-      g.stroke();
-      g.fillText(v.toString(), x, graphBottom + 18);
+    // Burette
+    const bx = fx + 90, by = 20;
+    ctx.fillStyle = 'rgba(200,200,200,0.5)';
+    ctx.fillRect(bx - 6, by, 12, h - 100);
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx - 6, by, 12, h - 100);
+
+    // Scale on burette
+    ctx.fillStyle = '#333';
+    ctx.font = '10px system-ui';
+    for (let i = 0; i <= 50; i += 10) {
+      const y = by + 10 + i * 4;
+      ctx.fillRect(bx + 6, y, 6, 1);
+      ctx.fillText(i + '', bx + 14, y + 3);
     }
 
-    // ─── Draw titration curve ───
-    g.lineWidth = 2.5;
-    g.strokeStyle = '#00ffaa';
-    g.beginPath();
-    const eqVol = equivalencePoint(state.acidConc, state.baseConc, state.acidVolume);
-
-    for (let i = 0; i <= graphW; i++) {
-      const vol = (i / graphW) * maxVol;
-      const ph = calculatePH(state.acidConc, state.baseConc, state.acidVolume, vol);
-      const x = graphLeft + i;
-      const y = graphBottom - (ph / 14) * graphH;
-      if (i === 0) g.moveTo(x, y);
-      else g.lineTo(x, y);
-    }
-    g.stroke();
-
-    // ── Mark equivalence point ──
-    const eqX = graphLeft + (eqVol / maxVol) * graphW;
-    const eqPH = 7;
-    const eqY = graphBottom - (eqPH / 14) * graphH;
-
-    g.strokeStyle = '#ff6b6b';
-    g.lineWidth = 1;
-    g.setLineDash([4, 4]);
-    g.beginPath();
-    g.moveTo(eqX, graphBottom);
-    g.lineTo(eqX, graphTop);
-    g.stroke();
-    g.setLineDash([]);
-
-    // EQ label
-    g.fillStyle = '#ff6b6b';
-    g.font = 'bold 12px system-ui, sans-serif';
-    g.textAlign = 'left';
-    g.fillText(`终点 ≈ ${EurekaFormat.format(eqVol, 1)} mL`, eqX + 5, graphTop + 15);
-
-    // ── Current point marker ──
-    const curX = graphLeft + (state.baseAdded / maxVol) * graphW;
-    const curPH = calculatePH(state.acidConc, state.baseConc, state.acidVolume, state.baseAdded);
-    const curY = graphBottom - (Math.max(0, Math.min(14, curPH)) / 14) * graphH;
-
-    g.fillStyle = '#ffff00';
-    g.beginPath();
-    g.arc(curX, curY, 6, 0, Math.PI * 2);
-    g.fill();
-    g.strokeStyle = '#ffffff';
-    g.lineWidth = 2;
-    g.stroke();
-
-    // Current pH readout
-    g.fillStyle = '#ffffff';
-    g.font = 'bold 13px system-ui, sans-serif';
-    g.textAlign = 'right';
-    g.fillText(`当前 pH: ${EurekaFormat.format(curPH, 2)}`, graphRight, graphTop + 15);
-
-    // ── Indicator color zone on graph ──
-    const ind = INDICATORS[state.indicator];
-    const yLow = graphBottom - (ind.high / 14) * graphH;
-    const yHigh = graphBottom - (ind.low / 14) * graphH;
-    g.fillStyle = ind.midColor.replace(/[\d.]+\)$/, '0.1)');
-    g.fillRect(graphLeft, yLow, graphW, yHigh - yLow);
-
-    // ── Beaker visualization (right side) ──
-    const beakerX = w - 200;
-    const beakerY = graphTop + 20;
-    const beakerW = 120;
-    const beakerH = 180;
-
-    // Beaker outline
-    g.strokeStyle = '#cccccc';
-    g.lineWidth = 2;
-    g.strokeRect(beakerX, beakerY, beakerW, beakerH);
-
-    // Liquid
-    const fillRatio = Math.min(1, (state.acidVolume + state.baseAdded) / 80);
-    const liquidH = beakerH * fillRatio;
-    const liquidColor = indicatorColor(state.indicator, curPH);
-    g.fillStyle = liquidColor;
-    g.fillRect(beakerX + 2, beakerY + beakerH - liquidH, beakerW - 4, liquidH);
-
-    // Beaker label
-    g.fillStyle = '#e0e0ff';
-    g.font = '12px system-ui, sans-serif';
-    g.textAlign = 'center';
-    g.fillText('锥形瓶', beakerX + beakerW / 2, beakerY + beakerH + 20);
-
-    // Volume text
-    g.fillStyle = '#ffffff';
-    g.font = '11px system-ui, sans-serif';
-    g.fillText(`${EurekaFormat.format(state.acidVolume + state.baseAdded, 1)} mL`, beakerX + beakerW / 2, beakerY + beakerH - liquidH / 2);
-
-    // ── Burette visualization ──
-    const buretteX = beakerX + beakerW / 2 - 8;
-    const buretteY = beakerY - 120;
-    const buretteW = 16;
-    const buretteH = 120;
-
-    // Burette tube
-    g.strokeStyle = '#cccccc';
-    g.lineWidth = 2;
-    g.strokeRect(buretteX, buretteY, buretteW, buretteH);
-
-    // NaOH level
-    const naohRatio = Math.max(0, 1 - state.baseAdded / 50);
-    const naohH = buretteH * naohRatio;
-    g.fillStyle = 'rgba(255,255,255,0.3)';
-    g.fillRect(buretteX + 2, buretteY + buretteH - naohH, buretteW - 4, naohH);
+    // Burette liquid level
+    const buretteLevel = by + 10 + state.baseAdded * 4;
+    ctx.fillStyle = 'rgba(100,149,237,0.4)';
+    ctx.fillRect(bx - 5, buretteLevel, 10, (by + 210) - buretteLevel);
 
     // Stopcock
-    g.fillStyle = '#aaaa88';
-    g.fillRect(buretteX - 4, buretteY + buretteH, buretteW + 8, 8);
+    ctx.beginPath();
+    ctx.arc(bx, by + 215, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#666';
+    ctx.fill();
 
-    // Burette label
-    g.fillStyle = '#e0e0ff';
-    g.font = '11px system-ui, sans-serif';
-    g.fillText('NaOH', buretteX + buretteW / 2, buretteY - 8);
-    g.fillStyle = '#aaaaaa';
-    g.font = '10px system-ui, sans-serif';
-    g.fillText(`${EurekaFormat.format(state.baseAdded, 1)} mL`, buretteX + buretteW / 2, buretteY + buretteH + 25);
+    // Drops
+    if (state.baseAdded > 0 && state.baseAdded < 50) {
+      ctx.fillStyle = 'rgba(100,149,237,0.6)';
+      ctx.beginPath();
+      ctx.arc(bx, by + 225 + (Date.now() % 500) / 20, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-    // ── Indicator info ──
-    const infoY = beakerY + beakerH + 45;
-    g.fillStyle = '#ccccff';
-    g.font = 'bold 12px system-ui, sans-serif';
-    g.textAlign = 'left';
-    g.fillText(`指示剂: ${ind.name}`, beakerX, infoY);
+    // pH meter
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(20, 20, 80, 40);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(20, 20, 80, 40);
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 18px system-ui';
+    ctx.fillText('pH ' + ph.toFixed(2), 28, 46);
 
-    // Color swatches
-    const swatchY = infoY + 18;
-    const swatchSize = 14;
-    g.fillStyle = ind.acidColor;
-    g.fillRect(beakerX, swatchY, swatchSize, swatchSize);
-    g.fillStyle = '#ffffff';
-    g.font = '10px system-ui, sans-serif';
-    g.fillText('酸色', beakerX + swatchSize + 4, swatchY + 11);
+    // Info text
+    ctx.fillStyle = '#6B21A8';
+    ctx.font = '12px system-ui';
+    ctx.fillText('指示剂: ' + indicators[state.indicator].name, 20, h - 60);
+    ctx.fillText('等当点体积: ' + eqVol.toFixed(1) + ' mL', 20, h - 45);
+  }
 
-    g.fillStyle = ind.baseColor;
-    g.fillRect(beakerX + 50, swatchY, swatchSize, swatchSize);
-    g.fillStyle = '#ffffff';
-    g.fillText('碱色', beakerX + 50 + swatchSize + 4, swatchY + 11);
-
-    // ── Legend ──
-    const legendY = graphBottom + 50;
-    g.fillStyle = '#00ffaa';
-    g.fillRect(graphLeft, legendY, 20, 3);
-    g.fillStyle = '#cccccc';
-    g.font = '11px system-ui, sans-serif';
-    g.textAlign = 'left';
-    g.fillText('滴定曲线', graphLeft + 26, legendY + 8);
-
-    g.fillStyle = '#ff6b6b';
-    g.setLineDash([4, 2]);
-    g.beginPath();
-    g.moveTo(graphLeft + 100, legendY + 1);
-    g.lineTo(graphLeft + 120, legendY + 1);
-    g.stroke();
-    g.setLineDash([]);
-    g.fillStyle = '#cccccc';
-    g.fillText('等当量点', graphLeft + 126, legendY + 8);
-
-    // ── Equations ──
-    g.fillStyle = '#8888cc';
-    g.font = '11px system-ui, sans-serif';
-    g.textAlign = 'left';
-    EQUATIONS.forEach((eq, i) => {
-      g.fillText(eq.label, graphLeft, legendY + 25 + i * 18);
-    });
-
-    // ── Table area ──
-    const tableX = graphLeft;
-    const tableY = legendY + 55;
-    g.strokeStyle = '#555577';
-    g.lineWidth = 0.5;
-
-    // Header
-    const colW = [100, 80, 80];
-    const rowH = 20;
-    const headers = ['参数', '数值', '单位'];
-
-    g.fillStyle = '#2a2a4a';
-    g.fillRect(tableX, tableY, colW.reduce((a, b) => a + b, 0), rowH);
-    g.fillStyle = '#ccccff';
-    g.font = 'bold 11px system-ui, sans-serif';
-    headers.forEach((h, i) => {
-      let cx = tableX;
-      for (let j = 0; j < i; j++) cx += colW[j];
-      g.fillText(h, cx + 8, tableY + 14);
-    });
-
-    // Rows
-    const rows = [
-      ['当前 pH', EurekaFormat.format(curPH, 2), ''],
-      ['终点体积', EurekaFormat.format(eqVol, 1), 'mL'],
-      ['剩余酸量', EurekaFormat.format(Math.max(0, state.acidConc * state.acidVolume - state.baseConc * state.baseAdded), 2), 'mmol'],
-      ['加入碱量', EurekaFormat.format(state.baseConc * state.baseAdded, 2), 'mmol'],
-    ];
-
-    rows.forEach((row, r) => {
-      const ry = tableY + rowH * (r + 1);
-      g.fillStyle = r % 2 === 0 ? '#1f1f3a' : '#1a1a2e';
-      g.fillRect(tableX, ry, colW.reduce((a, b) => a + b, 0), rowH);
-      g.fillStyle = '#bbbbdd';
-      g.font = '11px system-ui, sans-serif';
-      row.forEach((cell, c) => {
-        let cx = tableX;
-        for (let j = 0; j < c; j++) cx += colW[j];
-        g.fillText(cell, cx + 8, ry + 14);
-      });
-      g.strokeRect(tableX, ry, colW.reduce((a, b) => a + b, 0), rowH);
+  function setupSlider(id, key, digits) {
+    const el = document.getElementById('ctl-' + id);
+    if (!el) return;
+    el.addEventListener('input', (e) => {
+      state[key] = parseFloat(e.target.value);
+      document.getElementById('v-' + id).textContent = state[key].toFixed(digits || 0);
+      draw();
     });
   }
 
-  // ── Slider Handler ──
-  function handleSlider(el) {
-    const id = el.id;
-    const val = parseFloat(el.value);
-    state[id] = val;
-    const readout = document.getElementById('readout-' + id);
-    if (readout) {
-      if (id === 'acidConc' || id === 'baseConc') {
-        readout.textContent = val.toFixed(2);
-      } else if (id === 'baseAdded') {
-        readout.textContent = val.toFixed(1);
-      } else {
-        readout.textContent = val;
-      }
-    }
-    needRedraw = true;
-  }
-  window.handleSlider = handleSlider;
+  setupSlider('acidConc', 'acidConc', 2);
+  setupSlider('baseConc', 'baseConc', 2);
+  setupSlider('acidVolume', 'acidVolume', 0);
+  setupSlider('baseAdded', 'baseAdded', 1);
+  setupSlider('temperature', 'temperature', 0);
 
-  // ── Host Command Handler ──
-  window.onHostCommand = function (name, payload) {
-    if (name === 'updateParams') {
-      if (payload.acidConc !== undefined) { state.acidConc = payload.acidConc; }
-      if (payload.baseConc !== undefined) { state.baseConc = payload.baseConc; }
-      if (payload.acidVolume !== undefined) { state.acidVolume = payload.acidVolume; }
-      if (payload.baseAdded !== undefined) { state.baseAdded = payload.baseAdded; }
-      if (payload.indicator !== undefined) { state.indicator = Math.round(payload.indicator); }
-      if (payload.temperature !== undefined) { state.temperature = payload.temperature; }
-
-      // Sync sliders
-      ['acidConc', 'baseConc', 'acidVolume', 'baseAdded', 'temperature'].forEach(k => {
-        const el = document.getElementById(k);
-        if (el) {
-          el.value = state[k];
-          const r = document.getElementById('readout-' + k);
-          if (r) {
-            if (k === 'acidConc' || k === 'baseConc') r.textContent = state[k].toFixed(2);
-            else if (k === 'baseAdded') r.textContent = state[k].toFixed(1);
-            else r.textContent = state[k];
-          }
-        }
-      });
-      const indEl = document.getElementById('indicator');
-      if (indEl) indEl.value = state.indicator;
-
-      needRedraw = true;
-    }
-  };
-
-  // ── Result Emitter ──
-  function emitResult() {
-    const curPH = calculatePH(state.acidConc, state.baseConc, state.acidVolume, state.baseAdded);
-    const eqVol = equivalencePoint(state.acidConc, state.baseConc, state.acidVolume);
-    const ind = INDICATORS[state.indicator];
-    const excessAcid = state.acidConc * state.acidVolume - state.baseConc * state.baseAdded;
-
-    let colorDesc;
-    if (curPH <= ind.low) colorDesc = '酸性色（无色/红/红）';
-    else if (curPH >= ind.high) colorDesc = '碱性色（粉红/黄/蓝）';
-    else colorDesc = '过渡色';
-
-    EurekaHost.emitResultUpdate({
-      pH: {
-        value: EurekaFormat.format(curPH, 2),
-        label: 'pH',
-      },
-      equivalencePoint: {
-        value: EurekaFormat.format(eqVol, 1),
-        label: '终点体积 (mL)',
-      },
-      color: {
-        value: colorDesc,
-        label: '溶液颜色',
-      },
-      reactionState: {
-        value: excessAcid > 0.01 ? '酸过量' : excessAcid < -0.01 ? '碱过量' : '恰好中和',
-        label: '反应状态',
-      },
+  document.querySelectorAll('[data-ind]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      state.indicator = parseInt(e.target.dataset.ind);
+      document.getElementById('v-indicator').textContent = indicators[state.indicator].name;
+      document.querySelectorAll('[data-ind]').forEach(b => b.classList.remove('primary'));
+      e.target.classList.add('primary');
+      draw();
     });
-  }
-
-  // Emit initial result
-  emitResult();
-
-  // ── Keyboard Shortcuts ──
-  canvas.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-      e.preventDefault();
-      state.baseAdded = Math.min(50, state.baseAdded + 0.1);
-      document.getElementById('baseAdded').value = state.baseAdded;
-      document.getElementById('readout-baseAdded').textContent = state.baseAdded.toFixed(1);
-      needRedraw = true;
-    } else if (e.code === 'Backspace') {
-      e.preventDefault();
-      state.baseAdded = Math.max(0, state.baseAdded - 0.1);
-      document.getElementById('baseAdded').value = state.baseAdded;
-      document.getElementById('readout-baseAdded').textContent = state.baseAdded.toFixed(1);
-      needRedraw = true;
-    }
   });
+
+  // Animation loop
+  function animate() {
+    draw();
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // Signal ready
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'ready', experimentId: 'chemistry/acid-base-titration' }, '*');
+  }
 </script>
 </body>
 </html>
