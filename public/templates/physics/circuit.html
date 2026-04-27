@@ -142,14 +142,25 @@
             <input id="ctl-r2" class="eureka-slider" type="range" min="0.5" max="100" step="0.5" value="10">
           </div>
 
+          <!-- Switches -->
           <div class="eureka-control" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 2px solid #E5E7EB;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 18px;">💡</span>
-              <span class="eureka-control-label" style="margin: 0;">电路开关</span>
+              <span style="font-size: 18px;">🔌</span>
+              <span class="eureka-control-label" style="margin: 0;">总开关 S总</span>
             </div>
-            <button id="ctl-switch" class="eureka-segmented-item active" style="padding: 6px 20px; font-size: 12px; border-radius: 20px;">
+            <button id="ctl-switch-main" class="eureka-segmented-item active" style="padding: 6px 16px; font-size: 12px; border-radius: 20px;">
               🔌 闭合
             </button>
+          </div>
+          <div id="branch-switches" class="eureka-control" style="grid-column: 1 / -1; display: flex; gap: 10px;">
+            <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; background: #F3F4F6; border-radius: 8px; padding: 8px 12px;">
+              <span class="eureka-control-label" style="margin: 0; font-size: 13px;">S₁</span>
+              <button id="ctl-switch-s1" class="eureka-segmented-item active" style="padding: 4px 12px; font-size: 11px; border-radius: 16px;">闭合</button>
+            </div>
+            <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; background: #F3F4F6; border-radius: 8px; padding: 8px 12px;">
+              <span class="eureka-control-label" style="margin: 0; font-size: 13px;">S₂</span>
+              <button id="ctl-switch-s2" class="eureka-segmented-item active" style="padding: 4px 12px; font-size: 11px; border-radius: 16px;">闭合</button>
+            </div>
           </div>
 
         </div>
@@ -164,7 +175,8 @@
   const TEMPLATE_ID = 'physics/circuit';
   EurekaHost.setTemplateId(TEMPLATE_ID);
 
-  const state = { voltage: 6, r1: 10, r2: 10, topology: 0, switchOn: true }; // 0=series 1=parallel
+  // switchMain=总开关, switch1=R1支路开关, switch2=R2支路开关
+  const state = { voltage: 6, r1: 10, r2: 10, topology: 0, switchMain: true, switch1: true, switch2: true }; // 0=series 1=parallel
 
   const canvas = document.getElementById('canvas');
   const cssW = 520, cssH = 260;
@@ -173,7 +185,6 @@
   const ctlU = document.getElementById('ctl-u');
   const ctlR1 = document.getElementById('ctl-r1');
   const ctlR2 = document.getElementById('ctl-r2');
-  const ctlSwitch = document.getElementById('ctl-switch');
   const vU = document.getElementById('v-u');
   const vR1 = document.getElementById('v-r1');
   const vR2 = document.getElementById('v-r2');
@@ -183,29 +194,39 @@
 
   function compute() {
     let Rtotal, I, I1, I2, U1, U2;
-    if (!state.switchOn) {
-      // Switch open: no current flows
-      Rtotal = state.topology === 0 ? state.r1 + state.r2 : 1 / (1 / state.r1 + 1 / state.r2);
-      I = 0; I1 = 0; I2 = 0;
-      U1 = 0; U2 = 0;
-    } else if (state.topology === 0) {
-      // Series: Rtotal = R1+R2, I same through both, U1+U2=U
-      Rtotal = state.r1 + state.r2;
-      I = state.voltage / Rtotal;
-      I1 = I;
-      I2 = I;
-      U1 = I * state.r1;
-      U2 = I * state.r2;
+    if (state.topology === 0) {
+      // Series: only main switch matters
+      if (!state.switchMain) {
+        Rtotal = state.r1 + state.r2;
+        I = 0; I1 = 0; I2 = 0; U1 = 0; U2 = 0;
+      } else {
+        Rtotal = state.r1 + state.r2;
+        I = state.voltage / Rtotal;
+        I1 = I; I2 = I;
+        U1 = I * state.r1; U2 = I * state.r2;
+      }
     } else {
-      // Parallel: 1/Rtotal = 1/R1 + 1/R2, U same across both
-      Rtotal = 1 / (1 / state.r1 + 1 / state.r2);
-      I = state.voltage / Rtotal;
-      U1 = state.voltage;
-      U2 = state.voltage;
-      I1 = state.voltage / state.r1;
-      I2 = state.voltage / state.r2;
+      // Parallel: main switch + branch switches all matter
+      if (!state.switchMain) {
+        // Main switch open: entire circuit off
+        Rtotal = 1 / (1 / state.r1 + 1 / state.r2);
+        I = 0; I1 = 0; I2 = 0; U1 = 0; U2 = 0;
+      } else {
+        // Main switch closed: each branch controlled by its own switch
+        const r1Effective = state.switch1 ? state.r1 : Infinity;
+        const r2Effective = state.switch2 ? state.r2 : Infinity;
+        const invR1 = state.switch1 ? 1 / state.r1 : 0;
+        const invR2 = state.switch2 ? 1 / state.r2 : 0;
+        const invRtotal = invR1 + invR2;
+        Rtotal = invRtotal > 0 ? 1 / invRtotal : Infinity;
+        U1 = state.switch1 ? state.voltage : 0;
+        U2 = state.switch2 ? state.voltage : 0;
+        I1 = state.switch1 ? state.voltage / state.r1 : 0;
+        I2 = state.switch2 ? state.voltage / state.r2 : 0;
+        I = I1 + I2;
+      }
     }
-    const P = state.switchOn ? state.voltage * I : 0;
+    const P = state.switchMain ? state.voltage * I : 0;
     return { Rtotal, I, I1, I2, U1, U2, P };
   }
 
@@ -221,7 +242,7 @@
     }
 
     // Show "Open Circuit" warning when switch is off
-    if (!state.switchOn) {
+    if (!state.switchMain) {
       ctx.fillStyle = 'rgba(107, 114, 128, 0.15)';
       ctx.fillRect(0, 0, cssW, cssH);
 
@@ -233,6 +254,50 @@
       ctx.font = '13px "Segoe UI", system-ui, sans-serif';
       ctx.fillText('电流为 0，灯泡熄灭', cssW / 2, cssH / 2 + 14);
       ctx.textAlign = 'left';
+    }
+  }
+
+  function drawSwitch(x, y, isOpen, vertical) {
+    // Draw a switch symbol: two dots with a breakable line
+    const gap = 10;
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+
+    if (vertical) {
+      // Vertical switch (up-down)
+      // Bottom contact
+      ctx.beginPath(); ctx.arc(x, y + gap, 2.5, 0, Math.PI * 2); ctx.stroke();
+      // Top contact
+      ctx.beginPath(); ctx.arc(x, y - gap, 2.5, 0, Math.PI * 2); ctx.stroke();
+      if (isOpen) {
+        // Open: angled line
+        ctx.beginPath();
+        ctx.moveTo(x, y + gap - 2);
+        ctx.lineTo(x + 8, y - gap + 2);
+        ctx.stroke();
+      } else {
+        // Closed: straight line
+        ctx.beginPath();
+        ctx.moveTo(x, y + gap - 2);
+        ctx.lineTo(x, y - gap + 2);
+        ctx.stroke();
+      }
+    } else {
+      // Horizontal switch (left-right)
+      ctx.beginPath(); ctx.arc(x - gap, y, 2.5, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x + gap, y, 2.5, 0, Math.PI * 2); ctx.stroke();
+      if (isOpen) {
+        ctx.beginPath();
+        ctx.moveTo(x - gap + 2, y);
+        ctx.lineTo(x + gap - 8, y - 8);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(x - gap + 2, y);
+        ctx.lineTo(x + gap - 2, y);
+        ctx.stroke();
+      }
     }
   }
 
@@ -291,7 +356,8 @@
   function drawBulb(x, y, current) {
     // Bulb brightness proportional to current (power)
     // Linear: 2A = full brightness, 0.5A = 25% brightness
-    const brightness = state.switchOn ? Math.min(1, current * 0.5) : 0;
+    // If current is 0 (switch open), bulb is off
+    const brightness = Math.min(1, current * 0.5);
 
     // Glow radius increases with brightness
     const glowRadius = 12 + brightness * 18;
@@ -400,9 +466,8 @@
   }
 
   function drawCurrentDots(x1, y1, x2, y2, current) {
-    // No current dots when switch is open
-    if (!state.switchOn || current < 0.001) return;
     // Animated orange dots moving along the wire
+    if (current < 0.001) return;
     const speed = 0.6 + Math.min(3, current * 4);
     const dx = x2 - x1, dy = y2 - y1;
     const len = Math.hypot(dx, dy);
@@ -431,28 +496,32 @@
     drawGrid();
     drawBattery(batX, batY);
 
-    // Series: positive → right → up → R1 → R2 → right → down → left → up → negative
-    // Positive (batX+5) → right to left edge of top wire
-    drawWire(batX + 8, batY, left + 20, batY);
+    // Series: positive → main switch → main bulb → up → R1 → R2 → right → down → left → up → negative
+    const mainSwitchX = batX + 28;
+    const mainBulbX = batX + 55;
+
+    // Positive → main switch
+    drawWire(batX + 8, batY, mainSwitchX - 10, batY);
+    drawSwitch(mainSwitchX, batY, !state.switchMain, false);
+    drawWire(mainSwitchX + 10, batY, mainBulbX - 12, batY);
+    // Main bulb
+    drawBulb(mainBulbX, batY, p.I);
+    drawWire(mainBulbX + 12, batY, left + 20, batY);
+
     drawWire(left + 20, batY, left + 20, top);
 
-    // Top wire with R1, Bulb, R2 in series
+    // Top wire with R1, R2 in series
     drawWire(left + 20, top, left + 30, top);
     drawResistor(left + 30, top - 11, rWidth, 'R₁=' + state.r1 + 'Ω');
-    drawWire(left + 30 + rWidth, top, left + 30 + rWidth + 10, top);
-    // Bulb between R1 and R2 (shows total current brightness)
-    drawBulb(left + 30 + rWidth + 25, top, p.I);
-    drawWire(left + 30 + rWidth + 40, top, left + 30 + rWidth + 55, top);
-    drawResistor(left + 30 + rWidth + 55, top - 11, rWidth, 'R₂=' + state.r2 + 'Ω');
-    drawWire(left + 30 + rWidth * 2 + 55, top, right - 20, top);
+    drawWire(left + 30 + rWidth, top, left + 30 + rWidth + 20, top);
+    drawResistor(left + 30 + rWidth + 20, top - 11, rWidth, 'R₂=' + state.r2 + 'Ω');
+    drawWire(left + 30 + rWidth * 2 + 20, top, right - 20, top);
 
     // Right side down
     drawWire(right - 20, top, right - 20, bottom);
-
     // Bottom wire left
     drawWire(right - 20, bottom, left + 20, bottom);
-
-    // Left side up to negative (batX-5)
+    // Left side up to negative
     drawWire(left + 20, bottom, left + 20, batY);
     drawWire(left + 20, batY, batX - 8, batY);
 
@@ -460,19 +529,30 @@
     ctx.fillStyle = '#FF7D29';
     ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('I=' + p.I.toFixed(2) + 'A', left + 20, batY + 18);
+    ctx.fillText('I=' + p.I.toFixed(2) + 'A', (batX + mainSwitchX) / 2 + 5, batY + 20);
+    ctx.textAlign = 'left';
+
+    // Switch label
+    ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = state.switchMain ? '#6B7280' : '#EF4444';
+    ctx.textAlign = 'center';
+    ctx.fillText(state.switchMain ? 'S总 合' : 'S总 断', mainSwitchX, batY - 16);
     ctx.textAlign = 'left';
 
     // Current dots
-    drawCurrentDots(batX + 10, batY, left + 15, batY, p.I);
-    drawCurrentDots(left + 20, batY - 5, left + 20, top + 5, p.I);
-    drawCurrentDots(left + 25, top, left + 30, top, p.I);
-    drawCurrentDots(left + 30 + rWidth + 5, top, left + 30 + rWidth + 20, top, p.I);
-    drawCurrentDots(left + 30 + rWidth * 2 + 20 + 5, top, right - 25, top, p.I);
-    drawCurrentDots(right - 20, top + 5, right - 20, bottom - 5, p.I);
-    drawCurrentDots(right - 25, bottom, left + 25, bottom, p.I);
-    drawCurrentDots(left + 20, bottom - 5, left + 20, batY + 5, p.I);
-    drawCurrentDots(left + 15, batY, batX - 10, batY, p.I);
+    if (state.switchMain) {
+      drawCurrentDots(batX + 10, batY, mainSwitchX - 10, batY, p.I);
+      drawCurrentDots(mainSwitchX + 10, batY, mainBulbX - 12, batY, p.I);
+      drawCurrentDots(mainBulbX + 12, batY, left + 15, batY, p.I);
+      drawCurrentDots(left + 20, batY - 5, left + 20, top + 5, p.I);
+      drawCurrentDots(left + 25, top, left + 30, top, p.I);
+      drawCurrentDots(left + 30 + rWidth + 5, top, left + 30 + rWidth + 20, top, p.I);
+      drawCurrentDots(left + 30 + rWidth * 2 + 20 + 5, top, right - 25, top, p.I);
+      drawCurrentDots(right - 20, top + 5, right - 20, bottom - 5, p.I);
+      drawCurrentDots(right - 25, bottom, left + 25, bottom, p.I);
+      drawCurrentDots(left + 20, bottom - 5, left + 20, batY + 5, p.I);
+      drawCurrentDots(left + 15, batY, batX - 10, batY, p.I);
+    }
   }
 
   function drawParallel(p) {
@@ -494,75 +574,111 @@
     // Battery on left
     drawBattery(batX, batY);
 
-    // Positive terminal is on battery's RIGHT side (thick orange line at batX+5)
-    // Wire: positive → right to junction
-    drawWire(batX + 8, batY, junctionX, batY);
+    // === MAIN LINE: positive → main switch → main bulb → junction ===
+    const mainSwitchX = batX + 28;
+    const mainBulbX = batX + 52;
+
+    // Positive → main switch
+    drawWire(batX + 8, batY, mainSwitchX - 10, batY);
+    // Main switch (总开关)
+    drawSwitch(mainSwitchX, batY, !state.switchMain, false);
+    drawWire(mainSwitchX + 10, batY, mainBulbX - 12, batY);
+    // Main bulb (总灯泡, shows total current)
+    drawBulb(mainBulbX, batY, p.I);
+    drawWire(mainBulbX + 12, batY, junctionX, batY);
 
     // Junction → up to R1
     drawWire(junctionX, batY, junctionX, r1Y);
-    drawWire(junctionX, r1Y, junctionX + 10, r1Y);
+    drawWire(junctionX, r1Y, junctionX + 8, r1Y);
 
     // Junction → down to R2
     drawWire(junctionX, batY, junctionX, r2Y);
-    drawWire(junctionX, r2Y, junctionX + 10, r2Y);
+    drawWire(junctionX, r2Y, junctionX + 8, r2Y);
 
-    // R1 + Bulb (upper branch)
-    const r1X = junctionX + 10;
+    // === R1 BRANCH ===
+    const r1SwitchX = junctionX + 22;
+    const r1X = r1SwitchX + 22;
+    // Branch switch 1
+    drawSwitch(r1SwitchX, r1Y, !state.switch1, false);
+    drawWire(junctionX + 8, r1Y, r1SwitchX - 10, r1Y);
+    drawWire(r1SwitchX + 10, r1Y, r1X, r1Y);
+    // R1 resistor
     drawResistor(r1X, r1Y - 11, rWidth, 'R₁=' + state.r1 + 'Ω');
     drawWire(r1X + rWidth, r1Y, r1X + rWidth + 10, r1Y);
-    // Bulb on R1 branch (shows I1 brightness)
+    // Branch bulb 1 (shows I1)
     drawBulb(r1X + rWidth + 28, r1Y, p.I1);
     drawWire(r1X + rWidth + 46, r1Y, mergeX, r1Y);
     drawWire(mergeX, r1Y, mergeX, batY);
 
-    // R2 + Bulb (lower branch)
-    const r2X = junctionX + 10;
+    // === R2 BRANCH ===
+    const r2SwitchX = junctionX + 22;
+    const r2X = r2SwitchX + 22;
+    // Branch switch 2
+    drawSwitch(r2SwitchX, r2Y, !state.switch2, false);
+    drawWire(junctionX + 8, r2Y, r2SwitchX - 10, r2Y);
+    drawWire(r2SwitchX + 10, r2Y, r2X, r2Y);
+    // R2 resistor
     drawResistor(r2X, r2Y - 11, rWidth, 'R₂=' + state.r2 + 'Ω');
     drawWire(r2X + rWidth, r2Y, r2X + rWidth + 10, r2Y);
-    // Bulb on R2 branch (shows I2 brightness)
+    // Branch bulb 2 (shows I2)
     drawBulb(r2X + rWidth + 28, r2Y, p.I2);
     drawWire(r2X + rWidth + 46, r2Y, mergeX, r2Y);
     drawWire(mergeX, r2Y, mergeX, batY);
 
-    // Merge → down → left → up to negative terminal (negative is on battery's LEFT at batX-5)
+    // Merge → down → left → up to negative terminal
     drawWire(mergeX, batY, mergeX, returnY);
     drawWire(mergeX, returnY, batX - 8, returnY);
     drawWire(batX - 8, returnY, batX - 8, batY);
 
-    // Orange node dots at all junctions
+    // Orange node dots
     drawNode(junctionX, batY);
     drawNode(mergeX, batY);
 
-    // Current labels (eurekafinder style: orange, next to wires)
+    // Current labels
     ctx.fillStyle = '#FF7D29';
     ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
-
-    // I total on bottom return wire
     ctx.textAlign = 'center';
-    ctx.fillText('I总=' + p.I.toFixed(2) + 'A', (batX + junctionX) / 2 + 10, returnY + 14);
-
-    // I1 next to R1
+    ctx.fillText('I总=' + p.I.toFixed(2) + 'A', (batX + mainSwitchX) / 2 + 5, batY + 20);
     ctx.fillText('I₁=' + p.I1.toFixed(2) + 'A', r1X + rWidth + 8, r1Y - 2);
-
-    // I2 next to R2
     ctx.fillText('I₂=' + p.I2.toFixed(2) + 'A', r2X + rWidth + 8, r2Y + 12);
     ctx.textAlign = 'left';
 
+    // Switch status labels
+    ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = state.switchMain ? '#6B7280' : '#EF4444';
+    ctx.textAlign = 'center';
+    ctx.fillText(state.switchMain ? 'S总 合' : 'S总 断', mainSwitchX, batY - 16);
+    ctx.fillStyle = state.switch1 ? '#6B7280' : '#EF4444';
+    ctx.fillText(state.switch1 ? 'S₁ 合' : 'S₁ 断', r1SwitchX, r1Y - 18);
+    ctx.fillStyle = state.switch2 ? '#6B7280' : '#EF4444';
+    ctx.fillText(state.switch2 ? 'S₂ 合' : 'S₂ 断', r2SwitchX, r2Y - 18);
+    ctx.textAlign = 'left';
+
     // Current dots animation
-    drawCurrentDots(batX + 10, batY, junctionX - 5, batY, p.I);
-    drawCurrentDots(junctionX, batY - 5, junctionX, r1Y + 5, p.I1);
-    drawCurrentDots(junctionX + 5, r1Y, r1X, r1Y, p.I1);
-    drawCurrentDots(r1X + rWidth + 5, r1Y, mergeX - 5, r1Y, p.I1);
-    drawCurrentDots(mergeX, r1Y + 5, mergeX, batY - 5, p.I1);
-
-    drawCurrentDots(junctionX, batY + 5, junctionX, r2Y - 5, p.I2);
-    drawCurrentDots(junctionX + 5, r2Y, r2X, r2Y, p.I2);
-    drawCurrentDots(r2X + rWidth + 5, r2Y, mergeX - 5, r2Y, p.I2);
-    drawCurrentDots(mergeX, r2Y - 5, mergeX, batY + 5, p.I2);
-
-    drawCurrentDots(mergeX + 5, batY, mergeX + 5, returnY - 5, p.I);
-    drawCurrentDots(mergeX - 5, returnY, batX, returnY, p.I);
-    drawCurrentDots(batX - 8, returnY - 5, batX - 8, batY + 5, p.I);
+    if (state.switchMain) {
+      drawCurrentDots(batX + 10, batY, mainSwitchX - 10, batY, p.I);
+      drawCurrentDots(mainSwitchX + 10, batY, mainBulbX - 12, batY, p.I);
+      drawCurrentDots(mainBulbX + 12, batY, junctionX - 5, batY, p.I);
+    }
+    if (state.switch1) {
+      drawCurrentDots(junctionX, batY - 5, junctionX, r1Y + 5, p.I1);
+      drawCurrentDots(junctionX + 5, r1Y, r1SwitchX - 10, r1Y, p.I1);
+      drawCurrentDots(r1SwitchX + 10, r1Y, r1X, r1Y, p.I1);
+      drawCurrentDots(r1X + rWidth + 5, r1Y, mergeX - 5, r1Y, p.I1);
+      drawCurrentDots(mergeX, r1Y + 5, mergeX, batY - 5, p.I1);
+    }
+    if (state.switch2) {
+      drawCurrentDots(junctionX, batY + 5, junctionX, r2Y - 5, p.I2);
+      drawCurrentDots(junctionX + 5, r2Y, r2SwitchX - 10, r2Y, p.I2);
+      drawCurrentDots(r2SwitchX + 10, r2Y, r2X, r2Y, p.I2);
+      drawCurrentDots(r2X + rWidth + 5, r2Y, mergeX - 5, r2Y, p.I2);
+      drawCurrentDots(mergeX, r2Y - 5, mergeX, batY + 5, p.I2);
+    }
+    if (state.switchMain && p.I > 0) {
+      drawCurrentDots(mergeX + 5, batY, mergeX + 5, returnY - 5, p.I);
+      drawCurrentDots(mergeX - 5, returnY, batX, returnY, p.I);
+      drawCurrentDots(batX - 8, returnY - 5, batX - 8, batY + 5, p.I);
+    }
   }
 
   function update(emitParam) {
@@ -606,13 +722,45 @@
   wire(ctlR1, 'r1', 'r1');
   wire(ctlR2, 'r2', 'r2');
 
-  // Switch toggle
-  ctlSwitch.addEventListener('click', () => {
-    state.switchOn = !state.switchOn;
-    ctlSwitch.classList.toggle('active', state.switchOn);
-    ctlSwitch.textContent = state.switchOn ? '🔌 闭合' : '✂️ 断开';
-    update({ param: 'switch', value: state.switchOn ? 1 : 0 });
-    EurekaHost.emitInteraction('switch-toggle', { on: state.switchOn });
+  // Switch toggles
+  const switchEls = {
+    main: document.getElementById('ctl-switch-main'),
+    s1: document.getElementById('ctl-switch-s1'),
+    s2: document.getElementById('ctl-switch-s2')
+  };
+
+  function updateSwitchUI() {
+    switchEls.main.classList.toggle('active', state.switchMain);
+    switchEls.main.textContent = state.switchMain ? '🔌 S总 闭合' : '✂️ S总 断开';
+    switchEls.s1.classList.toggle('active', state.switch1);
+    switchEls.s1.textContent = state.switch1 ? '🔌 S₁ 闭合' : '✂️ S₁ 断开';
+    switchEls.s2.classList.toggle('active', state.switch2);
+    switchEls.s2.textContent = state.switch2 ? '🔌 S₂ 闭合' : '✂️ S₂ 断开';
+
+    // Show/hide branch switches based on topology
+    const branchSwitches = document.getElementById('branch-switches');
+    if (branchSwitches) {
+      branchSwitches.style.display = state.topology === 1 ? 'flex' : 'none';
+    }
+  }
+
+  switchEls.main.addEventListener('click', () => {
+    state.switchMain = !state.switchMain;
+    updateSwitchUI();
+    update({ param: 'switchMain', value: state.switchMain ? 1 : 0 });
+    EurekaHost.emitInteraction('switch-toggle', { switch: 'main', on: state.switchMain });
+  });
+  switchEls.s1.addEventListener('click', () => {
+    state.switch1 = !state.switch1;
+    updateSwitchUI();
+    update({ param: 'switch1', value: state.switch1 ? 1 : 0 });
+    EurekaHost.emitInteraction('switch-toggle', { switch: 's1', on: state.switch1 });
+  });
+  switchEls.s2.addEventListener('click', () => {
+    state.switch2 = !state.switch2;
+    updateSwitchUI();
+    update({ param: 'switch2', value: state.switch2 ? 1 : 0 });
+    EurekaHost.emitInteraction('switch-toggle', { switch: 's2', on: state.switch2 });
   });
 
   // Topology switcher
@@ -621,6 +769,7 @@
       document.querySelectorAll('.eureka-segmented-item[data-topology]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.topology = parseInt(btn.dataset.topology, 10);
+      updateSwitchUI();
       update({ param: 'topology', value: state.topology });
       EurekaHost.emitInteraction('mode-switch', { topology: state.topology === 0 ? 'series' : 'parallel' });
     });
@@ -635,10 +784,10 @@
       }
       update();
     } else if (cmd.type === 'reset') {
-      state.voltage = 6; state.r1 = 10; state.r2 = 10; state.topology = 0; state.switchOn = true;
+      state.voltage = 6; state.r1 = 10; state.r2 = 10; state.topology = 0;
+      state.switchMain = true; state.switch1 = true; state.switch2 = true;
       ctlU.value = 6; ctlR1.value = 10; ctlR2.value = 10;
-      ctlSwitch.classList.add('active');
-      ctlSwitch.textContent = '🔌 闭合';
+      updateSwitchUI();
       update();
     }
   });
@@ -653,11 +802,9 @@
           b.classList.toggle('active', parseInt(b.dataset.topology, 10) === state.topology);
         });
         break;
-      case 'switch':
-        state.switchOn = value === 1;
-        ctlSwitch.classList.toggle('active', state.switchOn);
-        ctlSwitch.textContent = state.switchOn ? '🔌 闭合' : '✂️ 断开';
-        break;
+      case 'switchMain': state.switchMain = value === 1; updateSwitchUI(); break;
+      case 'switch1': state.switch1 = value === 1; updateSwitchUI(); break;
+      case 'switch2': state.switch2 = value === 1; updateSwitchUI(); break;
     }
   }
 
