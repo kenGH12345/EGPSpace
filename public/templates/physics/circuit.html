@@ -290,8 +290,8 @@
 
   function drawBulb(x, y, current) {
     // Bulb brightness proportional to current (power)
-    // Max current reference: ~3A for full brightness
-    const brightness = state.switchOn ? Math.min(1, current / 2.5) : 0;
+    // Linear: 2A = full brightness, 0.5A = 25% brightness
+    const brightness = state.switchOn ? Math.min(1, current * 0.5) : 0;
 
     // Glow radius increases with brightness
     const glowRadius = 12 + brightness * 18;
@@ -616,9 +616,9 @@
   });
 
   // Topology switcher
-  document.querySelectorAll('.eureka-segmented-item').forEach((btn) => {
+  document.querySelectorAll('.eureka-segmented-item[data-topology]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.eureka-segmented-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.eureka-segmented-item[data-topology]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.topology = parseInt(btn.dataset.topology, 10);
       update({ param: 'topology', value: state.topology });
