@@ -102,7 +102,7 @@
       </div>
 
       <div class="eureka-canvas-wrapper circuit-canvas-wrapper">
-        <canvas id="canvas" class="eureka-canvas" width="520" height="200"></canvas>
+        <canvas id="canvas" class="eureka-canvas" width="520" height="260"></canvas>
         <div style="margin-top: 4px; text-align: center;">
           <div class="eureka-segmented" style="display: inline-flex;">
             <button class="eureka-segmented-item active" data-topology="0" style="padding: 5px 14px; font-size: 11px;">串联</button>
@@ -331,67 +331,70 @@
   }
 
   function drawParallel(p) {
-    // 正确并联电路：电池在中间，R1/R2 分别并联在电池两侧
-    //      +──R1──+
-    //  [+]─+      +─[−]
-    //      +──R2──+
-    const midX = cssW / 2;
-    const midY = cssH / 2;
-    const rWidth = 90;
-    const left = midX - 90;
-    const right = midX + 90;
-    const topY = midY - 55;
-    const botY = midY + 55;
+    // 标准并联电路：电池在左侧，R1上支路，R2下支路
+    // 电流从正极→分流点→分两路(R1/R2)→汇流点→负极
+    const left = 55;
+    const right = cssW - 55;
+    const top = 48;
+    const bottom = cssH - 48;
+    const midY = (top + bottom) / 2;
+    const branchX = left + 50;   // 左侧分流节点
+    const joinX = right - 50;    // 右侧汇流节点
 
-    // 电池在中间
-    drawBattery(midX, midY);
+    // 电池在左侧
+    drawBattery(left, midY);
 
-    // 正极 → 上左分支点
-    drawWire(midX, midY - 18, midX, topY, p.I);
-    drawWire(midX, topY, left + 30, topY, p.I1);
+    // 正极 → 分流点（先横后竖）
+    drawWire(left, midY - 15, branchX, midY - 15, p.I);
+    drawWire(branchX, midY - 15, branchX, top, p.I);
 
-    // 负极 ← 下左分支点
-    drawWire(midX, midY + 18, midX, botY, p.I);
-    drawWire(midX, botY, left + 30, botY, p.I2);
+    // 负极 ← 汇流点（先竖后横）
+    drawWire(joinX, bottom, joinX, midY + 15, p.I2);
+    drawWire(joinX, midY + 15, left, midY + 15, p.I);
 
-    // R1 - 上支路（左到右）
-    drawResistor(left + 30, topY - 8, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    // R1 上支路：分流点 → R1 → 汇流点
+    const rWidth = 80;
+    const r1X = branchX + 12;
+    drawResistor(r1X, top - 8, rWidth, 'R₁=' + state.r1 + 'Ω', p.U1, p.I1);
+    drawWire(branchX, top, r1X, top, p.I1);
+    drawWire(r1X + rWidth, top, joinX, top, p.I1);
 
-    // R2 - 下支路（左到右）
-    drawResistor(left + 30, botY - 8, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    // R2 下支路：分流点 → R2 → 汇流点
+    const r2X = branchX + 12;
+    drawResistor(r2X, bottom - 8, rWidth, 'R₂=' + state.r2 + 'Ω', p.U2, p.I2);
+    drawWire(branchX, bottom, r2X, bottom, p.I2);
+    drawWire(r2X + rWidth, bottom, joinX, bottom, p.I2);
 
-    // R1 右端 → 汇合 → 负极
-    drawWire(left + 30 + rWidth, topY, right, topY, p.I1);
-    drawWire(right, topY, right, botY, p.I);
-    drawWire(right, botY, left + 30 + rWidth, botY, p.I2);
+    // 橙色节点标记（分流点、汇流点）
+    ctx.fillStyle = '#F97316';
+    ctx.beginPath(); ctx.arc(branchX, midY - 15, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(joinX, midY + 15, 4.5, 0, Math.PI * 2); ctx.fill();
 
-    // 右侧汇合点
-    ctx.fillStyle = '#1F2937';
-    ctx.beginPath();
-    ctx.arc(right, topY, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(right, botY, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 左侧分支点
-    ctx.beginPath();
-    ctx.arc(left + 30, topY, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(left + 30, botY, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 总电流标签（电池处）
+    // 总电流标签
     ctx.font = 'bold 11px system-ui';
     ctx.fillStyle = '#F59E0B';
-    ctx.fillText('I总=' + p.I.toFixed(2) + 'A', midX + 12, midY - 5);
+    ctx.textAlign = 'center';
+    ctx.fillText('I总=' + p.I.toFixed(2) + 'A', (left + branchX) / 2, midY + 28);
+    ctx.textAlign = 'left';
 
-    // 电流流动动画
-    drawCurrentDots(midX, topY, left + 30, topY, p.I1);
-    drawCurrentDots(left + 30 + rWidth + 5, topY, right - 5, topY, p.I1);
-    drawCurrentDots(midX, botY, left + 30, botY, p.I2);
-    drawCurrentDots(left + 30 + rWidth + 5, botY, right - 5, botY, p.I2);
+    // 支路电流标注
+    ctx.fillStyle = '#2563EB';
+    ctx.textAlign = 'center';
+    ctx.fillText('I₁=' + p.I1.toFixed(2) + 'A', r1X + rWidth / 2, top - 16);
+    ctx.fillText('I₂=' + p.I2.toFixed(2) + 'A', r2X + rWidth / 2, bottom + 14);
+    ctx.textAlign = 'left';
+
+    // 电压相等标注
+    ctx.fillStyle = '#DC2626';
+    ctx.fillText('U=' + p.U1.toFixed(1) + 'V', left + 2, midY + 42);
+
+    // 电流动画
+    drawCurrentDots(left + 5, midY - 15, branchX - 5, midY - 15, p.I);
+    drawCurrentDots(branchX, top - 2, r1X, top - 2, p.I1);
+    drawCurrentDots(r1X + rWidth + 5, top - 2, joinX - 5, top - 2, p.I1);
+    drawCurrentDots(branchX, bottom + 2, r2X, bottom + 2, p.I2);
+    drawCurrentDots(r2X + rWidth + 5, bottom + 2, joinX - 5, bottom + 2, p.I2);
+    drawCurrentDots(joinX - 5, midY + 15, left + 5, midY + 15, p.I);
   }
 
   function update(emitParam) {
