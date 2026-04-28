@@ -1,53 +1,65 @@
 {
-  "DEVELOP": {
+  "PLAN": {
     "decisions": [
-      "[新建文件（15 个）] `src/lib/framework/assembly/spec.ts` (72 行)",
-      "[Framework 通用层（5）— AC-A~AC-E 核心保证] `src/lib/framework/assembly/spec.ts` (72 行)",
-      "[Circuit Domain 绑定（4）] `src/lib/framework/domains/circuit/assembly/circuit-spec.ts` (42 行)",
-      "[浏览器 L3（3）] `public/templates/_shared/component-mirror.js` (87 行)",
-      "[测试（2）] `src/lib/framework/__tests__/assembly.test.ts` (363 行) · 34 tests · Wave 1.5 Gate"
+      "[Execution Plan · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+      "[依赖图] W0_START([Wave 0 · 类型层 + FluentAssembly 分流])",
+      "[Wave 0 · 类型层 + FluentAssembly 分流（90 min）] File: `src/lib/framework/assembly/layout.ts`",
+      "[T-1 · `assembly/layout.ts` 新文件（20 min）] File: `src/lib/framework/assembly/layout.ts`",
+      "[T-2 · `assembly/fluent.ts` 内部分流（30 min）] File: `src/lib/framework/assembly/fluent.ts`"
     ],
-    "timestamp": "2026-04-28T13:05:00.310Z",
-    "session": "wf-20260428120154.",
-    "artifactHash": null
+    "timestamp": "2026-04-28T16:05:29.617Z",
+    "session": "wf-20260428153150.",
+    "artifactHash": "12151-#ExecutionPlan·anchor-Layout"
   },
   "_meta": {
-    "requirementFingerprint": "ac 全学科通用性 电路集成 装配层框架化"
+    "requirementFingerprint": "anchor layoutspec 解耦"
+  },
+  "DEVELOP": {
+    "decisions": [
+      "[DEVELOP Stage · Code Changes Summary (D)] > Session: `wf-20260428153150.`",
+      "[新建文件（3）] | # | File | LOC | Purpose |",
+      "[修改文件（10）] | # | File | Change | AC |",
+      "[Framework 层关键 AC 审计] AC-D1 · layout.ts 不 import AssemblySpec",
+      "[意外红利：T-12 测试迁移工作量 = 0] ARCHITECT 阶段原预估 T-12（老测试迁移）60 min，因上轮 446 测试都是结构级断言（没有硬断言具体 anchor 值），零迁移即零回归。原因："
+    ],
+    "timestamp": "2026-04-28T17:15:55.457Z",
+    "session": "wf-20260428153150.",
+    "artifactHash": null
   },
   "TEST": {
     "decisions": [
-      "[Test Report · Session wf-20260428120154.] 执行: `npm test` (Jest) + `npx tsc --noEmit`",
-      "[总览] Test Suites: 18 passed, 18 total",
-      "[新增覆盖（本轮 +10 tests）] | 测试文件 | 测试数 | 覆盖对象 |",
-      "[AC 验收（强制条款）逐条证据] 测试：`AC-A · framework/assembly is domain-agnostic · no domain-specific keyword appears in framework/assembly/*.ts`",
-      "[AC-A 通用化 ✅] 测试：`AC-A · framework/assembly is domain-agnostic · no domain-specific keyword appears in framework/assembly/*.ts`"
+      "[TEST · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+      "[Overall] | Test Suites | 24 passed / 24 total |",
+      "[14 AC 逐条证据] | AC | 要求 | 验证方式 | 结果 |",
+      "[新增 19 测试清单] AC-D1 · layout.ts 不 import AssemblySpec type",
+      "[风险验证] | Risk (PLAN) | Mitigation | 结果 |"
     ],
-    "timestamp": "2026-04-28T13:07:18.776Z",
-    "session": "wf-20260428120154.",
-    "artifactHash": "3482-#TestReport·Sessionwf-20260"
+    "timestamp": "2026-04-28T17:23:32.869Z",
+    "session": "wf-20260428153150.",
+    "artifactHash": "3736-#TEST·anchor-LayoutSpec解耦（D）"
   },
   "REVIEW": {
     "decisions": [
-      "[需求达成度审查] |---------|---------|------|",
-      "[架构 Scorecard 复核] 14 项 ARCH 检查全部 PASS。关键亮点：",
-      "[Failure Model 复核] | 故障 ID | 在 CODE 中的实现 |",
-      "[单文件体积检查（AC-D）] | `assembly/spec.ts` | 72 |",
-      "[依赖方向检查（AC-A 支撑）] framework/assembly/* → framework/components/*        ✅（合法：顶层抽象）"
+      "[REVIEW · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+      "[需求达成度] | 把 anchor 从 AssemblySpec 分离为独立 LayoutSpec | ✅ 100% |",
+      "[5 决策对比（ARCHITECT vs DEVELOP）] | 决策 | 原承诺 | 实际交付 | 偏差 |",
+      "[3 意外红利] | 1. T-12 迁移工作量 = 0 | ARCHITECT 原预估 60min，实际因上轮 test 都是结构级断言，零迁移即零回归 |",
+      "[Failure Model 实际覆盖] | FM | Architecture 承诺 | 实际验证 |"
     ],
-    "timestamp": "2026-04-28T13:12:42.015Z",
-    "session": "wf-20260428120154.",
+    "timestamp": "2026-04-28T17:31:44.409Z",
+    "session": "wf-20260428153150.",
     "artifactHash": null
   },
   "DEPLOY": {
     "decisions": [
-      "[Deploy Output · Session wf-20260428120154.] 本地落盘（local-writeback）—— Next.js 项目在 IDE 环境完成重构；运行 `pnpm dev` 即可加载新版 circuit.html v3 进行浏览器端验证。",
-      "[部署模式] 本地落盘（local-writeback）—— Next.js 项目在 IDE 环境完成重构；运行 `pnpm dev` 即可加载新版 circuit.html v3 进行浏览器端验证。",
-      "[已交付文件清单] src/lib/framework/assembly/",
-      "[新建（15）] src/lib/framework/assembly/",
-      "[修改（5）] src/lib/framework/index.ts                — 新增 assembly 层的所有 export"
+      "[DEPLOY · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+      "[文件变更总清单] |------|------|------|",
+      "[前置检查（已在 TEST/REVIEW 完成）] ✅ TSC `--noEmit` 零错误",
+      "[回滚方案] |------|------|------|",
+      "[提交建议] feat(framework): anchor-LayoutSpec 解耦（为编辑器 framework 做前置清理）"
     ],
-    "timestamp": "2026-04-28T13:13:50.618Z",
-    "session": "wf-20260428120154.",
+    "timestamp": "2026-04-28T17:34:03.054Z",
+    "session": "wf-20260428153150.",
     "artifactHash": null
   }
 }

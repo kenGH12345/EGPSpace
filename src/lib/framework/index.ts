@@ -77,3 +77,17 @@ export { Assembler } from './assembly/assembler';
 
 export type { FluentAddOptions } from './assembly/fluent';
 export { FluentAssembly } from './assembly/fluent';
+
+// ── Layout (visual placement, sibling to AssemblySpec) ────────────────────
+export type {
+  LayoutEntry,
+  LayoutSpec,
+  LayoutMetadata,
+  AssemblyBundle,
+} from './assembly/layout';
+export {
+  isLayoutSpec,
+  emptyLayout,
+  layoutLookup,
+  isAssemblyBundle,
+} from './assembly/layout';

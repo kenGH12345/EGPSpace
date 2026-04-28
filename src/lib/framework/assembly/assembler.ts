@@ -16,6 +16,7 @@
 import type { IExperimentComponent, ComponentDomain } from '../components/base';
 import { DomainGraph } from '../components/graph';
 import type { AssemblySpec, ComponentDecl } from './spec';
+import type { AssemblyBundle } from './layout';
 import type { AssemblyError, AssemblyValidationResult } from './errors';
 import { AssemblyBuildError, makeError } from './errors';
 import { validateSpec, type PortsLookup } from './validator';
@@ -72,6 +73,9 @@ export class Assembler<
    */
   assemble(spec: AssemblySpec<D>, opts: AssembleOptions = {}): DomainGraph<C> {
     const { portsOf, strict = true } = opts;
+
+    // Step 0: emit warning for legacy decl.anchor (deprecated; see D-4)
+    this._warnLegacyAnchor(spec);
 
     // Step 1: validate
     const validation = this.validate(spec, portsOf);
@@ -134,5 +138,29 @@ export class Assembler<
     }
 
     return graph;
+  }
+
+  /**
+   * Assemble a bundle (spec + optional layout) into a live DomainGraph.
+   * The layout is not consumed by the graph itself (solvers don't need anchors);
+   * callers retain the layout for downstream rendering or persistence.
+   */
+  assembleBundle(bundle: AssemblyBundle<D>, opts: AssembleOptions = {}): DomainGraph<C> {
+    return this.assemble(bundle.spec as AssemblySpec<D>, opts);
+  }
+
+  // ── Internal helpers ──
+
+  private _warnedAnchorOnce = false;
+  private _warnLegacyAnchor(spec: AssemblySpec<D>): void {
+    if (this._warnedAnchorOnce) return;
+    const hasLegacy = spec.components.some((c) => (c as ComponentDecl).anchor !== undefined);
+    if (hasLegacy) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[Assembler:${this.domain}] Spec contains legacy "decl.anchor" fields — this is deprecated; use LayoutSpec for visual placement.`,
+      );
+      this._warnedAnchorOnce = true;
+    }
   }
 }

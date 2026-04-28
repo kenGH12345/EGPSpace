@@ -1,56 +1,63 @@
-# CODE Diff Summary — Wave 0~6 交付（Session wf-20260428120154.）
+# DEVELOP Stage · Code Changes Summary (D)
 
-## 新建文件（15 个）
+> Session: `wf-20260428153150.`
+> 14 tasks complete. 465/465 tests PASS. TSC zero errors.
 
-### Framework 通用层（5）— AC-A~AC-E 核心保证
-- `src/lib/framework/assembly/spec.ts` (72 行)
-- `src/lib/framework/assembly/errors.ts` (53 行)
-- `src/lib/framework/assembly/validator.ts` (138 行)
-- `src/lib/framework/assembly/assembler.ts` (135 行)
-- `src/lib/framework/assembly/fluent.ts` (155 行)
-- `src/lib/framework/assembly/index.ts` (21 行)
+## 新建文件（3）
 
-### Circuit Domain 绑定（4）
-- `src/lib/framework/domains/circuit/assembly/circuit-spec.ts` (42 行)
-- `src/lib/framework/domains/circuit/assembly/circuit-assembler.ts` (53 行)
-- `src/lib/framework/domains/circuit/assembly/circuit-builder.ts` (155 行)
-- `src/lib/framework/domains/circuit/assembly/index.ts` (23 行)
+| # | File | LOC | Purpose |
+|---|------|-----|---------|
+| 1 | `src/lib/framework/assembly/layout.ts` | ~130 | LayoutSpec / LayoutEntry / AssemblyBundle + helpers |
+| 2 | `src/lib/framework/__tests__/layout-spec.test.ts` | ~220 | 19 测试 · 覆盖 AC-D1/D2a/D2b/D4/D9/D10a/D10b/D10c/D11/D11b/D11c/D12/D13/D14 |
+| 3 | `docs/layout-spec.md` | ~150 | 契约文档 · 迁移指南 · FAQ |
 
-### 浏览器 L3（3）
-- `public/templates/_shared/component-mirror.js` (87 行)
-- `public/templates/_shared/circuit-draw.js` (207 行)
-- `public/templates/_shared/circuit-builder.js` (148 行)
+## 修改文件（10）
 
-### 测试（2）
-- `src/lib/framework/__tests__/assembly.test.ts` (363 行) · **34 tests** · Wave 1.5 Gate
-- `src/lib/framework/domains/circuit/__tests__/circuit-assembly.test.ts` (144 行) · **11 tests**
-- `src/lib/engines/__tests__/circuit-engine-v2.test.ts` (144 行) · **10 tests**
+| # | File | Change | AC |
+|---|------|--------|----|
+| 1 | `src/lib/framework/assembly/fluent.ts` | 增 `_layout` 字段 + `_writeAnchor` helper + `toLayout/toBundle` · add() 内部分流 | AC-D11 |
+| 2 | `src/lib/framework/assembly/assembler.ts` | 增 `assembleBundle` + `_warnLegacyAnchor` | AC-D12 |
+| 3 | `src/lib/framework/assembly/spec.ts` | `ComponentDecl.anchor` @deprecated JSDoc | AC-D4 |
+| 4 | `src/lib/framework/assembly/index.ts` | barrel 增 `./layout` re-export | AC-D5 |
+| 5 | `src/lib/framework/index.ts` | 顶层 re-export LayoutSpec 相关 | AC-D5 |
+| 6 | `src/lib/framework/components/base.ts` | `ComponentAnchor` / `IExperimentComponent.anchor` @deprecated JSDoc | AC-D5 |
+| 7 | `src/lib/framework/domains/chemistry/reaction-utils.ts` | 移除 3 处 `anchor: {x:0, y:0}` hardcode → `PLACEHOLDER_ANCHOR` 常量 | AC-D14 |
+| 8 | `src/lib/engines/physics/circuit.ts` | `_normaliseToSpec` 的 components map 移除 `anchor: c.anchor`（保留注释说明） | AC-D2a |
+| 9 | `public/templates/_shared/circuit-builder.js` | JS 镜像分流（_layout + toLayoutSpec + components() 合并视图） | 跨语言一致性 |
+| 10 | `public/templates/_shared/chemistry-builder.js` | 同上 | 跨语言一致性 |
+| 11 | `docs/component-framework.md` | 顶部索引加 LayoutSpec + Chemistry 链接 | 文档索引 |
 
-### 文档（1）
-- `docs/assembly-framework.md` (~320 行) · 5 学科示例代码
+## Framework 层关键 AC 审计
 
-## 修改文件（5）
-- `src/lib/framework/index.ts` — 新增 assembly 层的全部 export
-- `src/lib/framework/domains/circuit/index.ts` — `export * from './assembly'`
-- `src/lib/engines/physics/circuit.ts` — **v1.1 → v2.0**（dual-path + InteractionEngine 集成）
-- `src/lib/template-registry.ts` — atomVersion 联合增加 `'v3-component'`
-- `src/lib/templates/physics-registry.ts` — circuit 标记 `v3-component`
-- `public/templates/physics/circuit.html` — **重写为 v3-component**
-- `docs/component-framework.md` — 顶部插入对 assembly-framework.md 的索引
+```
+AC-D1 · layout.ts 不 import AssemblySpec
+  grep "^import.*AssemblySpec" layout.ts → 0 hits ✅
 
-## 备份文件（1）
-- `public/templates/physics/circuit.html.v2-atomic-legacy` — 上轮版本回滚用
+AC-D3 · Builder Sugar 签名零改
+  circuit-builder.ts / chemistry-builder.ts 方法签名 git diff → 0 行 API 面改动 ✅
 
-## 验证结果
-- **TSC**: 零错误
-- **Jest**: **403/403** 全绿（基线 393 + 新 10）
-- **零回归**: 上轮的 393 测试全部保持绿
-- **AC-A**: grep scan zero hits — framework/assembly 零学科词
-- **AC-C**: 5 mock domain × 2 path = 10 跨域装配测试全绿
-- **AC-E**: 5 mock domain 的 literal ≡ DSL 断言全绿
-- **AC-D**: 单文件均 ≤ 250 行，6th domain 零改动测试通过
+AC-D6 · solver/reactions 零改
+  git diff --shortstat -- solvers/ interactions/ domains/*/solver.ts domains/*/reactions
+  → empty output = 0 行改动 ✅
+  (注：reaction-utils.ts 的 hardcode 删除是语义改善，不改变 reaction 逻辑)
 
-## 文件体积
-- v1-legacy circuit.html: ~950 行
-- v2-atomic circuit.html: ~220 行
-- **v3-component circuit.html: ~250 行**（含 L1 engine dual-path 完整集成 + 过载事件可视化）
+AC-D7 · 浏览器模板零改
+  git diff --stat -- circuit.html metal-acid-reaction.html
+  → empty output = 0 byte 变动 ✅
+```
+
+## 意外红利：T-12 测试迁移工作量 = 0
+
+ARCHITECT 阶段原预估 T-12（老测试迁移）60 min，因上轮 446 测试都是结构级断言（没有硬断言具体 anchor 值），**零迁移即零回归**。原因：
+- 大部分 test 只断言 `component.domain === 'circuit'` 类型/结构
+- 唯一读 anchor 的地方（circuit-assembly.test 第 179 行）写的是 `{x:0, y:0}` 占位，这正是新契约的行为（component.anchor 默认值）
+
+## Test Results
+
+```
+Test Suites: 24 passed, 24 total
+Tests:       465 passed, 465 total   (上轮 446 基线 + 19 新增)
+Time:        ~5 s
+```
+
+`npx tsc --noEmit`: **zero errors**

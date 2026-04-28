@@ -3,7 +3,7 @@ name: EGPSpace Skill Knowledge
 project: egpspace
 type: project-knowledge
 version: 1.0.0
-generated_at: 2026-04-28T12:02:24.248Z
+generated_at: 2026-04-28T15:32:22.561Z
 sources:
   - skill-discovery
 deprecated: false

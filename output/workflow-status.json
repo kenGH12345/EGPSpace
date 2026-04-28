@@ -1,12 +1,12 @@
 {
   "activeWorkflow": {
-    "session": "wf-20260428120154.",
-    "startedAt": "2026-04-28T12:27:18.484Z",
+    "session": "wf-20260428153150.",
+    "startedAt": "2026-04-28T15:59:17.928Z",
     "currentStage": "DEPLOY",
     "completedStages": [],
-    "requirement": "装配层框架化+电路集成（全学科通用性 AC）",
-    "requirementFingerprint": "ac 全学科通用性 电路集成 装配层框架化",
-    "ttlExpiry": "2026-04-28T14:02:24.280Z",
-    "stageStartTime": 1777381981601
+    "requirement": "D · anchor-LayoutSpec 解耦",
+    "requirementFingerprint": "anchor layoutspec 解耦",
+    "ttlExpiry": "2026-04-28T17:32:22.612Z",
+    "stageStartTime": 1777397504578
   }
 }

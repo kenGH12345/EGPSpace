@@ -13,11 +13,19 @@
  *     graph: circuit.toSpec(),
  *     overrides: { B1: { voltage: getParam('voltage') } }
  *   });
- *   ComponentMirror.renderAll(ctx, circuit.toSpec().components, result.values.perComponent);
+ *   ComponentMirror.renderAll(ctx, circuit.components(), result.values.perComponent);
  *
  * Cross-language contract (see src/lib/framework/domains/circuit/__tests__/circuit-assembly.test.ts):
  *   This file MUST produce the same DTO shape as the TS CircuitBuilder.
  *   Any drift will break the engine's v2 path.
+ *
+ * Anchor policy (post D-separation):
+ *   - sugar API signature unchanged: .battery({voltage, id, anchor})
+ *   - _spec.components[i].anchor is NO longer written — anchor routes to _layout
+ *   - toSpec() returns components without anchors (matches TS AssemblySpec)
+ *   - toLayoutSpec() returns the sibling LayoutSpec
+ *   - components() still returns a view WITH anchor merged from _layout
+ *     (renderers need anchor; they pull it from this method, not from toSpec())
  */
 
 (function () {
@@ -29,6 +37,10 @@
         domain: 'circuit',
         components: [],
         connections: [],
+      };
+      this._layout = {
+        domain: 'circuit',
+        entries: [],
       };
       this._idCounter = 0;
       this._addOrder = [];
@@ -42,10 +54,23 @@
         id: id,
         kind: kind,
         props: props || {},
-        anchor: opts.anchor,
+        // anchor intentionally NOT written here (D-3 split)
       });
       this._addOrder.push(id);
+      if (opts.anchor) {
+        this._writeAnchor(id, opts.anchor);
+      }
       return this;
+    }
+
+    _writeAnchor(id, anchor) {
+      for (var i = 0; i < this._layout.entries.length; i++) {
+        if (this._layout.entries[i].componentId === id) {
+          this._layout.entries[i] = { componentId: id, anchor: anchor };
+          return;
+        }
+      }
+      this._layout.entries.push({ componentId: id, anchor: anchor });
     }
 
     // ── Typed sugar methods ──
@@ -83,8 +108,8 @@
       return this._add(
         'bulb',
         {
-          resistance: opts.resistance !== undefined ? opts.resistance : 6,
-          ratedPower: opts.ratedPower !== undefined ? opts.ratedPower : 2,
+          resistance: opts.resistance || 6,
+          ratedPower: opts.ratedPower || 2,
           label: opts.label,
         },
         { id: opts.id, anchor: opts.anchor },
@@ -139,12 +164,30 @@
 
     // ── Terminal operations ──
     toSpec() {
-      // Deep clone for safety (callers may mutate slider overrides independently)
+      // Deep clone for safety (callers may mutate slider overrides independently).
+      // This output is anchor-free by design — renderers use components() instead.
       return JSON.parse(JSON.stringify(this._spec));
     }
 
+    toLayoutSpec() {
+      return JSON.parse(JSON.stringify(this._layout));
+    }
+
+    toBundle() {
+      return { spec: this.toSpec(), layout: this.toLayoutSpec() };
+    }
+
+    /**
+     * Returns components merged with their anchors from _layout. This is what
+     * renderers consume (they need id + kind + props + anchor to paint).
+     * The merge is a one-way view; does not mutate _spec or _layout.
+     */
     components() {
-      return this._spec.components.slice();
+      const lookup = {};
+      for (const e of this._layout.entries) lookup[e.componentId] = e.anchor;
+      return this._spec.components.map(function (c) {
+        return Object.assign({}, c, { anchor: lookup[c.id] || { x: 0, y: 0 } });
+      });
     }
 
     findById(id) {

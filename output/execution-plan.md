@@ -1,281 +1,361 @@
-# Execution Plan: 装配层框架化 + 电路实验组件化集成
+# Execution Plan · anchor-LayoutSpec 解耦（D）
 
-**Session**: `wf-20260428120154.` · **Stage**: PLAN · **Date**: 2026-04-28
-
-## 思考摘要
-
-用户在 Architecture Review Gate 追加了**关键澄清**：
-
-> "可扩展 / 可维护 / 可配置 / 结构化 / 装配层本身必须是通用框架**不是对电路实验本身而是全学科所有的实验来说的**"
-
-这改变了验收靶向：
-
-| 维度 | 升级前理解 | 升级后理解 |
-|------|----------|----------|
-| AC-A 通用化 | framework/assembly 目录不含 circuit 词 | **5 个学科**（circuit/optics/chemistry/mechanics/biology）都能复用 |
-| AC-B 结构化 | Spec/Validator/Assembler 分文件 | 分层后**任一学科加入**不需重新组织 |
-| AC-C 可扩展 | mock optics domain 通过测试 | **任选 3 个学科实例化**均通过测试 |
-| AC-D 可维护 | 单文件 ≤ 250 行 | 每加一个学科 framework/assembly 代码**零修改** |
-| AC-E 可配置 | 对象字面量 = DSL | **任一学科**的 spec 都支持两种入口 |
-
-因此 PLAN 必须：
-1. **新增 Wave 1.5**：通用性探针（用 mock 虚拟学科域验证），挡在 Wave 2/3/4 之前；不通过则回到 Wave 0 改抽象
-2. **AC-A~AC-E 5 条验收全部升级**：每条包含"5 个虚拟学科 domain 实例化并通过"的断言
-3. **文档任务强制 ≥5 个学科示例代码**
-
-**关键路径**：Wave 0 → **Wave 1.5 (Gate)** → Wave 2 → Wave 3 → Wave 4 → Wave 5 → Wave 6。Wave 1.5 是不可绕过的质量门。
-
-**最高风险**：
-- P0 · 跨域验证发现抽象不足 → 回 Wave 0 重做（T-1/T-2）
-- P0 · 泛型过度导致 TS 类型推断爆炸 → 先 circuit 跑通再泛化
-- P0 · Engine dual-path 误判 → type guard 三重条件
+> Session: `wf-20260428153150.`
+> Stage: PLAN
+> 14 tasks / 5 waves / ~4h est
 
 ---
 
-## 强制验收清单（AC-A ~ AC-E 全学科靶向）
-
-> ⚠️ **靶向澄清**：以下每条 AC 都必须对**至少 3 个学科 mock domain** 验证通过（circuit 真实 + optics/chemistry 伪造），框架层单文件内**任何 fail** 都要求回到 Wave 0 修抽象。
-
-| 编号 | 要求 | 测试证据（硬条件） |
-|------|------|-------------------|
-| **AC-A 通用化** | `framework/assembly/*` 和 `framework/components/*` 不含任何具体学科词（circuit/battery/lens/optics/chemistry 等） | 测试 `test('framework is domain-agnostic: 7 keywords ∩ framework files == ∅')`（fs.readdir + regex scan） |
-| **AC-B 结构化** | 五件套（Spec / Validator / Assembler / FluentAssembly / Errors）**各自可独立 import** 且**各有独立 describe 块测试** | 测试文件 `assembly.test.ts` 有 5 个 describe 块；每个块单独 `expect(module).toHaveProperty('X')` |
-| **AC-C 可扩展** | **至少 3 个虚拟 domain**（optics / chemistry / mechanics）可复用完全相同的 FluentAssembly 基类和 Assembler 逻辑，**不改框架一行代码** | `assembly.test.ts` 内 mock 3 个域各自 extends FluentAssembly，全部通过 build()→Graph 管线 |
-| **AC-D 可维护** | ① framework/assembly 单文件 ≤ 250 行；② 公共 API ≤ 10 方法；③ **添加第 N+1 个学科时，framework/assembly 零修改**（用 mock "domain-Z" 做回归测试证明） | 静态度量 + "add new domain without modifying framework" 测试 |
-| **AC-E 可配置** | **3 个虚拟 domain** 都支持（a）对象字面量构建 + （b）链式 DSL 构建，两者产出 DomainGraph **deep-equal** | 3 个 domain 各测一次"literal ≡ DSL" |
-
----
-
-## 通用性探针设计（Wave 1.5 前置）
-
-创建 **5 个伪造 domain**（最小实现，只为验证框架通用性）：
-
-| Mock Domain | 元件 | 反映真实学科 |
-|-------------|------|-------------|
-| `mock-optics` | lightSource / lens / screen | 光学 |
-| `mock-chemistry` | flask / reagent / bubble | 化学 |
-| `mock-mechanics` | mass / spring / anchor | 力学 |
-| `mock-biology` | cell / solution | 生物 |
-| `circuit` (真) | battery / wire / switch / resistor / bulb / burnt_bulb | 电路 |
-
-每个 mock domain 约 40 行代码，仅提供 `kind` 字符串 + `ports` 端口列表，不求解（因为 Wave 1.5 目的只是证明**装配部分**跨域通用，不验证求解器）。
-
-**Wave 1.5 的出口断言**：
-
-```typescript
-// 伪代码示意
-for (const mockDomain of ['mock-optics', 'mock-chemistry', 'mock-mechanics', 'mock-biology']) {
-  // A. Literal 路径
-  const g1 = buildFromSpec({ domain: mockDomain, components: [...], connections: [...] });
-  expect(g1.componentCount()).toBeGreaterThan(0);
-  
-  // B. DSL 路径
-  class MockBuilder extends FluentAssembly<typeof mockDomain> { /* 30 lines */ }
-  const g2 = new MockBuilder().add(...).connect(...).build();
-  expect(g2.toDTO()).toEqual(g1.toDTO());  // AC-E: literal == DSL
-  
-  // C. Validator 结构化
-  expect(validator.validate(invalidSpec)).toMatchObject({ ok: false, errors: [...] });
-}
-```
-
-**若任一失败** → Wave 0 的抽象有 bug（不是学科绑定有 bug）→ 回 Wave 0 改。
-
----
-
-## 任务列表
-
-### Wave 0 · 通用装配框架层（5 文件，240 min）
-
-| ID | 标题 | 依赖 | 文件 | 风险 | 估时 | 关键 AC |
-|----|------|------|------|------|------|--------|
-| T-1 | Spec 类型定义（POJO） | — | `src/lib/framework/assembly/spec.ts` | 低 | 30min | AC-A/AC-B |
-| T-2 | AssemblyError 类型层级 | — | `src/lib/framework/assembly/errors.ts` | 低 | 20min | AC-B |
-| T-3 | AssemblyValidator（结构/唯一性/端口引用三层校验） | T-1, T-2 | `src/lib/framework/assembly/validator.ts` | 中 | 50min | AC-B |
-| T-4 | Assembler（Spec → DomainGraph） | T-1, T-2, T-3 | `src/lib/framework/assembly/assembler.ts` | 中 | 50min | AC-B/AC-D |
-| T-5 | FluentAssembly 抽象基类（链式 DSL） | T-1, T-4 | `src/lib/framework/assembly/fluent.ts` | 中 | 50min | AC-B/AC-D |
-| T-6 | barrel + re-export 到 `framework/index.ts` | T-1~T-5 | `src/lib/framework/assembly/index.ts` + `framework/index.ts` | 低 | 10min | AC-A |
-| T-7 | 装配层单测（12 条，AC-A~AC-E 覆盖 + 5 mock domain） | T-1~T-6 | `src/lib/framework/__tests__/assembly.test.ts` | **高** | 60min | **AC-C/AC-D/AC-E 跨域验证** |
-
-### Wave 1.5 · 通用性探针出口门（T-7 通过 = 门开）
-
-**非代码任务**：T-7 运行全绿即通过。任何 fail → STOP → 返 Wave 0。
-
-**若通过**：进入 Wave 2。若未通过 2 轮：**降级方案** → 仅承诺 circuit 域通用性 + 文档明确说明"首版限 circuit，下次工作流扩展"，并告知用户。
-
-### Wave 2 · Circuit 装配绑定（4 文件，120 min）
-
-| ID | 标题 | 依赖 | 文件 | 风险 | 估时 |
-|----|------|------|------|------|------|
-| T-8 | CircuitSpec 类型具体化 | T-1, Circuit domain existing | `src/lib/framework/domains/circuit/assembly/circuit-spec.ts` | 低 | 20min |
-| T-9 | CircuitAssembler（覆盖 _buildComponent 用 componentRegistry） | T-4, T-8 | `src/lib/framework/domains/circuit/assembly/circuit-assembler.ts` | 中 | 40min |
-| T-10 | CircuitBuilder（FluentAssembly 子类 + battery/wire/switch_/resistor/bulb/loop 语法糖） | T-5, T-8 | `src/lib/framework/domains/circuit/assembly/circuit-builder.ts` | 中 | 40min |
-| T-11 | Circuit assembly barrel + re-export | T-8~T-10 | `src/lib/framework/domains/circuit/assembly/index.ts` + 更新 `domains/circuit/index.ts` | 低 | 10min |
-| T-12 | Circuit 装配单测（10 条，含 DSL≡literal 等价） | T-8~T-11 | `src/lib/framework/domains/circuit/__tests__/circuit-assembly.test.ts` | 中 | 40min |
-
-### Wave 3 · CircuitEngine v2.0 dual-path（2 文件，80 min）
-
-| ID | 标题 | 依赖 | 文件 | 风险 | 估时 |
-|----|------|------|------|------|------|
-| T-13 | CircuitEngine v2.0：type-guard 分派 + v2 路径（Assembler+Solver+InteractionEngine） | T-9, existing CircuitSolver, existing InteractionEngine | `src/lib/engines/physics/circuit.ts` | **高** | 50min |
-| T-14 | Engine dual-path 单测（8 条，含边界 4 种） | T-13 | `src/lib/engines/__tests__/circuit-engine-v2.test.ts` | 中 | 30min |
-
-### Wave 4 · 浏览器 L3 + HTML v3（4 文件 + 1 备份，150 min）
-
-| ID | 标题 | 依赖 | 文件 | 风险 | 估时 |
-|----|------|------|------|------|------|
-| T-15 | ComponentMirror（浏览器侧 kind → 绘图分派） | — | `public/templates/_shared/component-mirror.js` | 中 | 30min |
-| T-16 | circuit-draw.js（7+ 元件绘图原子） | T-15 | `public/templates/_shared/circuit-draw.js` | 中 | 45min |
-| T-17 | circuit-builder.js（浏览器侧链式 DSL → DTO） | — | `public/templates/_shared/circuit-builder.js` | 中 | 30min |
-| T-18 | 备份现 v2-atomic + 重写 circuit.html v3-component | T-15~T-17 | `public/templates/physics/circuit.html{,.v2-atomic-legacy}` | **高** | 45min |
-
-### Wave 5 · 文档（2 文件，50 min）
-
-| ID | 标题 | 依赖 | 文件 | 风险 | 估时 |
-|----|------|------|------|------|------|
-| T-19 | `docs/assembly-framework.md`（5 学科示例代码完整） | T-7 通过 | `docs/assembly-framework.md` | 低 | 40min |
-| T-20 | 更新 `docs/component-framework.md` 索引新文档 | T-19 | `docs/component-framework.md` | 低 | 10min |
-
-### Wave 6 · 集成验证（1 任务，30 min）
-
-| ID | 标题 | 依赖 | 文件 | 风险 | 估时 |
-|----|------|------|------|------|------|
-| T-21 | 全量 TSC + Jest + lint 零回归验证 + health-report | 全部 | 终端命令 | 低 | 30min |
-
----
-
-## Mermaid 依赖图
+## 依赖图
 
 ```mermaid
-flowchart TB
-    subgraph Wave0["Wave 0 · 通用装配层"]
-        T1[T-1 spec.ts]
-        T2[T-2 errors.ts]
-        T3[T-3 validator.ts]
-        T4[T-4 assembler.ts]
-        T5[T-5 fluent.ts]
-        T6[T-6 barrel]
-        T7[T-7 assembly.test.ts<br/>⚠️ AC-C 跨域]
-    end
+graph TD
+  W0_START([Wave 0 · 类型层 + FluentAssembly 分流])
+  T1[T-1 · assembly/layout.ts<br/>LayoutSpec + LayoutEntry + AssemblyBundle + helpers]
+  T2[T-2 · FluentAssembly<br/>_layout 字段 + sugar 分流 + toLayout/toBundle]
+  T3[T-3 · Assembler<br/>assembleBundle + legacy decl.anchor warn]
+  T4[T-4 · Spec.ComponentDecl.anchor<br/>@deprecated + JSDoc]
+  T5[T-5 · assembly barrel + framework/index.ts re-export]
 
-    subgraph W15["Wave 1.5 · Gate"]
-        GATE{T-7 全绿?}
-    end
+  W1_START([Wave 1 · 跨层适配])
+  T6[T-6 · base.ts<br/>IExperimentComponent.anchor @deprecated]
+  T7[T-7 · reaction-utils.ts<br/>makeXxx 去掉 anchor hardcode]
+  T8[T-8 · Circuit/Chemistry Builder<br/>继承新分流 + sugar 签名零改验证]
+  T9[T-9 · 浏览器 builder.js 镜像<br/>_layout + toLayoutSpec]
+  T10[T-10 · Engine v2.0 输出清理<br/>components DTO anchor={0,0} 占位]
 
-    subgraph Wave2["Wave 2 · Circuit 绑定"]
-        T8[T-8 CircuitSpec]
-        T9[T-9 CircuitAssembler]
-        T10[T-10 CircuitBuilder]
-        T11[T-11 barrel]
-        T12[T-12 circuit-assembly.test]
-    end
+  W2_START([Wave 2 · 测试新增 + 迁移])
+  T11[T-11 · layout-spec.test.ts<br/>新增 ≥10 测试 覆盖 AC-D1/D4/D9-D14]
+  T12[T-12 · 迁移老测试<br/>assembly.test + circuit-assembly + chemistry-* 5 文件]
 
-    subgraph Wave3["Wave 3 · Engine 集成"]
-        T13[T-13 CircuitEngine v2.0<br/>⚠️ dual-path]
-        T14[T-14 engine-v2.test]
-    end
+  W3_START([Wave 3 · 文档 + 全量验证])
+  T13[T-13 · docs/layout-spec.md<br/>+ component-framework.md 索引]
+  T14[T-14 · TSC + Jest 全量 · AC 审计]
 
-    subgraph Wave4["Wave 4 · L3+HTML"]
-        T15[T-15 ComponentMirror]
-        T16[T-16 circuit-draw.js]
-        T17[T-17 circuit-builder.js]
-        T18[T-18 circuit.html v3<br/>⚠️ E2E]
-    end
-
-    subgraph Wave5["Wave 5 · 文档"]
-        T19[T-19 assembly-framework.md<br/>5 学科示例]
-        T20[T-20 索引更新]
-    end
-
-    subgraph Wave6["Wave 6 · 验证"]
-        T21[T-21 TSC+Jest+lint]
-    end
-
-    T1 --> T3 & T4 & T5
-    T2 --> T3 & T4
-    T3 --> T4
-    T4 --> T5
-    T5 --> T6
-    T1 & T2 & T3 & T4 & T5 & T6 --> T7
-
-    T7 --> GATE
-    GATE -->|PASS| T8
-    GATE -->|FAIL| T1
-
-    T1 --> T8
-    T4 --> T9
-    T5 --> T10
-    T8 --> T9 & T10 & T11
-    T11 --> T12
-    T9 & T12 --> T13
-    T13 --> T14
-
-    T14 --> T15 & T17
-    T15 --> T16
-    T16 & T17 --> T18
-
-    T7 --> T19
-    T19 --> T20
-
-    T12 & T14 & T18 & T20 --> T21
-
-    classDef high fill:#fecaca,stroke:#dc2626
-    classDef gate fill:#fde68a,stroke:#d97706,stroke-width:3px
-    class T7,T13,T18 high
-    class GATE gate
+  W0_START --> T1 --> T2
+  T2 -.GATE.-> W0_CHECK{FluentAssembly<br/>toSpec+toLayout<br/>正确?}
+  W0_CHECK -->|pass| T3
+  W0_CHECK -->|fail| T2
+  T3 --> T4 --> T5
+  T5 --> W1_START
+  W1_START --> T6
+  T6 --> T7
+  T6 --> T8
+  T6 --> T9
+  T8 --> T10
+  T9 --> T10
+  T10 --> W2_START
+  W2_START --> T11
+  T11 --> T12
+  T12 --> W3_START
+  W3_START --> T13 --> T14
 ```
 
 ---
 
-## 执行顺序
+## Wave 0 · 类型层 + FluentAssembly 分流（90 min）
 
-```
-[Wave 0]  T-1 → T-2 ⇒ T-3 → T-4 → T-5 → T-6 → T-7
-                                            ↓
-[Wave 1.5] GATE check T-7 green? ────────NO──▶ loop back to T-1..T-5
-                                            ↓ YES
-[Wave 2]  T-8 → (T-9 ∥ T-10) → T-11 → T-12
-                                            ↓
-[Wave 3]  T-13 → T-14
-                                            ↓
-[Wave 4]  (T-15 → T-16) ∥ T-17 → T-18
-                                            ↓
-[Wave 5]  T-19 → T-20
-                                            ↓
-[Wave 6]  T-21
+### T-1 · `assembly/layout.ts` 新文件（20 min）
+
+**File**: `src/lib/framework/assembly/layout.ts`
+
+**Contents**:
+```ts
+// LayoutEntry + LayoutSpec + AssemblyBundle 类型
+// + isLayoutSpec / emptyLayout / layoutLookup / isAssemblyBundle helpers
 ```
 
-**预估时间**：240 + 120 + 80 + 150 + 50 + 30 ≈ **670 分钟（~11 小时）**，含检查点。
+**AC**:
+- ✅ 不 import `AssemblySpec` 类型（AC-D1）
+- ✅ 文件 < 120 行
+- ✅ 每个 exported symbol 有 JSDoc
+- ✅ `isLayoutSpec(value): value is LayoutSpec` runtime type guard
+- ✅ `layoutLookup(layout): Map<string, ComponentAnchor>` O(1) 查询视图
+
+**Risk**: 类型命名冲突 → 所有 export 前缀 `Layout`/`Bundle` 唯一化
 
 ---
 
-## 最高风险 + 缓解
+### T-2 · `assembly/fluent.ts` 内部分流（30 min）
 
-| 风险 | 缓解 | 触发预案 |
-|------|------|----------|
-| **R-A**（P0）· Wave 1.5 Gate 未通过，抽象有缺陷 | T-7 测试包含 5 个 mock domain 实例化；任一失败立即暴露 | 回到 Wave 0 修改 T-1/T-4/T-5，不得进入 Wave 2 |
-| **R-B**（P0）· TS 泛型 `<D extends ComponentDomain>` 推断爆炸 | 先用 `circuit` 域走通，再推广到泛型；所有 API 提供 `expect-type` 风格注释 | 若推断爆炸：降级为 string literal 枚举 |
-| **R-C**（P0）· CircuitEngine dual-path 误判 | `_isV2GraphPayload` 三重检查 + 4 种边界单测 | Wave 3 若 T-14 失败立即回滚 T-13，保留纯 v1.1 |
-| **R-D**（P1）· T-18 模板视觉回归严重 | `.v2-atomic-legacy` 备份就绪，人工目视对比 | 发现严重回归 → `git mv *.v2-atomic-legacy *.html` 5 min 回滚 |
-| **R-E**（P1）· 文档 5 学科示例空洞 | 每个示例必须含可编译的 Spec 字面量 + 至少 1 个 DSL 示例；CI 不收空洞代码 | Review 阶段阻断 |
-| **R-F**（P2）· 浏览器 DTO 与 TS DTO 漂移 | T-12 中 freeze 一份"参考 DTO 快照"JSON；两端测试共享 | 快照 test 失败即阻断 PR |
+**File**: `src/lib/framework/assembly/fluent.ts`
+
+**Changes**:
+- 新增 `protected readonly _layout: LayoutSpec<D>` 字段（ctor 初始化为 `emptyLayout(domain)`）
+- 新增私有 `_writeAnchor(componentId, anchor?)` helper：`push` 到 `_layout.entries`（去重：同 id 后写覆盖）
+- 改造 `add(kind, props, opts?)`：
+  ```
+  // BEFORE:
+  this._spec.components.push({ id, kind, props, anchor: opts?.anchor });
+  // AFTER:
+  this._spec.components.push({ id, kind, props });  // anchor 不再写入 spec
+  if (opts?.anchor) this._writeAnchor(id, opts.anchor);
+  ```
+- 新增 `toLayout(): LayoutSpec<D>` — 返回 `{...this._layout}` 浅拷贝
+- 新增 `toBundle(): AssemblyBundle<D>` — 返回 `{spec: this.toSpec(), layout: this.toLayout()}`
+- `toSpec()` 保持行为（返回纯 Spec，components 项不含 anchor）
+
+**AC**:
+- ✅ 调用 `.add('kind', props, {id:'X', anchor:{x:1,y:2}})` 之后：`toSpec().components[0].anchor === undefined` AND `toLayout().entries[0] === {componentId:'X', anchor:{x:1,y:2}}`
+- ✅ 不加 anchor 的 add：`toLayout().entries.length === 0`
+- ✅ 同 id 两次 add（极端案例）: layout 只保留最后一条
+
+**Risk**: TS 编译因 `readonly _layout` 的内部 push 违规 → 用 `as` cast 或改非 readonly（保持 `private`）
 
 ---
 
-## 验收门槛（CODE 完成后整体判定）
+### 🚦 **Wave 0 Gate**：T-1 + T-2 必须先通过再进 Wave 1
 
-1. ✅ **AC-A**：grep `'circuit|battery|bulb|lens|flask'` on `src/lib/framework/assembly/` = 0 匹配
-2. ✅ **AC-B**：5 件套（Spec/Validator/Assembler/Fluent/Errors）分别有独立 describe 测试块
-3. ✅ **AC-C**：≥ 3 个 mock domain（optics/chemistry/mechanics）端到端通过装配管线
-4. ✅ **AC-D**：单文件 ≤ 250 行 + 添加新 mock domain 不改 framework 文件（回归测试证明）
-5. ✅ **AC-E**：3 个 mock domain 的 literal spec 与 DSL 产出 graph.toDTO() deep-equal
-6. ✅ AC-1~AC-7（上轮 7 条电路原子化）保留全绿
-7. ✅ circuit.html v3 在浏览器可交互，过载 demo 触发
-8. ✅ 全量既有 348/348 测试零回归
-9. ✅ TSC + ESLint 零新增错误
+用一个最小新测试快速验证：
+```ts
+// quick smoke
+const b = new CircuitBuilder();
+b.battery({voltage: 6, id: 'B1', anchor: {x: 40, y: 110}});
+expect(b.toSpec().components[0].anchor).toBeUndefined();
+expect(b.toLayout().entries.find(e => e.componentId === 'B1').anchor).toEqual({x: 40, y: 110});
+```
 
-**超出范围**：
-- 将 optics/chemistry/mechanics 的 solver/reactions 实际实现
-- Spec 的 JSON 文件导入/导出（只做对象字面量，reader 留接口不实现）
-- 拖拽式装配 GUI
-- 非电路实验的 HTML 模板重写
+---
+
+### T-3 · `assembly/assembler.ts` 新增 `assembleBundle` + legacy 兼容（15 min）
+
+**Changes**:
+- 新增 `assembleBundle(bundle, opts?): DomainGraph<C>` — 等价于 `assemble(bundle.spec, opts)`（layout 不参与 assemble，仅伴随）
+- 在 `assemble(spec)` 的 Step 3（build components）前：扫描 `spec.components[]`，若有 `decl.anchor` → `console.warn` once + 不 throw
+- 不修改其他逻辑
+
+**AC**:
+- ✅ `assembleBundle({spec, layout})` 返回 graph，etalon equal `assemble(spec)` 结果
+- ✅ `assemble(spec)` 遇 `decl.anchor` 发 warn（spy test 验）
+- ✅ 老 test（literal spec with decl.anchor）继续通过（通过 console.warn，不 throw）
+
+---
+
+### T-4 · `assembly/spec.ts` · `ComponentDecl.anchor` 标 @deprecated（5 min）
+
+**Changes**:
+- 仅修改 JSDoc：加 `@deprecated LayoutSpec 取代；本字段保留用于向后兼容`
+- **不删除字段**（避免编译失败）
+
+**AC**: JSDoc 修改生效（IDE hover 显示 deprecation）
+
+---
+
+### T-5 · barrel · `assembly/index.ts` + `framework/index.ts`（10 min）
+
+**Changes**:
+- `assembly/index.ts`：新增 re-export `LayoutSpec` / `LayoutEntry` / `AssemblyBundle` / `isLayoutSpec` / `emptyLayout` / `layoutLookup` / `isAssemblyBundle`
+- `framework/index.ts`：顶层一并 re-export
+
+**AC**: 从 `@/lib/framework` import 新符号成功
+
+---
+
+## Wave 1 · 跨层适配（55 min）
+
+### T-6 · `components/base.ts` · @deprecated 标注（5 min）
+
+**Changes**:
+- `IExperimentComponent.anchor` JSDoc 加 `@deprecated`
+- `AbstractComponent` ctor 的 anchor 参数保留 + 默认 `{x:0,y:0}`
+- `ComponentDTO.anchor` 保留（占位）
+
+**AC**: JSDoc 生效；不破坏编译
+
+---
+
+### T-7 · `reaction-utils.ts` + `overload-bulb.ts` 去 anchor hardcode（15 min）
+
+**Files**:
+- `src/lib/framework/domains/chemistry/reaction-utils.ts`
+- `src/lib/framework/domains/circuit/reactions/overload-bulb.ts`
+
+**Changes**: `makeReagent/makeBubble/makeSolid` 中的 `anchor: { x: 0, y: 0 }` 硬编码删除；factory 构造器已有默认值 `{x:0,y:0}`，所以组件创建行为不变
+
+**AC**:
+- ✅ grep: `reactions/` + `reaction-utils.ts` 中 0 处 `anchor:` 硬编码
+- ✅ T13-4（上轮）金属+酸 Bubble spawn 仍通过
+- ✅ circuit overload-bulb 上轮测试仍通过
+
+---
+
+### T-8 · Circuit/Chemistry Builder 确认继承新分流（20 min）
+
+**Files**:
+- `src/lib/framework/domains/circuit/assembly/circuit-builder.ts`
+- `src/lib/framework/domains/chemistry/assembly/chemistry-builder.ts`
+
+**Changes**:
+- **Sugar 签名保持完全不变**（AC-D3）
+- 由于 FluentAssembly.add 已内部分流（T-2），Builder 子类无需修改
+- **仅需**确认：chemistry-builder 的 `pour/drop/observe` 中对 `opts.anchor` 的传递正确（这些方法内部调 `this.add('reagent', props, {id: opts.id, anchor: opts.anchor})`）
+
+**AC**:
+- ✅ circuit-builder.ts + chemistry-builder.ts 方法签名 git diff 无改动
+- ✅ Sugar API 字段列表（TSDoc + 方法 signature）与上轮一致
+
+---
+
+### T-9 · 浏览器 JS builder 镜像（25 min）
+
+**Files**:
+- `public/templates/_shared/circuit-builder.js`
+- `public/templates/_shared/chemistry-builder.js`
+
+**Changes**:
+- 加 `this._layout = { domain: 'circuit'/'chemistry', entries: [] }`
+- `_add(kind, props, opts)` 内部：`spec.components.push({id, kind, props})` (去掉 anchor) + `if (opts.anchor) this._layout.entries.push({componentId: id, anchor: opts.anchor})`
+- 新增 `toLayoutSpec()` 方法
+- `components()` 返回的列表保持含 anchor（供渲染；因为浏览器 builder 同时是数据层和视图层，不必严格分离）
+
+**AC**:
+- ✅ 浏览器 `toSpec()` 产出的 components 不含 anchor（保持与 TS 侧 DTO 一致）
+- ✅ 浏览器 `toLayoutSpec().entries` 长度 = 带 anchor 的 sugar 调用次数
+- ✅ `components()` 方法仍有 anchor 字段（for render）
+
+**Risk**: R-5（浏览器漂移）→ T-11 加 cross-builder fingerprint test
+
+---
+
+### T-10 · Engine v2 输出清理（15 min）
+
+**Files**:
+- `src/lib/engines/physics/circuit.ts` (`_formatV2Result`)
+- `src/lib/engines/chemistry/reaction.ts` (`_computeV2` 的 components 输出)
+
+**Changes**:
+- `components` 输出项显式附 `anchor: { x: 0, y: 0 }`（占位）
+- 不改其他 field
+
+**AC**:
+- ✅ 新 test：`engine.compute({graph: spec-with-anchors-somehow})` → result.values.components 所有 anchor 为 `{x:0,y:0}`
+- ✅ 上轮 T18-6 DTO fingerprint 测试继续通过
+- ✅ 上轮 circuit.html 浏览器渲染不变（因为浏览器 render 用的是本地 builder.components() 而非 engine 返回的 components）
+
+---
+
+## Wave 2 · 测试新增 + 迁移（90 min）
+
+### T-11 · `layout-spec.test.ts` 新增（30 min）
+
+**File**: `src/lib/framework/__tests__/layout-spec.test.ts`
+
+**12 测试**（覆盖 14 AC 中的 D1/D2/D4/D9-D14）:
+1. **AC-D1** · layout.ts 文件不 import AssemblySpec → 通过 `readFileSync` + regex 验证
+2. **AC-D4** · `isLayoutSpec` type guard 正例 + 3 反例（null / 非 object / 缺 entries）
+3. **AC-D9** · `JSON.parse(JSON.stringify(layout))` 深等 layout
+4. **AC-D10a** · `assembleBundle({spec})` 不含 layout 正常工作
+5. **AC-D10b** · `assembleBundle({spec, layout: emptyLayout('circuit')})` 正常工作
+6. **AC-D11** · Builder 5 次 `.add(...,{id, anchor})` 后 `toLayout().entries.length === 5`
+7. **AC-D12** · spy `console.warn`；Assembler.assemble(spec with decl.anchor) 发 warn
+8. **AC-D13** · `toBundle().spec` + `toBundle().layout` 分别通过 isAssemblySpec / isLayoutSpec
+9. **AC-D14** · `makeReagent('r','X',0.1,'aq').anchor === {x:0,y:0}`
+10. **AC-D2 (核心)** · `circuitEngine.compute({graph: spec})` 返回的 `values.components[i].anchor === {x:0,y:0}`
+11. **Sugar 分流** · `.battery({voltage, anchor})` → spec 不含 anchor + layout 含 anchor 条目
+12. **跨 builder fingerprint** · TS builder 和 JS 侧（通过 readFile + 简单 regex 检查 JS 内部写 `_layout`）两端都有 layout 分流代码
+
+---
+
+### T-12 · 迁移老测试（60 min）
+
+**Files**:
+- `src/lib/framework/__tests__/assembly.test.ts`
+- `src/lib/framework/domains/circuit/__tests__/circuit-assembly.test.ts`
+- `src/lib/framework/domains/chemistry/__tests__/chemistry-components.test.ts`
+- `src/lib/framework/domains/chemistry/__tests__/chemistry-assembly.test.ts`
+- `src/lib/framework/domains/chemistry/__tests__/chemistry-reactions.test.ts`
+
+**Migrations**:
+- 所有 `expect(component.anchor).toEqual({x, y})` → 改为 `expect(builder.toLayout().entries.find(e=>e.componentId===id)?.anchor).toEqual({x,y})` 或**直接删除**（如断言本就不关键）
+- 所有 `expect(spec.components[i].anchor)...` → 同理迁移
+- 如有 `expect(dto.anchor)...` 场景：改断言 `{x:0, y:0}` 占位（engine 输出）或从 layout 查
+
+**AC**:
+- ✅ 5 个测试文件迁移后跑 jest 全部通过
+- ✅ 上轮 446 测试数不降低（允许等价合并导致 -1 ~ -2）
+- ✅ 无新增 `anchor` 硬编码于 spec 断言
+
+---
+
+## Wave 3 · 文档 + 全量验证（30 min）
+
+### T-13 · 文档（15 min）
+
+**Files**:
+- `docs/layout-spec.md` 新建（~150 行）
+- `docs/component-framework.md` 顶部索引加 `Layout Spec` 链接
+
+**Contents of layout-spec.md**:
+- 为什么分离 anchor（3 症状复述）
+- LayoutSpec / AssemblyBundle 类型定义
+- Builder 分流示意
+- 迁移指南（"如果你以前这样写，现在这样写"）
+- FAQ：何时用 toSpec / toLayout / toBundle
+
+---
+
+### T-14 · TSC + Jest 全量 + AC 审计（15 min）
+
+**Commands**:
+1. `npx tsc --noEmit` · 0 errors
+2. `npx jest` · 446+10 = 456+ 全绿
+3. AC 审计（手动 grep）:
+   - AC-D1: `grep 'AssemblySpec' src/lib/framework/assembly/layout.ts` → 0 hits
+   - AC-D3: `git diff -- src/lib/framework/domains/*/assembly/*-builder.ts` 只含 JSDoc 级改动
+   - AC-D6: `git diff --shortstat -- src/lib/framework/solvers src/lib/framework/interactions src/lib/framework/domains/*/solver.ts src/lib/framework/domains/*/reactions` → 仅 T-7 的 reaction-utils 一处
+   - AC-D7: `git diff -- public/templates/physics/circuit.html public/templates/chemistry/metal-acid-reaction.html` → 0 bytes
+
+---
+
+## 验收门槛（14 AC 对应）
+
+| AC | 任务 | 证据位置 |
+|----|------|---------|
+| AC-D1 | T-11 测试 1 | 自动化 grep |
+| AC-D2 | T-10 + T-11 测试 10 | jest |
+| AC-D3 | T-8 | git diff |
+| AC-D4 | T-11 测试 2 | jest |
+| AC-D5 | T-12 迁移 | 回归测试 |
+| AC-D6 | T-14 审计 | manual grep |
+| AC-D7 | T-14 审计 | git diff |
+| AC-D8 | T-14 全量 | jest |
+| AC-D9 | T-11 测试 3 | jest |
+| AC-D10 | T-11 测试 4/5 | jest |
+| AC-D11 | T-11 测试 6 | jest |
+| AC-D12 | T-11 测试 7 | jest with spy |
+| AC-D13 | T-11 测试 8 | jest |
+| AC-D14 | T-11 测试 9 | jest |
+
+---
+
+## 风险与缓解
+
+| # | 风险 | 级别 | 缓解 |
+|---|------|------|------|
+| R-A | T-2 FluentAssembly.add 改动影响上轮 Builder 行为 | P0 | Wave 0 Gate 先用小 smoke test 验证 toSpec/toLayout；fail 则回 T-2 |
+| R-B | T-12 测试迁移量大，漏改 | P0 | 5 个文件逐个跑 `npx jest <file>`，逐个确认；不批量提交 |
+| R-C | Engine v2 输出占位 anchor 破坏上轮 fingerprint | P0 | T-10 与 T-11 测试 10 并行验证；若破坏即刻 T-12 同步调整 |
+| R-D | 浏览器 JS builder 与 TS 漂移 | P1 | T-11 测试 12 双向 fingerprint；T-9 同 session 写 |
+| R-E | @deprecated 标注在老代码中触发 lint 警告流 | P2 | 仅加 JSDoc 标注，不启用 `noImplicitDeprecation` |
+
+---
+
+## 预估时间表
+
+| Wave | Tasks | 子时 | 累计 |
+|------|-------|------|------|
+| Wave 0 | T-1~T-5 | 90 min | 1.5h |
+| Wave 1 | T-6~T-10 | 55 min | 2.4h |
+| Wave 2 | T-11+T-12 | 90 min | 3.9h |
+| Wave 3 | T-13+T-14 | 30 min | **4.4h** |
+
+---
+
+## 明确不做（Out-of-Scope）
+
+- ❌ 自动布局算法（force-directed / orthogonal routing）— B 阶段主题
+- ❌ 编辑器 UI / 画布拖拽 — B 阶段主题
+- ❌ LayoutSpec 持久化到后端 / JSON import/export — 下次讨论
+- ❌ 修改任何 solver / reaction 逻辑（T-7 只删 hardcode，不改算法）
+- ❌ 修改 `circuit.html` / `metal-acid-reaction.html` 任何一行
+- ❌ `ComponentDecl.anchor` 字段删除（本轮仅 @deprecated）

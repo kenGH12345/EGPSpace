@@ -1,141 +1,137 @@
-# 分析：装配框架化 + 电路实验组件化集成
+# ANALYSE · anchor-Spec 解耦（D）
 
-**Session**: `wf-20260428120154.` · **Stage**: ANALYSE · **Date**: 2026-04-28
+> Session: `wf-20260428153150.`
+> Scope: 把视觉坐标 `anchor` 从 Spec / Component 的数据层分离为独立 `LayoutSpec`，为后续 B（编辑器 framework）做架构前置清理。
+
+---
 
 ## 根因 / Root Cause
 
-本次需求由两股力量合流：
+当前 `AssemblySpec<D>.components[i].anchor` 与 `IExperimentComponent.anchor` **把"视觉信息"和"拓扑信息"强绑定在同一数据结构上**。这带来 3 个具体症状：
 
-### 🔴 功能断层（"发动机没装到车里"）
+### 症状 1 · **Engine 被迫接收它不需要的坐标**
 
-上一轮 `/wf` 交付了 `src/lib/framework/domains/circuit/**`（组件类、`CircuitGraph`、MNA 求解器 `CircuitSolver`、反应规则 `CIRCUIT_REACTIONS`）以及 `framework.test.ts` 的 22 条单测全部通过，但生产链路 **0 处消费**：
+`ChemistryReactionEngine / CircuitEngine` 在 v2 path 里收到 `spec.components[i]` 时，`anchor` 也跟着来。引擎做 MNA/化学计量完全不用坐标，但必须把它纳入 **DTO serialize** → **postMessage 载荷** → **hash 计算**。结果：**用户拖一下元件（仅改 anchor），整个 spec hash 变化**，任何基于 hash 的缓存/比对都要重算，尽管拓扑没变。
 
-| 检查点 | 结果 |
-|--------|------|
-| `src/**/*.ts(x)`（排除 framework 自身和测试）`import ... from '@/lib/framework'` | **0** 次 |
-| `src/lib/engines/physics/circuit.ts` 包含 `"framework"` | **0** 次（仍是 v1.1 闭式 `R_eq` 公式） |
-| `public/templates/physics/circuit.html` 包含 `"framework"` 或 `"CircuitBuilder"` | **0** 次 |
+### 症状 2 · **HTML 模板必须硬编码坐标才能渲染**
 
-换言之，**circuit 实验呈现给用户的行为完全与新框架无关**。用户直接感知的是"你说做完了但我在 circuit 实验里看不到一点变化"。这是交付沟通与生产集成同时失败的症状。
+`circuit.html` 第 98-101 行和 `metal-acid-reaction.html` 第 99-101 行各写了 4 次 `anchor: {x: 40, y: 110}`——Builder 强制要求 anchor 才能出现在画布上。**没有 anchor 就是 `{x:0, y:0}`**，所有元件挤在左上角，实验不可读。
 
-### 🔴 架构断层（"如果随便加个 CircuitBuilder 就叫完工，那就只是专用胶水"）
+→ 这意味着**"自由搭建"的前置条件不成立**：用户不可能会手写 `anchor: {x: 280, y: 110}`，而当前架构要求他写。
 
-用户这次补了一条关键约束："**组装元件一样要进行框架设计**，满足通用化 / 结构化 / 可扩展 / 可维护 / 可配置"。
+### 症状 3 · **Reaction 产生的新元件缺省坐标是 (0,0)**
 
-这意味着：
+`makeBubble/makeReagent/makeSolid` 都硬编码 `anchor: { x: 0, y: 0 }`，所以 `metal-acid-reaction.html` 的 `applyResult` 里被迫**客户端临时补 anchor**（第 168-175 行的 `bubbleStackY` hack）——这正是耦合最尖锐的体现：**数据层的 anchor 必选字段，强迫渲染层偷偷塞值**。
 
-- ❌ **不能**写一个 `circuit-builder.ts` 塞到 `domains/circuit/` 下就完事——那会让 circuit 成为**第二个"电路专用岛"**，与上一轮刚刚建立的"通用框架"理念冲突
-- ✅ **必须**把"装配"（assembly）作为**框架层一等公民**，在 `src/lib/framework/assembly/` 建立跨域抽象，电路只是**首个 Assembly 消费者**
-- ✅ 未来加光学/化学实验时，装配层代码**无需改动一行**，只需实现 domain 对应的 Spec 和 Renderer
+### 核因（1 句话）
 
-**深层原因**：上一轮把"元件原子化 + 求解 + 反应"三件都做成了跨域框架，却留下"装配"这唯一一个仍需域内自行实现的薄弱环节——用户捕捉到了这个不对称。
+> `anchor` 是**渲染关注点**，却被放在**数据层契约**里，导致所有下游消费者（engine / hash / 序列化 / reaction-rule）被迫携带它。
 
 ---
 
 ## 受影响位置
 
-### 生产代码（需要改动或新建）
+| # | File | 触及形式 | 改动性质 |
+|---|------|---------|---------|
+| 1 | `src/lib/framework/components/base.ts` | `IExperimentComponent.anchor` / `AbstractComponent.anchor` / `ComponentDTO.anchor` | **核心契约** |
+| 2 | `src/lib/framework/assembly/spec.ts` | `ComponentDecl.anchor?` / 新增 `LayoutSpec<D>` / `LayoutEntry` | **核心契约** |
+| 3 | `src/lib/framework/assembly/fluent.ts` | `FluentAddOptions.anchor` → 转为 `layout` 分支写入 | 新增 `layout(id, anchor)` API |
+| 4 | `src/lib/framework/assembly/assembler.ts` | Assembler 不再把 anchor 传给 ComponentBuilder | 轻度改动 |
+| 5 | `src/lib/framework/assembly/index.ts` | export LayoutSpec 相关 | 新增 export |
+| 6 | `src/lib/framework/index.ts` | 同上，顶层 re-export | 新增 export |
+| 7 | `src/lib/framework/domains/circuit/assembly/circuit-builder.ts` | 9 处 `{ id, anchor }` opts → `{ id, anchor }` 走新 layout 分支 | 内部改造 |
+| 8 | `src/lib/framework/domains/circuit/assembly/circuit-assembler.ts` | ComponentBuilder 收到的 decl 不含 anchor | 轻度 |
+| 9 | `src/lib/framework/domains/chemistry/assembly/chemistry-builder.ts` | 同 circuit-builder 模式 | 内部改造 |
+| 10 | `src/lib/framework/domains/chemistry/assembly/chemistry-assembler.ts` | 同上 | 轻度 |
+| 11 | `src/lib/framework/domains/chemistry/reaction-utils.ts` | `makeReagent/makeBubble/makeSolid` 不再 hard-code anchor | 轻度 |
+| 12 | `src/lib/framework/domains/circuit/reactions/overload-bulb.ts` | 同上（若有 anchor） | 轻度 |
+| 13 | `src/lib/framework/domains/circuit/components.ts` | factory 不接收 anchor（由 DTO 兼容层保留） | 向后兼容 |
+| 14 | `src/lib/framework/domains/chemistry/components.ts` | 同上 | 向后兼容 |
+| 15 | `public/templates/_shared/circuit-builder.js` | 浏览器 Builder 镜像的 anchor opts 走 layout 分支 | 镜像同步 |
+| 16 | `public/templates/_shared/chemistry-builder.js` | 同上 | 镜像同步 |
+| 17 | `public/templates/physics/circuit.html` | DSL 调用 `.battery({voltage, id, anchor})` 保持不变但语义变为"通过 sugar 同时写 anchor" | 零修改（API 兼容） |
+| 18 | `public/templates/chemistry/metal-acid-reaction.html` | 同上 + `applyResult` 里的 `bubbleStackY` hack 可简化 | 简化 |
+| 19 | `src/lib/engines/physics/circuit.ts` | `_formatV2Result` components 输出不再包含 anchor | 产出清理 |
+| 20 | `src/lib/engines/chemistry/reaction.ts` | 同上 | 产出清理 |
+| 21 | `src/lib/framework/__tests__/assembly.test.ts` | anchor 相关断言从 Spec 侧转移到 LayoutSpec 侧 | 测试迁移 |
+| 22 | `src/lib/framework/domains/circuit/__tests__/circuit-assembly.test.ts` | 同上 | 测试迁移 |
+| 23 | `src/lib/framework/domains/chemistry/__tests__/chemistry-*.test.ts` | 同上（3 测试文件） | 测试迁移 |
 
-| 文件 | 层次 | 当前状态 | 本次动作 |
-|------|------|----------|----------|
-| `src/lib/framework/assembly/spec.ts` | L2 框架 | **不存在** | 🆕 新建：`AssemblySpec<D>` 类型 + 验证契约 |
-| `src/lib/framework/assembly/assembler.ts` | L2 框架 | **不存在** | 🆕 新建：通用 `Assembler<D>`（Spec → DomainGraph） |
-| `src/lib/framework/assembly/fluent.ts` | L2 框架 | **不存在** | 🆕 新建：通用 `FluentAssembly<D>` 链式 DSL 基类 |
-| `src/lib/framework/assembly/validator.ts` | L2 框架 | **不存在** | 🆕 新建：Spec 结构/唯一性/端口引用三层校验 |
-| `src/lib/framework/assembly/index.ts` | L2 框架 | **不存在** | 🆕 新建：barrel 导出 |
-| `src/lib/framework/domains/circuit/assembly/circuit-spec.ts` | L3 Domain 绑定 | **不存在** | 🆕 新建：`CircuitSpec` 具体化通用 `AssemblySpec` |
-| `src/lib/framework/domains/circuit/assembly/circuit-assembler.ts` | L3 Domain 绑定 | **不存在** | 🆕 新建：`CircuitAssembler extends Assembler<'circuit'>` |
-| `src/lib/framework/domains/circuit/assembly/circuit-builder.ts` | L3 Domain 绑定 | **不存在** | 🆕 新建：`CircuitBuilder extends FluentAssembly<...>` |
-| `src/lib/framework/domains/circuit/assembly/index.ts` | L3 Domain 绑定 | **不存在** | 🆕 新建：barrel |
-| `src/lib/framework/domains/circuit/index.ts` | L3 Domain | 已存在 | 修改：re-export 装配层 |
-| `src/lib/framework/index.ts` | L2 框架 barrel | 已存在 | 修改：re-export `assembly/*` |
-| `src/lib/engines/physics/circuit.ts` | L1 Engine | 已存在（v1.1 单一闭式） | **修改**：升级为 v2.0 dual-path（识别 `params.graph` 走 MNA + 反应循环，否则保留 v1.1） |
-| `src/lib/engines/__tests__/atomization-refactor.test.ts` | 测试 | 已存在 | **可能小修**：若有新字段 |
-
-### 浏览器侧（L3 镜像 + 模板）
-
-| 文件 | 当前状态 | 本次动作 |
-|------|----------|----------|
-| `public/templates/_shared/component-mirror.js` | **不存在** | 🆕 新建：浏览器侧 `ComponentMirror`（根据引擎回传的 `perComponent` 驱动绘图） |
-| `public/templates/_shared/circuit-draw.js` | **不存在** | 🆕 新建：按元件类型分派的绘图函数（`drawBattery`/`drawWire`/`drawBulb`/`drawSwitch`/`drawResistor`...） |
-| `public/templates/_shared/circuit-builder.js` | **不存在** | 🆕 新建：浏览器侧的 `CircuitBuilder` 链式装配（生成与 TS 侧相同结构的 DTO） |
-| `public/templates/physics/circuit.html` | 已存在（v2-atomic） | **备份为 `.v2-atomic-legacy`** + **重写为 v3-component**（含过载烧毁 demo） |
-| `public/templates/physics/circuit.html.v1-legacy` | 已存在 | 保留不动 |
-
-### 测试（新增）
-
-| 文件 | 新建内容 |
-|------|----------|
-| `src/lib/framework/__tests__/assembly.test.ts` | 装配框架通用层 12 个测试（Spec 验证/Assembler/FluentAssembly/错误模式） |
-| `src/lib/framework/domains/circuit/__tests__/circuit-assembly.test.ts` | 装配层 circuit 绑定 10 个测试（含 Spec ↔ Graph 往返、端到端三电路） |
-| `src/lib/engines/__tests__/circuit-engine-v2.test.ts` | 引擎 dual-path 8 个测试（v1.1 向后兼容 / v2 graph 路径 / 反应事件上报 / 求解失败降级） |
-
-### 文档（新增）
-
-| 文件 | 内容 |
-|------|------|
-| `docs/assembly-framework.md` | 装配层设计理念 + 4 学科示例（circuit 实现完整，optics/chemistry/mechanics 示例代码） |
-| `docs/component-framework.md` | 修改：在"Assembly"章节插入对新文档的链接 |
-
-**文件总数预估**：15 个新建 + 5 个修改 = **20 文件**。
+**合计** ≈ **23 文件改动**（其中 2 新增概念 · 21 轻度修改 / 测试迁移）
 
 ---
 
 ## 修改范围
 
-### In-Scope（本次必须交付）
+### In-Scope（本轮必做）
 
-| 类别 | 范围 |
+| 目标 | 说明 |
 |------|------|
-| **Assembly 通用框架层** | `AssemblySpec<D>`、`Assembler<D>`、`FluentAssembly<D>`、`AssemblyValidator`、Error Types；完全 domain-无关（grep 验证：`src/lib/framework/assembly/` 内不含任何电路/化学/光学特有词） |
-| **电路域装配绑定** | `CircuitSpec`、`CircuitAssembler`、`CircuitBuilder`（作为通用层的**首个实例**；单一依赖方向：domain → framework） |
-| **引擎 dual-path 集成** | `CircuitEngine v2.0`：若 `params.graph` 存在则走 `CircuitAssembler` + `CircuitSolver` + `InteractionEngine`，否则回落到 v1.1 闭式公式；**100% 向后兼容** |
-| **浏览器 L3 镜像 + DSL** | `ComponentMirror`（值→绘图分派）、`circuit-draw.js`（元件绘图原子）、`circuit-builder.js`（与 TS 侧 CircuitBuilder 结构一致的浏览器版本） |
-| **circuit.html v3 模板** | 用 `new CircuitBuilder()` 声明式装配；slider 变化触发 `requestCompute` 传 graph DTO；结果按元件渲染；包含**过载电压触发烧毁**的可视 demo |
-| **测试** | 装配层通用 12+ 条 / circuit 装配 10+ 条 / 引擎 dual-path 8+ 条（共 ≥ 30 条新测试），全量既有 348/348 零回归 |
-| **文档** | 装配层设计文档含 4 学科示例，只有 circuit 是真实代码、其余 3 个为可读示例 |
+| **T1** 新增 `LayoutSpec<D>` 类型 | `{ domain, entries: Array<{componentId, anchor}> }`，独立于 AssemblySpec |
+| **T2** 新增 `AssemblyBundle<D>` 类型 | `{ spec: AssemblySpec<D>; layout?: LayoutSpec<D> }`——把两者组合但不合并 |
+| **T3** FluentAssembly 新增 `.layout(id, anchor)` + 保留 `add(kind, props, {id, anchor})` sugar | sugar 内部自动分流：props→Spec，anchor→LayoutSpec |
+| **T4** `IExperimentComponent.anchor` 标记 `deprecated` 但保留 | 向后兼容；组件不再从 ctor 接收 anchor 作为必需 |
+| **T5** Engine v2 path 输出不再包含 anchor | `_formatV2Result` 的 components DTO 去掉 anchor 字段 |
+| **T6** 浏览器 Builder 镜像同步 API | JS 端 `.flask({id, anchor})` 内部走 layout 分支 |
+| **T7** Reaction-utils 的 makeXxx 不再 hard-code anchor | 改为返回"无 anchor 纯拓扑元件"，anchor 由消费者（template 的 applyResult）补 |
+| **T8** 测试迁移 | anchor 相关测试从 Spec 侧 describe 块移到 LayoutSpec 专用 describe |
+| **T9** 文档 `docs/layout-spec.md` | 说明为什么分离、如何协同使用、迁移指南 |
+| **T10** 全量 TSC + Jest 验证 | 0 新增 error · 446+ 测试全绿 |
 
-### Out-of-Scope（明确不做，后续独立工作流）
+### Out-of-Scope（本轮明确不做）
 
-- 将其他 domain（光学/力学/化学）的 Spec/Assembler 实际实现
-- 拖拽式装配 GUI
-- Spec 的 JSON 文件持久化/加载（仅支持对象字面量与链式 DSL，JSON-import 在设计中预留接口但不实现 reader）
-- 交流电/电容/电感/二极管
-- 装配失败的"可视化错误提示"（仅控制台 + engine 返回 `compute_error`）
-
-### 强制验收追加（承接上轮 AC-1~AC-7 + 本次 5 条）
-
-| AC | 要求 | 测试证据 |
-|----|------|----------|
-| AC-A 通用化 | `src/lib/framework/assembly/*` **不得 grep 到** 任何 `circuit/battery/resistor/bulb/...` 词 | `assembly.test.ts` 的 grep 自检 |
-| AC-B 结构化 | 关注点分离：`spec`（声明）/ `validator`（校验）/ `assembler`（构建）/ `fluent`（DSL）**四文件各自单测独立通过** | `assembly.test.ts` 按 describe 分块 |
-| AC-C 可扩展 | 给出"伪光学域"3 分钟扩展示例：`OpticsSpec` + `OpticsAssembler` 即可复用 `FluentAssembly` 无需改核心 | `assembly.test.ts` 的 "mock-optics domain composes without touching framework core" 测试 |
-| AC-D 可维护 | 单文件 ≤ 250 行（避免超长）；核心类公共 API ≤ 10 个方法 | 测试里用 fs.readFileSync + AST count 校验 |
-| AC-E 可配置 | `AssemblySpec` 支持两种等价构造路径：（1）对象字面量声明；（2）链式 DSL；两者产出的 `DomainGraph` 必须 `deep-equal` | `circuit-assembly.test.ts` 的 "DSL and literal spec produce equivalent graphs" 测试 |
+- ❌ 自动布局算法（force-directed / orthogonal routing）— 是 Level 1 的主题，下一轮
+- ❌ 编辑器 UI（画布拖拽、元件面板、连线模式）— 是 B 的主题
+- ❌ LayoutSpec 的 JSON 文件导入导出接口 — 未来需要再加
+- ❌ anchor 迁移到后端持久化 — 未来需要再加
+- ❌ 修改任何 solver / reaction 逻辑 — 这些原本就不读 anchor
+- ❌ 修改 circuit.html / metal-acid-reaction.html 的视觉表现 — 保持用户可见零变化
 
 ---
 
 ## 风险评估
 
-| 风险 ID | 描述 | 严重度 | 缓解 |
-|---------|------|-------|------|
-| **R1** | `AssemblySpec<D>` 泛型过度——为追求"通用"导致 domain 方想用但编译错误连连 | **P0** | 先用 circuit 域完整跑通，再抽象；`<D extends ComponentDomain>` 约束最小化；避开条件类型 |
-| **R2** | CircuitEngine dual-path 误判 `params.graph`，把 v1.1 合法调用错导到 v2 路径 | **P0** | dual-path 仅当 `params.graph` 为**非空对象** AND `params.graph.components` 为数组时走 v2；其他一律 v1.1。新增 `circuit-engine-v2.test.ts` 覆盖 4 种边界 |
-| **R3** | 浏览器侧 `circuit-builder.js` 与 TS 侧 `CircuitBuilder` 产出的 DTO 结构漂移 | **P0** | 在 `circuit-assembly.test.ts` 里有一个"参考 DTO 快照"，浏览器侧 QA checklist 要求目测字段对齐 |
-| **R4** | v3 模板视觉回归（按元件绘图后，与 v2 的整体布局观感不一致） | **P1** | 保留 `.v2-atomic-legacy` 做对比；v3 默认布局采用 _shared/circuit-draw.js 的等距元件网格；在 `deploy-output.md` 列出人工目视 checklist |
-| **R5** | 反应事件（过载烧毁）在 iframe 模板没有合适的视觉呈现 | **P1** | 简单策略：`events[]` 中检出 `sourceRuleId === 'circuit/overload-bulb'` → 显示红色徽章 + 对应 bulb 的 mirror 切换为 BurntBulb 绘图样式 |
-| **R6** | 装配校验阶段返回的错误信息非人类可读（只有 id 和端口名） | **P2** | `AssemblyValidator` 返回结构化 `AssemblyError[]`，首版仅控制台友好，GUI 化留待未来 |
-| **R7** | 文档 `docs/assembly-framework.md` 写成空洞的"通用化宣言"而无实际价值 | **P2** | 文档硬要求：含 4 个学科示例，**每个示例的 AssemblySpec 写完整**；全局搜 `grep -E "FIXME\|TBD"` 不得有结果 |
-| **R8** | 时间估算失控：装配层抽象 + 电路绑定 + 浏览器镜像 + 模板同时推进容易爆 | **P1** | 分 6 波，每波完成触发 `read_lints` + 相关测试；任一波失败 STOP 并评估是否回滚 |
-| **R9** | `requestCompute` 的 params 大小限制——graph DTO 体积是否仍可通过 postMessage | **P2** | 实测：小型电路 DTO（< 20 元件） < 4KB，postMessage 无压力；文档注明超过 1000 元件请改用 `chunked` 协议（预留） |
-| **R10** | 与上轮工作流 T-15 "Engine v2.0 集成 InteractionEngine" 未完成的部分重叠 | **P0** | 本次明确包含此内容（circuit-engine dual-path）；不再作为"延后"，当场完成 |
+| # | 风险 | 严重度 | 缓解 |
+|---|------|-------|------|
+| R-1 | **向后兼容性破坏**：已有代码依赖 `component.anchor` 或 `spec.components[i].anchor` 会编译失败 | **P0** | 保留 `ComponentDecl.anchor?` 字段（@deprecated 标注）且字段仍可读写；`IExperimentComponent.anchor` 保留但 setter 写入内部默认值 {x:0,y:0}；真正改动仅"引入 LayoutSpec + sugar 分流"——老代码路径零破坏 |
+| R-2 | **DTO 序列化漂移**：TS 侧与浏览器 JS 侧 Builder 的 DTO fingerprint 测试已锁定 `anchor` 字段，改 DTO 形状会让 T18-6 快照测试失败 | **P0** | 保留 `ComponentDTO.anchor` 字段（向后兼容）；Engine v2 output 的 components 项保留 anchor 为 `{x:0,y:0}` 占位；由消费者/编辑器通过 LayoutSpec 覆盖 |
+| R-3 | **Reaction-utils 的 makeXxx 改动影响现有反应**：如 metalAcidRule 产生的 Bubble 之前 anchor=(0,0)，现在仍 (0,0)——看似无变化，但若反应多次产生同 id Bubble，anchor 永远是 (0,0) 堆叠 | **P1** | 反应产生的元件由 InteractionEngine 消费时 anchor 保持 (0,0) · 浏览器端 applyResult 的"bubbleStackY 堆叠"逻辑改为消费 LayoutSpec.entries（新机会：反应产生元件时同时 spawn LayoutEntry） |
+| R-4 | **Fluent sugar API 改动破坏模板**：circuit.html/metal-acid-reaction.html 当前调用 `.battery({voltage, anchor: {...}})`——若 sugar 签名变则模板改 | **P0** | **Sugar API 严格保持不变**：`{id, anchor}` 两个 opts 字段保留；内部实现由把 anchor 写入 ComponentDecl 改为写入 LayoutSpec。API 兼容 = 模板零改 |
+| R-5 | **浏览器镜像漂移**：JS `chemistry-builder.js` 的 toSpec() 与 TS 侧返回形状必须对齐 | **P1** | T18-6 快照测试保留；JS builder 新增 `toLayoutSpec()` 方法镜像 TS 侧；DTO fingerprint 依然检查 |
+| R-6 | **测试覆盖不足导致回归**：anchor 分离涉及 20+ 文件，漏改测试可能意外删除 anchor 行为 | **P1** | 新增 `layout-spec.test.ts` 覆盖 LayoutSpec 类型定义 + AssemblyBundle 协同 + Fluent sugar 分流三类场景（≥10 测试） |
+| R-7 | **API 边界膨胀**：增加 LayoutSpec 概念让装配层从 5 件套变 6 件套 | **P2** | 文档 `docs/layout-spec.md` 显式说明"LayoutSpec 是可选的并列资产，装配层核心仍是 5 件套"；Builder 不强制用户感知 LayoutSpec（sugar API 自动分流） |
+| R-8 | **过度设计风险**：仅为 B 做前置就分离 LayoutSpec 是否过早？ | **P2** | 不过早。现状诊断已明确 3 症状（Engine 被迫 hash 坐标 / 模板硬编码 / Reaction 0,0 堆叠）都是今天就在受损。LayoutSpec 本身不引入运行时开销（可选字段），仅是类型级分离 |
+| R-9 | **回滚成本**：若 Review Gate 拒绝 | **P2** | 新增概念独立在 `assembly/layout.ts`；回滚 = 删新文件 + revert 5 处 builder 改动，< 10min |
+| R-10 | **下轮 B 方案变更导致 D 白做**：编辑器 framework 最终选别的架构（比如直接用第三方拖拽库），LayoutSpec 成孤儿 | **P1** | LayoutSpec 本身独立有价值（Engine 不吃 anchor + hash 不受视觉干扰），即使 B 换路线仍有收益；且 LayoutSpec shape 极简（`{componentId, anchor}[]`），和任何编辑器库都容易桥接 |
 
 ---
 
-## 决策摘要（供 ARCHITECT 消费）
+## AC 验收预定（最终由 TEST 阶段校核）
 
-- **装配必须升级为框架一等公民**。不允许写 `src/lib/framework/domains/circuit/circuit-builder.ts` 而没有对应的 `src/lib/framework/assembly/fluent.ts` 先行。
-- **双入口装配**：对象字面量（`buildCircuit({components:[...], connections:[...]})`）与链式 DSL（`new CircuitBuilder().battery().bulb().loop()`）必须产出**完全相同**的 `CircuitGraph`，由 `AC-E` 测试强制保证。
-- **CircuitEngine v2.0 dual-path 是本次必须完成的集成点**，不再延后。
-- **5 条追加原子化要求（AC-A~AC-E）是刚性验收条件**，每条都有对应单测证据；与上轮的 AC-1~AC-7 并列。
-- **明确承诺范围锁定**：不做光学/化学 Domain 的实际实现，不做 GUI，不做 JSON 文件读取。
+| AC | 要求 | 验收方法 |
+|----|------|---------|
+| **AC-D1 · 契约独立** | `LayoutSpec<D>` 与 `AssemblySpec<D>` 类型上完全独立，两者可分别序列化 | grep: `LayoutSpec` 定义里不 import `AssemblySpec` 类型 |
+| **AC-D2 · Engine 不吃 anchor** | `ChemistryReactionEngine._computeV2` 的 `spec.components` 在序列化给 solver 之前 anchor 被剥离 | 新 test：compute({graph:spec-with-anchors}) → engine 内部 graph.toDTO().components 的 anchor 应为 {x:0,y:0} 占位 |
+| **AC-D3 · Sugar API 保持不变** | `.battery({voltage, id, anchor})` / `.flask({id, volumeML, anchor})` 签名与上轮完全一致 | circuit.html / metal-acid-reaction.html 两个模板文件零修改 |
+| **AC-D4 · LayoutSpec 可独立解析** | `LayoutSpec` 能单独 JSON.parse 后经 `isLayoutSpec` type guard | layout-spec.test 专测 |
+| **AC-D5 · DTO fingerprint 稳定** | 上轮的 T18-6 快照测试继续通过（DTO 形状兼容） | 回归测试不变 |
+| **AC-D6 · 零 solver/reaction 改动** | framework/solvers/** + framework/interactions/** + framework/domains/*/solver.ts + framework/domains/*/reactions/** 零行数改动 | grep audit |
+| **AC-D7 · 浏览器零改动** | `circuit.html` + `metal-acid-reaction.html` 文件内容 diff 为空 | git diff |
+| **AC-D8 · 无回归** | 上轮 446 测试 + 本轮新增（≥10）全绿 | jest 总量检查 |
+
+---
+
+## 关键前提假设
+
+1. **装配层 5 件套（Spec/Validator/Assembler/Fluent/Errors）已稳定** — 上轮 34+10 测试验证通过，本轮在其基础上**追加** LayoutSpec 而非修改
+2. **DTO 向后兼容优先于纯洁性** — 保留 `ComponentDTO.anchor: {x:0,y:0}` 字段而非移除，确保上轮 T18-6 快照测试零破坏
+3. **Sugar API 稳定优先于实现改动** — 模板作者接触的 `.battery({voltage, anchor})` 调用方式不变
+4. **"清理"≠"重构"** — 本轮不动 solver/reaction/base-framework；仅在 assembly/ 增加新概念 + builder 内部分流
+
+---
+
+## 关键边界（防止 Scope Creep）
+
+- 本轮产出"LayoutSpec 类型 + Builder 内部分流"三件事就结束
+- 不做任何 UI · 不做自动布局 · 不做持久化接口
+- `AssemblyBundle` 在 TS 类型层面引入但不强制任何模板使用它——保留作为未来 B 阶段的"spec + layout 配对契约"位置

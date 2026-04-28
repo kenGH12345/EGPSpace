@@ -154,7 +154,7 @@ export class CircuitEngine implements IExperimentEngine {
     if (isAssemblySpec(input)) {
       return input as AssemblySpec<'circuit'>;
     }
-    // Treat as DomainGraphDTO — reshape to spec
+    // Treat as DomainGraphDTO — reshape to spec (anchor intentionally dropped per D-5)
     const dto = input as DomainGraphDTO;
     return {
       domain: 'circuit',
@@ -162,7 +162,6 @@ export class CircuitEngine implements IExperimentEngine {
         id: c.id,
         kind: c.kind,
         props: c.props,
-        anchor: c.anchor,
       })),
       connections: dto.connections.map((c) => ({
         from: c.from,

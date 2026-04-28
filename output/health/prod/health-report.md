@@ -1,7 +1,7 @@
 # 🏥 System Health Monitoring Report
 
-> Generated: 2026-04-28T13:13:50.547Z
-> Session ID: `wf-20260428120154.`
+> Generated: 2026-04-28T17:34:02.983Z
+> Session ID: `wf-20260428153150.`
 > Run Category: `prod`
 
 ---
@@ -99,10 +99,10 @@
 |--------|-------|
 | Trend Enabled | ✅ Yes |
 | Window Size | 5 |
-| History Sessions | 73 |
-| Recent Avg Score | 71.6 |
-| Previous Avg Score | 56.2 |
-| Delta (Recent-Previous) | +15.4 |
+| History Sessions | 75 |
+| Recent Avg Score | 80.0 |
+| Previous Avg Score | 57.6 |
+| Delta (Recent-Previous) | +22.4 |
 | Low Score Threshold | 75 |
 | Alert Status | ✅ Normal |
 
@@ -119,32 +119,31 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 识别两个断层：功能层组件框架未接入电路实验(0处生产引用)+架构层装配仍是域内薄弱环节；确定 15 新+5 改共 20 文件范围，5 条追加 AC(通用/结构/扩展/维护/配置)+R1-R10 风险清单
+**📋 Summary:** D scope 确定：anchor 分离为 LayoutSpec 独立契约；23 文件范围；10 In-Scope 任务；AC-D1~D8 八条；10 风险含 4 P0（兼容性/DTO漂移/Sugar API/回滚）均有 mitigation。本轮只做 D，不做自动布局和编辑器 UI（Out-of-Scope 明确）
 
-**📥 Input:** 上一轮产出的 framework/ + circuit domain + circuit.html v2 + CircuitEngine v1.1；需要：引擎 dual-path 集成+声明式装配框架+模板 v3
+**📥 Input:** 现状：AssemblySpec<D>.components[i].anchor 与 props 混杂；circuit.html v3 + metal-acid-reaction.html 均硬编码 anchor 坐标；engine 不需要 anchor 却必须序列化
 
-**📤 Output:** output/analysis.md 含根因/受影响位置(20文件分层)/In-Out-Scope/10 项风险+AC-A~AC-E 验收证据映射
+**📤 Output:** analysis.md 含根因 3 症状+23 文件受影响+In/Out-Scope+8 AC+10 风险
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\requirement.md`
 - Lines: 134, Hash: `3997-#EurekaSpace—化学实验迁移到统一声明式框架(`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 142, Hash: `8212-#分析：装配框架化+电路实验组件化集成**Sess`
+- Lines: 138, Hash: `8896-#ANALYSE·anchor-Spec解耦（D）`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# 分析：装配框架化 + 电路实验组件化集成
+# ANALYSE · anchor-Spec 解耦（D）
 
-**Session**: `wf-20260428120154.` · **Stage**: ANALYSE · **Date**: 2026-04-28
+> Session: `wf-20260428153150.`
+> Scope: 把视觉坐标 `anchor` 从 Spec / Component 的数据层分离为独立 `LayoutSpec`，为后续 B（编辑器 framework）做架构前置清理。
+
+---
 
 ## 根因 / Root Cause
 
-本次需求由两股力量合流：
-
-### 🔴 功能断层（"发动机没装到车里"）
-
-上一轮 `/wf` 交付了 `src/lib/framework/domains/circuit/**`（组件类、`CircuitGraph`、MNA 求解器 `CircuitSolver`、反应规则 `CIRCUIT_REACTIONS`）以及 `fra
+当前 `AssemblySpec<D>.components[i].anchor` 与 `IExperimentComponent.anchor` **把"视觉信息"和"拓扑信息"强绑定在同一数据结构上**。这带来
 ```
 </details>
 
@@ -165,34 +164,36 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 装配升级为框架一等公民 framework/assembly/（五件套：Spec/Validator/Assembler/FluentAssembly/Errors），domain 绑定走 CircuitSpec/CircuitAssembler/CircuitBuilder；Engine v2.0 dual-path 通过 type guard 路由；4 阶段部署独立可回滚；零新依赖
+**📋 Summary:** D 架构定型：LayoutSpec 扁平 entries+AssemblyBundle 可选容器+Builder sugar 内部分流+向后兼容（ComponentDecl.anchor @deprecated + IExperimentComponent.anchor 保留占位）；AC-D3/D7 Sugar API 零改+模板零改硬约束；5 决策含 Why+Trade-off；6 Failure Model；4 阶段 Migration 独立可回滚；4 对抗自审
 
-**📥 Input:** analysis.md 20 files scope, AC-A~AC-E 5 additional acceptance requirements
+**📥 Input:** analysis.md: 23 文件+10 任务+8 AC+10 风险；关键约束：Sugar API 零改+模板零改+DTO fingerprint 稳定
 
-**📤 Output:** architecture.md 含 Scorecard 14/14+5 关键决策+8 Failure Mode+4 Migration 阶段+6 Scenario+4 对抗性问答+Mermaid
+**📤 Output:** architecture.md 含 Mermaid 数据流 before/after+14 Scorecard+6 Failure Model+4 Migration+5 Scenario+14 AC
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 142, Hash: `8212-#分析：装配框架化+电路实验组件化集成**Sess`
+- Lines: 138, Hash: `8896-#ANALYSE·anchor-Spec解耦（D）`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 324, Hash: `13492-#Architecture:装配层框架化+电路实验组件化`
+- Lines: 314, Hash: `12721-#Architecture·anchor-LayoutSp`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Architecture: 装配层框架化 + 电路实验组件化集成
+# Architecture · anchor-LayoutSpec 解耦（D）
 
-**Session**: `wf-20260428120154.` · **Stage**: ARCHITECT · **Date**: 2026-04-28
+> Session: `wf-20260428153150.`
+> Stage: ARCHITECT
+> Scope: 把 `anchor` 从 Spec 数据层分离为独立 `LayoutSpec`，保持 Sugar API 与模板零改动。
 
-## 1. 总览：为什么要引入"装配层"
+---
 
-上一轮已落地的 3 个跨域框架模块：
+## 1. 架构总览
 
-```
-framework/
-├── components/       ← 元件原子化（Battery / Bulb / ...）
-├── solvers/          ← 求解器接口（MNA 是首实例）
-└── interactions/     
+```mermaid
+graph LR
+  subgraph Before["修改前（耦合）"]
+    B_Spec[AssemblySpec<D><br/>components[i].anchor ⚠️]
+
 ```
 </details>
 
@@ -213,35 +214,35 @@ framework/
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 21 任务分 7 波执行，关键路径含 Wave 1.5 通用性探针 Gate（T-7 用 5 个 mock domain 验证跨域通用性）——失败即回 Wave 0，阻止学科绑定先跑。AC-A~AC-E 5 条验收升级为全学科靶向。~11 小时预估，3 个最高风险均有缓解+回滚预案
+**📋 Summary:** 14 任务 5 波执行：W0 类型+FluentAssembly 分流（含 Gate）/W1 跨层适配/W2 测试新增+迁移/W3 文档+全量验证；预估 4.4h；14 AC 每条有测试映射；5 风险含 3 P0 均有 mitigation
 
-**📥 Input:** architecture.md 定 D1-D5 设计；追加澄清：通用性验收以全学科为靶
+**📥 Input:** architecture.md 5 决策 + 14 AC + 14 任务预估 4h
 
-**📤 Output:** execution-plan.md 含 21 任务+强制验收清单（5 域）+Wave 1.5 Gate+Mermaid+6 风险缓解
+**📤 Output:** execution-plan.md 含 Mermaid 依赖图+14 任务详解+验收映射+Out-of-Scope
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 324, Hash: `13492-#Architecture:装配层框架化+电路实验组件化`
+- Lines: 314, Hash: `12721-#Architecture·anchor-LayoutSp`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 282, Hash: `11102-#ExecutionPlan:装配层框架化+电路实验组`
+- Lines: 362, Hash: `12151-#ExecutionPlan·anchor-Layout`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Execution Plan: 装配层框架化 + 电路实验组件化集成
+# Execution Plan · anchor-LayoutSpec 解耦（D）
 
-**Session**: `wf-20260428120154.` · **Stage**: PLAN · **Date**: 2026-04-28
+> Session: `wf-20260428153150.`
+> Stage: PLAN
+> 14 tasks / 5 waves / ~4h est
 
-## 思考摘要
+---
 
-用户在 Architecture Review Gate 追加了**关键澄清**：
+## 依赖图
 
-> "可扩展 / 可维护 / 可配置 / 结构化 / 装配层本身必须是通用框架**不是对电路实验本身而是全学科所有的实验来说的**"
-
-这改变了验收靶向：
-
-| 维度 | 升级前理解 | 升级后理解 |
-|------|----------|
+```mermaid
+graph TD
+  W0_START([Wave 0 · 类型层 + FluentAssembly 分流])
+  T1[T-1 · assembly/layout.ts<br/>LayoutSpec + LayoutEntry + AssemblyBundle + helpers
 ```
 </details>
 
@@ -262,30 +263,31 @@ framework/
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 21 任务完成：Wave 0 装配五件套+Wave 1.5 Gate(5 mock domain 34 tests 全绿)+Wave 2 circuit 绑定(11 tests)+Wave 3 CircuitEngine v2.0 dual-path(10 tests)+Wave 4 浏览器 L3+HTML v3+Wave 5 文档+Wave 6 TSC/Jest 零错误零回归。全量 403/403 测试 PASS
+**📋 Summary:** 14 任务全部完成：W0 LayoutSpec 类型+FluentAssembly 分流（Gate 通过）/W1 跨层适配（base/reaction-utils/engine 清理+浏览器镜像）/W2 T-11 新增 19 测试（AC-D1~D14 全覆盖）+ T-12 实质零迁移（红利：架构设计保 Sugar API 零改→老 test 零回归）/W3 文档+全量验证。465/465 测试 PASS，TSC 零错误，AC-D1/D3/D6/D7 硬约束审计全通过
 
-**📥 Input:** 21 tasks in 7 waves; Wave 0 first (5 件套装配框架)
+**📥 Input:** 14 tasks in 5 waves; Wave 0 first (types + FluentAssembly 分流)
 
-**📤 Output:** 15 新建+5 修改+1 备份 共 21 文件；AC-A~AC-E 全部有测试证据；v1.1 路径一行未改保留向后兼容
+**📤 Output:** 3 新 + 10 改 + 7 工作流文档 共 20 文件；AC-D6 solver/reactions 零行数变动；AC-D7 模板零 byte 变动
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 282, Hash: `11102-#ExecutionPlan:装配层框架化+电路实验组`
+- Lines: 362, Hash: `12151-#ExecutionPlan·anchor-Layout`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 57, Hash: `2322-#CODEDiffSummary—Wave0~6交`
+- Lines: 64, Hash: `2758-#DEVELOPStage·CodeChangesS`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# CODE Diff Summary — Wave 0~6 交付（Session wf-20260428120154.）
+# DEVELOP Stage · Code Changes Summary (D)
 
-## 新建文件（15 个）
+> Session: `wf-20260428153150.`
+> 14 tasks complete. 465/465 tests PASS. TSC zero errors.
 
-### Framework 通用层（5）— AC-A~AC-E 核心保证
-- `src/lib/framework/assembly/spec.ts` (72 行)
-- `src/lib/framework/assembly/errors.ts` (53 行)
-- `src/lib/framework/assembly/validator.ts` (138 行)
-- `src/lib/framework/assembly/a
+## 新建文件（3）
+
+| # | File | LOC | Purpose |
+|---|------|-----|---------|
+| 1 | `src/lib/framework/assembly/layout.ts` | ~130 | LayoutSpec / LayoutEntry / Assem
 ```
 </details>
 
@@ -306,35 +308,34 @@ framework/
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 全量 403/403 tests PASS，TSC 零错误；AC-A~AC-E 五条验收全有测试证据；Engine dual-path 4 种边界正确分派；反应规则在 v2 路径集成验证通过；零回归
+**📋 Summary:** 465/465 PASS；TSC 零错误；14 AC 全有测试证据；5 风险缓解验证通过；AC-D1/D3/D6/D7 硬约束审计通过（solver/reactions/模板零改）
 
-**📥 Input:** 403/403 tests GREEN across 18 suites; TSC zero errors
+**📥 Input:** 465/465 PASS; TSC 0 errors; AC-D1/D3/D6/D7 audits pass
 
-**📤 Output:** test-report.md 含 AC 逐条证据+R-A/B/C 风险验证+Engine 功能验证
+**📤 Output:** test-report.md 含 AC 逐条证据+19 测试清单+风险验证
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 57, Hash: `2322-#CODEDiffSummary—Wave0~6交`
+- Lines: 64, Hash: `2758-#DEVELOPStage·CodeChangesS`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\test-report.md`
-- Lines: 101, Hash: `3482-#TestReport·Sessionwf-20260`
+- Lines: 99, Hash: `3736-#TEST·anchor-LayoutSpec解耦（D）`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Test Report · Session wf-20260428120154.
+# TEST · anchor-LayoutSpec 解耦（D）
 
-**执行**: `npm test` (Jest) + `npx tsc --noEmit`
+> Session: `wf-20260428153150.`
 
-## 总览
-- **Test Suites**: 18 passed, 18 total
-- **Tests**: **403 passed, 403 total** ✅
-- **TSC**: 0 errors ✅
-- **Time**: ~1.7s
-- **零回归**: 上轮的 393 基线测试全部保持绿
+## Overall
 
-## 新增覆盖（本轮 +10 tests）
-
-| 测试文件 | 测试数 | 覆
+| Metric | Value |
+|--------|-------|
+| Test Suites | **24 passed / 24 total** |
+| Tests | **465 passed / 465 total** |
+| TSC `--noEmit` | **0 errors** |
+| Baseline (pre-DEVELOP) | 446 tests |
+| New tests adde
 ```
 </details>
 
@@ -355,28 +356,32 @@ framework/
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** REVIEW 通过：需求达成 100%，AC-A~AC-E 5 条全学科验收有测试证据，14 Scorecard+8 Failure Model 全实装，5 原子化要求在框架层而非仅 circuit 实现，代码依赖方向纯净
+**📋 Summary:** REVIEW 通过：需求 100% 达成，5 决策 0 偏差，6/6 FM 覆盖，3 意外红利（T-12 零迁移/耗时远低于预估/Builder.components 合并视图复用）；遗留债务全部低优先级
 
-**📥 Input:** 403/403 tests; AC-A~AC-E verified
+**📥 Input:** 465/465 PASS · 14 AC verified
 
-**📤 Output:** review-output.md 含 AC 逐条对照/Scorecard 复核/Failure 映射/代码质量+遗留债务
+**📤 Output:** review-output.md 含需求达成/决策对比/意外红利/FM 覆盖/代码质量/遗留债务
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\review-output.md`
-- Lines: 116, Hash: `4500-#ReviewOutput·Sessionwf-202`
+- Lines: 76, Hash: `2701-#REVIEW·anchor-LayoutSpec解耦（`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Review Output · Session wf-20260428120154.
+# REVIEW · anchor-LayoutSpec 解耦（D）
 
-## 需求达成度审查
+> Session: `wf-20260428153150.`
 
-| 原始要求 | 交付状态 | 证据 |
-|---------|---------|------|
-| A. 集成组件化到电路实验（Engine + HTML） | ✅ 完成 | `circuit.ts v2.0` dual-path + `circuit.html v3-component` 使用 `requestCompute('physics/circuit', {graph})` |
-| 装配层本身必须框架设计 | ✅ 完成 | `src/lib/frame
+## 需求达成度
+
+| 原始需求 | 达成 |
+|---------|------|
+| 把 anchor 从 AssemblySpec 分离为独立 LayoutSpec | ✅ 100% |
+| Engine compute 时不携带 anchor | ✅ AC-D2a/D2b 有测试证据 |
+| Sugar API 保持零改动 | ✅ git diff 无 API 面改动 |
+| circuit.html / metal-acid-
 ```
 </details>
 
@@ -397,34 +402,32 @@ framework/
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 本地落盘部署完成：21 文件变更已全部写入工作区；TSC+Jest 前置检查全绿；.v2-atomic-legacy 备份就绪 5 分钟可回滚；需用户浏览器人工验证 4 项 Runbook
+**📋 Summary:** 本地落盘完成：20 文件变更（1 新 TS + 1 新 test + 7 改 TS + 2 改 JS + 1 新 doc + 1 改 doc + 7 workflow docs）；AC-D6/D7 硬约束零改（solver/reactions/模板）；465/465 测试全绿；TSC 零错误；零新依赖
 
-**📥 Input:** REVIEW passed; all 21 tasks complete
+**📥 Input:** all gates pass; 465/465 tests
 
-**📤 Output:** deploy-output.md 含文件清单/Runbook/回滚流程/后续建议
+**📤 Output:** deploy-output.md 含文件清单/Runbook/回滚方案/commit message 建议
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\deploy-output.md`
-- Lines: 115, Hash: `3354-#DeployOutput·Sessionwf-202`
+- Lines: 86, Hash: `3147-#DEPLOY·anchor-LayoutSpec解耦（`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Deploy Output · Session wf-20260428120154.
+# DEPLOY · anchor-LayoutSpec 解耦（D）
 
-## 部署模式
+> Session: `wf-20260428153150.`
+> Deployment Type: 本地落盘（代码已写入工作区）
 
-**本地落盘**（local-writeback）—— Next.js 项目在 IDE 环境完成重构；运行 `pnpm dev` 即可加载新版 circuit.html v3 进行浏览器端验证。
+## 文件变更总清单
 
-## 已交付文件清单
-
-### 新建（15）
-```
-src/lib/framework/assembly/
-├── spec.ts          (72 行)
-├── errors.ts        (53 行)
-├── validator.ts     (
+| 类别 | 数量 | 说明 |
+|------|------|------|
+| 新建 TS 源码 | 1 | `src/lib/framework/assembly/layout.ts` |
+| 新建测试 | 1 | 19 测试全绿 |
+| 修改 TS 源码 | 7 | fluent/assembler/spec/barrel×2/base/
 ```
 </details>
 
@@ -445,7 +448,7 @@ src/lib/framework/assembly/
 | Field | Value |
 |-------|-------|
 | Protocol Version | `evidence-v1` |
-| Session | `wf-20260428120154.` |
+| Session | `wf-20260428153150.` |
 | Run Category | `prod` |
 | Missing Stage Artifacts | 0 |
 
@@ -453,13 +456,13 @@ src/lib/framework/assembly/
 
 | Stage | Exists | Size(bytes) | SHA256 (prefix) |
 |-------|--------|-------------|------------------|
-| ANALYSE | ✅ | 12284 | `f25c71b7069b1f25...` |
-| ARCHITECT | ✅ | 18445 | `8cba0e49f58b0e9d...` |
-| PLAN | ✅ | 14323 | `a21e05c3e2e43042...` |
-| CODE | ✅ | 2724 | `65dbf22727775c34...` |
-| TEST | ✅ | 4491 | `3e81df89209e8b7e...` |
+| ANALYSE | ✅ | 12635 | `e29a1c8a38a3d8f2...` |
+| ARCHITECT | ✅ | 16930 | `00664356c9ebe4d0...` |
+| PLAN | ✅ | 14684 | `06b38be21c1b0716...` |
+| CODE | ✅ | 3267 | `596d2e0957e23c27...` |
+| TEST | ✅ | 4406 | `29632717b135417e...` |
 
-- **Trace Hash**: `14ff33b4792fce6392e297680d3144329cc3d1f4bf9af62fc2157e57298d860a`
+- **Trace Hash**: `d156d2e3e32731dcfdeab4b15402aed7eb93e96c9c3b55cf5a3c743024cf9bb4`
 - **Quality Report Hash**: N/A
 - **Evolution Log Hash**: N/A
 

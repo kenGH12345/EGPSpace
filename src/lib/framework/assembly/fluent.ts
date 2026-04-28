@@ -2,17 +2,17 @@
  * FluentAssembly — domain-agnostic chainable DSL base class.
  *
  * Design (D-3):
- *   - Base class provides {add, connect, loop, build, toSpec, toDTO, metadata}
+ *   - Base class provides {add, connect, loop, build, toSpec, toLayout, toBundle}
  *   - Zero domain-specific methods here (no .battery(), .lens(), etc.)
  *   - Domain bindings extend this class to add type-safe sugar methods:
  *       class CircuitBuilder extends FluentAssembly<'circuit'> {
  *         battery(opts) { return this.add('battery', {voltage: opts.voltage}, opts.id); }
  *       }
  *
- *   - Two equivalent paths (AC-E):
- *       a) const g = new Assembler(...).assemble(literalSpec);
- *       b) const g = new FooBuilder().xxx().yyy().build();
- *     Must produce deep-equal graphs when given equivalent inputs.
+ * Sugar API contract (unchanged since D-3 / AC-D3):
+ *   - Sugar methods still accept `{id, anchor}` opts.
+ *   - Internally: props are written to `_spec.components`, while anchor is
+ *     written to `_layout.entries` — zero leakage of visual data into Spec.
  *
  * Key contract: `build()` delegates to a caller-supplied Assembler — FluentAssembly
  * itself does NOT own a component factory (keeps it domain-agnostic).
@@ -22,8 +22,10 @@ import type { IExperimentComponent, ComponentDomain, ComponentAnchor } from '../
 import type { DomainGraph } from '../components/graph';
 import type { DomainGraphDTO } from '../components/graph';
 import type { Assembler } from './assembler';
-import type { AssemblySpec, ComponentDecl, ConnectionDecl, AssemblyMetadata } from './spec';
+import type { AssemblySpec, AssemblyMetadata } from './spec';
 import { emptySpec } from './spec';
+import type { LayoutSpec, AssemblyBundle } from './layout';
+import { emptyLayout } from './layout';
 
 export interface FluentAddOptions {
   id?: string;
@@ -42,12 +44,14 @@ export abstract class FluentAssembly<
   C extends IExperimentComponent = IExperimentComponent,
 > {
   protected readonly _spec: AssemblySpec<D>;
+  protected readonly _layout: LayoutSpec<D>;
   private _idCounter = 0;
   /** Ordered list of ids as they were added (for loop() convenience). */
   private readonly _addOrder: string[] = [];
 
   constructor(domain: D, metadata?: AssemblyMetadata) {
     this._spec = emptySpec(domain);
+    this._layout = emptyLayout(domain);
     if (metadata) this._spec.metadata = metadata;
   }
 
@@ -56,6 +60,9 @@ export abstract class FluentAssembly<
   /**
    * Add a component to the spec. `kind` must be resolvable by the assembler
    * passed to build(); FluentAssembly does not validate kind existence.
+   *
+   * anchor (if provided via opts) is routed to the sibling LayoutSpec — NOT
+   * embedded in the component decl. This is the core D-3 split.
    */
   add(kind: string, props: Record<string, unknown>, opts: FluentAddOptions = {}): this {
     const id = opts.id ?? `${kind}${this._nextIdCounter()}`;
@@ -63,9 +70,12 @@ export abstract class FluentAssembly<
       id,
       kind,
       props,
-      anchor: opts.anchor,
+      // NOTE: anchor intentionally NOT written here; routed to _layout below.
     });
     this._addOrder.push(id);
+    if (opts.anchor) {
+      this._writeAnchor(id, opts.anchor);
+    }
     return this;
   }
 
@@ -88,17 +98,11 @@ export abstract class FluentAssembly<
   /**
    * Convenience: chain the last-added component's FIRST port to the next-to-last
    * component's SECOND port. Callers can override by explicit connect().
-   *
-   * NOTE: "first/second port" semantics depend on each component's port order.
-   * Subclasses with domain knowledge can wrap this with safer helpers.
    */
   chain(kind?: string): this {
     if (this._addOrder.length < 2) return this;
     const last = this._addOrder[this._addOrder.length - 1];
     const prev = this._addOrder[this._addOrder.length - 2];
-    // Use conventional port names — subclasses may override
-    // Default convention: prev.out → last.in (common across domains).
-    // If ports don't match, validator will flag; caller should use explicit connect.
     this._spec.connections.push({
       from: { componentId: prev, portName: 'out' },
       to: { componentId: last, portName: 'in' },
@@ -120,6 +124,19 @@ export abstract class FluentAssembly<
   /** Return the accumulated spec as a new POJO (deep clone for safety). */
   toSpec(): AssemblySpec<D> {
     return JSON.parse(JSON.stringify(this._spec));
+  }
+
+  /** Return the accumulated layout as a new POJO (deep clone for safety). */
+  toLayout(): LayoutSpec<D> {
+    return JSON.parse(JSON.stringify(this._layout));
+  }
+
+  /** Return both spec and layout in a single bundle (deep-cloned). */
+  toBundle(): AssemblyBundle<D> {
+    return {
+      spec: this.toSpec(),
+      layout: this.toLayout(),
+    };
   }
 
   /**
@@ -154,6 +171,20 @@ export abstract class FluentAssembly<
   }
 
   // ── Internal helpers ──
+
+  /**
+   * Write an anchor entry to _layout. "Last write wins" on duplicate ids so
+   * sugar methods that spin the same id (rare) remain idempotent.
+   */
+  private _writeAnchor(componentId: string, anchor: ComponentAnchor): void {
+    const idx = this._layout.entries.findIndex((e) => e.componentId === componentId);
+    if (idx >= 0) {
+      this._layout.entries[idx] = { componentId, anchor };
+    } else {
+      this._layout.entries.push({ componentId, anchor });
+    }
+  }
+
   private _nextIdCounter(): number {
     return ++this._idCounter;
   }

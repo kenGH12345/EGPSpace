@@ -11,6 +11,7 @@
  */
 
 export * from './spec';
+export * from './layout';
 export * from './errors';
 export * from './validator';
 export * from './assembler';

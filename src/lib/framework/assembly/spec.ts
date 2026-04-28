@@ -21,7 +21,11 @@ export interface ComponentDecl {
   kind: string;
   /** Free-form component-type-specific properties (resistance, focalLength, ...). */
   props: Record<string, unknown>;
-  /** Optional layout anchor for rendering. */
+  /**
+   * @deprecated Use `LayoutSpec` (see `./layout.ts`) for visual placement.
+   * The field is retained on ComponentDecl only for backwards compatibility;
+   * Assembler emits a console.warn when it encounters a non-undefined value.
+   */
   anchor?: ComponentAnchor;
 }
 

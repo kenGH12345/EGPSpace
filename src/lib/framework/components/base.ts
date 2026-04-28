@@ -35,6 +35,10 @@ export type ComponentKind = string;
 /**
  * Where a component sits on the canvas (for rendering only; solver doesn't use this).
  * Optional rotation in degrees, default 0. Solvers should never read anchor.
+ *
+ * @deprecated Prefer `LayoutSpec` (see `framework/assembly/layout.ts`) for
+ * visual placement. This type is retained for backwards compatibility; new code
+ * should not write anchors directly to components.
  */
 export interface ComponentAnchor {
   x: number;
@@ -80,6 +84,11 @@ export interface IExperimentComponent<Props extends object = Record<string, unkn
   readonly domain: ComponentDomain;
   readonly kind: ComponentKind;
   readonly ports: readonly string[];
+  /**
+   * @deprecated Visual placement now lives in `LayoutSpec`. This field is
+   * retained for backwards compatibility and defaults to `{x:0,y:0}` when
+   * components are built by the new Assembler pipeline.
+   */
   anchor: ComponentAnchor;
   props: Props;
 
