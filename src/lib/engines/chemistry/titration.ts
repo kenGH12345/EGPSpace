@@ -114,6 +114,23 @@ export class TitrationEngine implements IExperimentEngine {
     const equivVol = (acidConc * acidVol) / baseConc;
     const buretteLevel = Math.min(100, (baseVol / equivVol) * 100);
 
+    // ── Display-layer derivations (v2-atomic) ──
+    let badgeKind: 'success' | 'danger' | 'info' | 'warning' = 'info';
+    if (state === '等当点') badgeKind = 'success';
+    else if (state === '酸过量') badgeKind = 'warning';
+    else if (state === '碱过量') badgeKind = 'info';
+    else if (state === '初始（纯酸）') badgeKind = 'danger';
+
+    // Name the current indicator colour region for UI badge
+    let colorName = '无色';
+    if (indicatorKey === 'phenolphthalein') {
+      colorName = pH < 8.2 ? '无色' : pH < 10 ? '粉红' : '红';
+    } else if (indicatorKey === 'methylOrange') {
+      colorName = pH < 3.1 ? '红' : pH < 4.4 ? '橙' : '黄';
+    } else if (indicatorKey === 'bromothymolBlue') {
+      colorName = pH < 6 ? '黄' : pH < 7.6 ? '绿' : '蓝';
+    }
+
     return {
       values: {
         pH,
@@ -126,6 +143,10 @@ export class TitrationEngine implements IExperimentEngine {
         indicatorColor,
         stateLabel: state,
         speciesLabel: species,
+        // v2-atomic display-layer fields
+        badgeKind,
+        badgeText: state,
+        colorName,
       },
       state,
       explanation: `${acidConc}M 酸 ${acidVol}mL + ${baseConc}M 碱 ${baseVol}mL → pH=${pH.toFixed(2)}。${state}。`,

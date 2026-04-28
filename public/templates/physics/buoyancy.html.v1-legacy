@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>浮力原理</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .buoyancy-canvas-wrapper {
+    background: linear-gradient(180deg, #F0F9FF 0%, #E0F2FE 100%);
+  }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">浮力 F浮</p>
+      <p class="eureka-stat-value primary" id="stat-buoyancy">0.0 N</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">重力 G</p>
+      <p class="eureka-stat-value danger" id="stat-gravity">0.0 N</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">状态</p>
+      <p class="eureka-stat-value success" id="stat-status">悬浮</p>
+    </div>
+  </div>
+
+  <div class="eureka-canvas-wrapper buoyancy-canvas-wrapper">
+    <canvas id="canvas" class="eureka-canvas" width="560" height="240"></canvas>
+    <div style="margin-top: 8px; text-align: center;">
+      <span id="status-badge" class="eureka-badge info">悬浮</span>
+    </div>
+  </div>
+
+  <div class="eureka-card">
+    <h3 class="eureka-card-title">参数调节</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">物体体积</span>
+          <span class="eureka-control-value"><span id="v-volume">50</span> cm³</span>
+        </div>
+        <input id="ctl-volume" class="eureka-slider" type="range" min="10" max="200" value="50">
+      </div>
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">物体密度 (ρ物)</span>
+          <span class="eureka-control-value"><span id="v-obj-density">800</span> kg/m³</span>
+        </div>
+        <input id="ctl-obj-density" class="eureka-slider" type="range" min="200" max="2000" step="50" value="800">
+        <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">
+          <span>200 (软木)</span>
+          <span>1000 (水)</span>
+          <span>2000 (金属)</span>
+        </div>
+      </div>
+
+      <div class="eureka-control">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">液体密度 (ρ液)</span>
+          <span class="eureka-control-value"><span id="v-liq-density">1000</span> kg/m³</span>
+        </div>
+        <input id="ctl-liq-density" class="eureka-slider" type="range" min="800" max="13600" step="100" value="1000">
+        <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">
+          <span>800 (油)</span>
+          <span>1000 (水)</span>
+          <span>13600 (汞)</span>
+        </div>
+      </div>
+
+      <div class="eureka-control" id="force-control" style="display: none;">
+        <div class="eureka-control-header">
+          <span class="eureka-control-label">外力 (按压)</span>
+          <span class="eureka-control-value"><span id="v-force">0.0</span> N</span>
+        </div>
+        <input id="ctl-force" class="eureka-slider" type="range" min="0" max="10" step="0.1" value="0">
+        <p style="font-size: 10px; color: var(--eureka-text-muted); margin-top: 2px;">对下沉物体施加外力可改变浸入深度</p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script src="/templates/_shared/ui-core.js"></script>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const g = 9.8;
+
+  const state = {
+    objectVolume: 50,
+    objectDensity: 800,
+    liquidDensity: 1000,
+    externalForce: 0,
+  };
+
+  function updateDisplay() {
+    const { objectVolume, objectDensity, liquidDensity, externalForce } = state;
+    const densityRatio = objectDensity / liquidDensity;
+    const isFloating = densityRatio < 1;
+    const isSinking = densityRatio > 1;
+    const isSuspended = Math.abs(densityRatio - 1) < 0.01;
+
+    const objectMass = objectVolume * objectDensity;
+    const gravityForce = objectMass * g;
+    const equilibriumImmersionRatio = isFloating ? densityRatio : 1;
+    const actualImmersionRatio = isFloating
+      ? equilibriumImmersionRatio
+      : Math.min(1, (gravityForce - externalForce) / (liquidDensity * g * objectVolume) || 1);
+    const immersedVolume = objectVolume * Math.max(0, Math.min(1, actualImmersionRatio));
+    const buoyantForce = liquidDensity * g * immersedVolume;
+
+    document.getElementById('stat-buoyancy').textContent = buoyantForce.toFixed(1) + ' N';
+    document.getElementById('stat-gravity').textContent = gravityForce.toFixed(1) + ' N';
+
+    let statusText, statusColor, badgeClass, badgeText;
+    if (isFloating) {
+      statusText = '上浮';
+      statusColor = 'text-green-600';
+      badgeClass = 'success';
+      badgeText = '物体上浮（密度 < 液体）';
+    } else if (isSinking) {
+      statusText = '下沉';
+      statusColor = 'text-red-600';
+      badgeClass = 'danger';
+      badgeText = '物体下沉（密度 > 液体）';
+    } else {
+      statusText = '悬浮';
+      statusColor = 'text-blue-600';
+      badgeClass = 'info';
+      badgeText = '物体悬浮（密度 = 液体）';
+    }
+
+    const statusEl = document.getElementById('stat-status');
+    statusEl.textContent = statusText;
+    statusEl.className = 'eureka-stat-value ' + statusColor;
+
+    const badgeEl = document.getElementById('status-badge');
+    badgeEl.className = 'eureka-badge ' + badgeClass;
+    badgeEl.textContent = badgeText;
+
+    // Show/hide force control
+    document.getElementById('force-control').style.display = isFloating ? 'none' : 'block';
+
+    return { isFloating, isSinking, isSuspended, densityRatio, buoyantForce, gravityForce, actualImmersionRatio };
+  }
+
+  function draw() {
+    const { isFloating, isSinking, isSuspended, densityRatio, buoyantForce, gravityForce, actualImmersionRatio } = updateDisplay();
+    const { objectVolume, liquidDensity } = state;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const liquidLevel = height * 0.55;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw liquid
+    ctx.fillStyle = liquidDensity > 2000 ? '#1E40AF' : liquidDensity > 1500 ? '#0891B2' : liquidDensity > 1000 ? '#06B6D4' : '#67E8F9';
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(0, liquidLevel, width, height - liquidLevel);
+    ctx.globalAlpha = 1;
+
+    // Draw liquid surface
+    ctx.strokeStyle = '#0EA5E9';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, liquidLevel);
+    ctx.lineTo(width, liquidLevel);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw beaker/container
+    const beakerLeft = width/2 - 100;
+    const beakerRight = width/2 + 100;
+    const beakerBottom = height - 10;
+    ctx.strokeStyle = '#64748B';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(beakerLeft, liquidLevel - 20);
+    ctx.lineTo(beakerLeft, beakerBottom);
+    ctx.lineTo(beakerRight, beakerBottom);
+    ctx.lineTo(beakerRight, liquidLevel - 20);
+    ctx.stroke();
+    // Beaker labels
+    ctx.font = '11px system-ui';
+    ctx.fillStyle = '#64748B';
+    ctx.fillText('烧杯', width/2 - 12, beakerBottom + 14);
+
+    // Object with size based on volume
+    const objectWidth = Math.max(30, Math.min(objectVolume * 0.5, 90));
+    const objectHeight = Math.max(20, Math.min(objectVolume * 0.6, 120));
+    const containerBottom = beakerBottom - 5;
+    const objectX = width / 2 - objectWidth / 2;
+    let objectY;
+
+    if (isFloating) {
+      objectY = liquidLevel - objectHeight * densityRatio;
+    } else if (isSinking) {
+      objectY = containerBottom - objectHeight;
+    } else {
+      objectY = liquidLevel;
+    }
+    objectY = Math.max(liquidLevel - objectHeight, Math.min(objectY, containerBottom - objectHeight));
+
+    // Object color based on density (green = light, red = heavy)
+    let objectHue = Math.max(0, Math.min(120, 120 - (objectDensity - 200) / 1800 * 120));
+    let objectColor = 'hsl(' + objectHue + ', 70%, 45%)';
+    let materialName = objectDensity < 500 ? '软木' : objectDensity < 900 ? '塑料' : objectDensity < 1200 ? '木材' : objectDensity < 2500 ? '玻璃' : objectDensity < 5000 ? '铝' : objectDensity < 9000 ? '铜' : '铁';
+
+    // Object body with gradient
+    let grad = ctx.createLinearGradient(objectX, objectY, objectX + objectWidth, objectY);
+    grad.addColorStop(0, 'hsl(' + objectHue + ', 70%, 55%)');
+    grad.addColorStop(1, 'hsl(' + objectHue + ', 70%, 35%)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(objectX + 2, objectY + 2, objectWidth - 4, objectHeight - 4);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(objectX, objectY, objectWidth, objectHeight);
+
+    // Density label ON the object
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillStyle = '#FFF';
+    ctx.textAlign = 'center';
+    ctx.fillText(objectDensity + 'kg/m³', objectX + objectWidth/2, objectY + objectHeight/2);
+    ctx.font = '10px system-ui';
+    ctx.fillText(materialName, objectX + objectWidth/2, objectY + objectHeight/2 + 14);
+    ctx.textAlign = 'left';
+
+    // Immersed highlight
+    const immersedHeight = Math.max(0, Math.min(objectHeight, liquidLevel - objectY));
+    if (immersedHeight > 0) {
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(objectX + 2, objectY + objectHeight - immersedHeight, objectWidth - 4, immersedHeight);
+    }
+
+    // Buoyancy arrow (thickness = force magnitude)
+    if (buoyantForce > 0) {
+      let arrowLen = Math.min(80, buoyantForce / 3);
+      let arrowThick = Math.max(2, buoyantForce / 15);
+      ctx.strokeStyle = '#3B82F6';
+      ctx.lineWidth = arrowThick;
+      ctx.beginPath();
+      ctx.moveTo(objectX + objectWidth / 2, objectY + 5);
+      ctx.lineTo(objectX + objectWidth / 2, objectY - arrowLen);
+      ctx.stroke();
+      // Arrow head
+      ctx.beginPath();
+      ctx.moveTo(objectX + objectWidth / 2, objectY - arrowLen);
+      ctx.lineTo(objectX + objectWidth / 2 - 10, objectY - arrowLen + 15);
+      ctx.lineTo(objectX + objectWidth / 2 + 10, objectY - arrowLen + 15);
+      ctx.closePath();
+      ctx.fillStyle = '#3B82F6';
+      ctx.fill();
+      // Force value
+      ctx.font = 'bold 12px system-ui';
+      ctx.fillStyle = '#3B82F6';
+      ctx.fillText('↑ F浮 ' + buoyantForce.toFixed(1) + 'N', objectX + objectWidth + 8, objectY - arrowLen/2);
+    }
+
+    // Gravity arrow (thickness = force magnitude)
+    let gArrowLen = Math.min(80, gravityForce / 3);
+    let gArrowThick = Math.max(2, gravityForce / 15);
+    ctx.strokeStyle = '#EF4444';
+    ctx.lineWidth = gArrowThick;
+    ctx.beginPath();
+    ctx.moveTo(objectX + objectWidth / 2, objectY + objectHeight - 5);
+    ctx.lineTo(objectX + objectWidth / 2, objectY + objectHeight + gArrowLen);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(objectX + objectWidth / 2, objectY + objectHeight + gArrowLen);
+    ctx.lineTo(objectX + objectWidth / 2 - 10, objectY + objectHeight + gArrowLen - 15);
+    ctx.lineTo(objectX + objectWidth / 2 + 10, objectY + objectHeight + gArrowLen - 15);
+    ctx.closePath();
+    ctx.fillStyle = '#EF4444';
+    ctx.fill();
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillStyle = '#EF4444';
+    ctx.fillText('↓ G ' + gravityForce.toFixed(1) + 'N', objectX + objectWidth + 8, objectY + objectHeight + gArrowLen/2 + 5);
+
+    // State label above object
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillStyle = isFloating ? '#059669' : isSinking ? '#DC2626' : '#2563EB';
+    let stateText = isFloating ? '▲ 上浮' : isSinking ? '▼ 下沉' : '● 悬浮';
+    ctx.textAlign = 'center';
+    ctx.fillText(stateText, objectX + objectWidth/2, objectY - 18);
+    ctx.textAlign = 'left';
+
+    // Liquid density label on liquid
+    ctx.font = '11px system-ui';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    let liqName = liquidDensity < 900 ? '油' : liquidDensity < 1100 ? '水' : liquidDensity < 3000 ? '盐水' : '水银';
+    ctx.fillText(liqName + ' ρ=' + liquidDensity + 'kg/m³', beakerLeft + 8, (liquidLevel + beakerBottom) / 2);
+
+    // Volume label on beaker
+    ctx.fillStyle = '#64748B';
+    ctx.fillText('V=' + objectVolume + 'cm³', beakerRight + 5, objectY + objectHeight/2);
+  }
+
+  function setupControl(id, key) {
+    const el = document.getElementById('ctl-' + id);
+    if (!el) return;
+    el.addEventListener('input', (e) => {
+      state[key] = parseFloat(e.target.value);
+      document.getElementById('v-' + id).textContent = state[key];
+      draw();
+    });
+  }
+
+  setupControl('volume', 'objectVolume');
+  setupControl('obj-density', 'objectDensity');
+  setupControl('liq-density', 'liquidDensity');
+  setupControl('force', 'externalForce');
+
+  draw();
+
+  // Signal ready to parent
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'ready', experimentId: 'physics/buoyancy' }, '*');
+  }
+</script>
+</body>
+</html>

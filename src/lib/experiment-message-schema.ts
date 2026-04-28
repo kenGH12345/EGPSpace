@@ -20,6 +20,7 @@ export type ExperimentMessageType =
   | 'param_change'     // user adjusted a slider/input inside the template
   | 'result_update'    // template computed new results (e.g. forces, status)
   | 'interaction'      // user performed a gesture (drag/click) on the canvas
+  | 'compute_request'  // template asks host to run L1 engine.compute() (v2-atomic)
   | 'error';           // template encountered a non-recoverable error
 
 /**
@@ -78,18 +79,42 @@ export interface ErrorMessage extends BaseExperimentMessage {
   code?: string;
 }
 
+/**
+ * Template asks the host to run a registered L1 engine's compute() on its behalf.
+ * Host replies with ComputeResultCommand (success) or ComputeErrorCommand (failure),
+ * correlated via requestId. This enables v2-atomic templates to delegate all physics/
+ * chemistry calculation to L1 engines instead of duplicating formulas inline.
+ */
+export interface ComputeRequestMessage extends BaseExperimentMessage {
+  type: 'compute_request';
+  templateId: string;
+  /** Correlation ID — host echoes it back so templates can match response to request. */
+  requestId: string;
+  /** Engine identifier, e.g. 'physics/buoyancy' or a PhysicsEngineType value. */
+  engineId: string;
+  /** Numeric parameters for engine.compute(). */
+  params: Record<string, number>;
+}
+
 export type ExperimentMessage =
   | ReadyMessage
   | ParamChangeMessage
   | ResultUpdateMessage
   | InteractionMessage
+  | ComputeRequestMessage
   | ErrorMessage;
 
 /**
  * Messages the HOST sends TO the template.
  * Templates only accept these command types; any unknown command is ignored.
  */
-export type HostCommandType = 'set_param' | 'set_params' | 'reset' | 'highlight';
+export type HostCommandType =
+  | 'set_param'
+  | 'set_params'
+  | 'reset'
+  | 'highlight'
+  | 'compute_result'   // host reply with engine.compute() success payload
+  | 'compute_error';   // host reply indicating engine.compute() failed or engine not found
 
 export interface SetParamCommand {
   source: typeof MESSAGE_SOURCE;
@@ -119,11 +144,36 @@ export interface HighlightCommand {
   durationMs?: number;
 }
 
+/** Host reply to a successful ComputeRequestMessage (v2-atomic protocol). */
+export interface ComputeResultCommand {
+  source: typeof MESSAGE_SOURCE;
+  type: 'compute_result';
+  /** Echoed from the request. Templates MUST check this before applying results. */
+  requestId: string;
+  /** Mirrors ComputationResult.values from L1 engine. */
+  values: Record<string, number | string | boolean | object>;
+  /** Mirrors ComputationResult.state. */
+  state?: string;
+  /** Mirrors ComputationResult.explanation. */
+  explanation?: string;
+}
+
+/** Host reply when compute failed (engine missing, validation failed, exception). */
+export interface ComputeErrorCommand {
+  source: typeof MESSAGE_SOURCE;
+  type: 'compute_error';
+  requestId: string;
+  message: string;
+  code?: string;
+}
+
 export type HostCommand =
   | SetParamCommand
   | SetParamsCommand
   | ResetCommand
-  | HighlightCommand;
+  | HighlightCommand
+  | ComputeResultCommand
+  | ComputeErrorCommand;
 
 /** Whitelist of valid incoming message types. */
 const VALID_INCOMING_TYPES: ReadonlySet<ExperimentMessageType> = new Set([
@@ -131,6 +181,7 @@ const VALID_INCOMING_TYPES: ReadonlySet<ExperimentMessageType> = new Set([
   'param_change',
   'result_update',
   'interaction',
+  'compute_request',
   'error',
 ]);
 
@@ -168,6 +219,15 @@ export function validateIncomingMessage(data: unknown): ExperimentMessage | null
     case 'interaction':
       if (typeof msg.kind !== 'string') return null;
       break;
+    case 'compute_request':
+      if (typeof msg.requestId !== 'string' || msg.requestId.length === 0) return null;
+      if (typeof msg.engineId !== 'string' || msg.engineId.length === 0) return null;
+      if (!msg.params || typeof msg.params !== 'object') return null;
+      // Recursively validate params: every leaf must be a finite number, string, or boolean.
+      // Nested objects/arrays are allowed (e.g. graph DTOs for component-based engines).
+      // Rejects NaN/Infinity, functions, symbols, cycles (via depth limit).
+      if (!isJsonSafePayload(msg.params, 0)) return null;
+      break;
     case 'error':
       if (typeof msg.message !== 'string') return null;
       break;
@@ -176,3 +236,42 @@ export function validateIncomingMessage(data: unknown): ExperimentMessage | null
 
   return msg as unknown as ExperimentMessage;
 }
+
+/**
+ * Recursively validate that a payload is JSON-safe and free of security hazards.
+ *  - Leaves MUST be finite number | string | boolean | null
+ *  - Objects and arrays are allowed up to MAX_DEPTH (cycle protection)
+ *  - Functions, symbols, BigInts, NaN, Infinity are rejected
+ *  - undefined is rejected at leaf level (use null instead)
+ *
+ * Used by validateIncomingMessage for compute_request's `params` field which may
+ * carry nested graph DTOs (v2-atomic component-based engines).
+ */
+const MAX_PAYLOAD_DEPTH = 16;
+
+function isJsonSafePayload(value: unknown, depth: number): boolean {
+  if (depth > MAX_PAYLOAD_DEPTH) return false;
+
+  if (value === null) return true;
+  const t = typeof value;
+  if (t === 'string' || t === 'boolean') return true;
+  if (t === 'number') return Number.isFinite(value as number);
+  if (t === 'function' || t === 'symbol' || t === 'bigint' || t === 'undefined') return false;
+
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      if (!isJsonSafePayload(v, depth + 1)) return false;
+    }
+    return true;
+  }
+
+  if (t === 'object') {
+    for (const v of Object.values(value as Record<string, unknown>)) {
+      if (!isJsonSafePayload(v, depth + 1)) return false;
+    }
+    return true;
+  }
+
+  return false;
+}
+

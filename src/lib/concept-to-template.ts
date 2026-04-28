@@ -194,3 +194,43 @@ export function listAllMappedConcepts(): string[] {
   }
   return all;
 }
+
+// ── Subject-level concept exports (T-4: capability atomization) ───────────
+
+const PHYSICS_KEYWORDS = new Set([
+  '浮力', '阿基米德', '排水', '浮沉', 'buoyancy', 'archimedes', 'floating', 'sinking',
+  '杠杆', '力矩', '平衡', '省力', '费力', 'lever', 'torque', 'fulcrum',
+  '光的折射', '折射', '折射率', '斯涅尔', 'refraction', 'snell', 'refractive-index',
+  '电路', '串联', '并联', '欧姆定律', '电阻', '电流', 'circuit', 'ohm', 'series', 'parallel', 'resistance',
+  '匀变速直线运动', '运动学', '位移', '速度', '加速度', '初速度', '末速度', 'v-t图', 's-t图', '运动图像', 'kinematics',
+  '机械能守恒', '动能', '势能', '单摆', '能量守恒', '机械能', '重力势能', '弹性势能', 'energy conservation',
+  '机械波', '波', '波长', '振幅', '频率', '波速', '波的叠加', '干涉', '横波', '纵波', 'wave',
+  '电磁感应', '感应电流', '法拉第定律', '楞次定律', '磁通量', '切割磁感线', 'electromagnetic induction',
+  '光的反射', '反射定律', '平面镜成像', '平面镜', '入射角', 'reflection', 'mirror',
+  '凸透镜', '焦距', '放大镜', '透镜成像规律', '像距', '物距', 'lens',
+  '比热容', '热传递', '升温对比', 'Q=cmΔT', 'heat',
+  '声波', '音调', '响度', '音色', '声波传播', '声音的特性', 'sound',
+]);
+
+const CHEMISTRY_KEYWORDS = new Set([
+  '酸碱滴定', '滴定', 'pH曲线', '强酸强碱', 'acid-base titration',
+  '电解水', '电解', '氢气氧气', '阴极阳极', 'electrolysis',
+  '反应速率', '阿伦尼乌斯', '催化剂', '化学动力学', 'reaction rate',
+  '燃烧条件', '燃烧三要素', '燃点', '助燃物', 'combustion conditions',
+]);
+
+/** Extract physics concept mappings */
+export const PHYSICS_CONCEPTS = CONCEPT_MAPPINGS.filter(m =>
+  m.keywords.some(k => PHYSICS_KEYWORDS.has(k.toLowerCase()))
+);
+
+/** Extract chemistry concept mappings */
+export const CHEMISTRY_CONCEPTS = CONCEPT_MAPPINGS.filter(m =>
+  m.keywords.some(k => CHEMISTRY_KEYWORDS.has(k.toLowerCase()))
+);
+
+/** All subject concept mappings combined (T-5 integration point) */
+export const ALL_SUBJECT_CONCEPTS = {
+  physics: PHYSICS_CONCEPTS,
+  chemistry: CHEMISTRY_CONCEPTS,
+};

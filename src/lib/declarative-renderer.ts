@@ -7,6 +7,15 @@
  *
  * Supports 7 base element types: rect, circle, line, arrow, text, polygon, arc
  * Dynamic property binding via {variableName} syntax
+ *
+ * ─── Active status (2026-04-28, L2/L4 atomization refactor) ───
+ * RESERVED for LLM-generated ad-hoc experiments only (DynamicExperiment flow).
+ * The PRIMARY rendering path for approved/curated experiments is the iframe+HTML
+ * template track at `public/templates/<subject>/*.html` (v2-atomic templates
+ * delegate compute to L1 engines via postMessage compute_request protocol).
+ * DO NOT use this renderer for new manually-authored experiments — add them as
+ * iframe templates instead. Kept here because removing it would break the
+ * LLM-experiment code path in `src/lib/concept-to-template.ts`.
  */
 
 import type { AmbientAnimation, CanvasElement, CanvasLayout, ElementType } from './experiment-schema';

@@ -26,6 +26,9 @@ import {
   type ExperimentMessage,
   type HostCommand,
 } from '@/lib/experiment-message-schema';
+import { registry } from '@/lib/engines/registry';
+// Side-effect import: ensures all engines are auto-registered before compute dispatch.
+import '@/lib/engines';
 
 export interface IframeExperimentProps {
   /** Approved template ID — must be in the template registry whitelist. */
@@ -142,6 +145,61 @@ export function IframeExperiment({
         if (initialParams) {
           sendCommand({ source: MESSAGE_SOURCE, type: 'set_params', params: initialParams });
         }
+      }
+
+      // Compute RPC — v2-atomic templates delegate compute to L1 engines here
+      if (validated.type === 'compute_request') {
+        // Fire-and-forget async dispatch; handler itself stays synchronous
+        void (async () => {
+          const { requestId, engineId, params } = validated;
+          try {
+            // Accept both 'physics/buoyancy' full IDs and legacy PhysicsEngineType aliases
+            const engine = await registry.get(engineId);
+            if (!engine) {
+              sendCommand({
+                source: MESSAGE_SOURCE,
+                type: 'compute_error',
+                requestId,
+                message: `Engine not registered: ${engineId}`,
+                code: 'engine_not_found',
+              });
+              return;
+            }
+            const validation = engine.validate(params);
+            if (!validation.valid) {
+              const firstError = validation.errors.find(e => e.severity === 'error');
+              if (firstError) {
+                sendCommand({
+                  source: MESSAGE_SOURCE,
+                  type: 'compute_error',
+                  requestId,
+                  message: `${firstError.field}: ${firstError.message}`,
+                  code: 'validation_failed',
+                });
+                return;
+              }
+              // Only warnings — continue to compute
+            }
+            const result = engine.compute(params);
+            sendCommand({
+              source: MESSAGE_SOURCE,
+              type: 'compute_result',
+              requestId,
+              values: result.values,
+              state: result.state,
+              explanation: result.explanation,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            sendCommand({
+              source: MESSAGE_SOURCE,
+              type: 'compute_error',
+              requestId,
+              message,
+              code: 'compute_exception',
+            });
+          }
+        })();
       }
 
       if (validated.type === 'error') {

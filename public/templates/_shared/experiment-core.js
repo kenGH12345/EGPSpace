@@ -27,6 +27,11 @@
   let _globalPaused = false;
   let _lastTime = 0;
 
+  // Compute RPC state (v2-atomic protocol)
+  const _pendingRequests = new Map(); // requestId(string) → { resolve, reject, timer }
+  let _nextRequestId = 1;
+  let _latestResolvedId = 0; // for race-condition guard
+
   // ---------- Host Communication (backward compatible) ----------
 
   const EurekaHost = {
@@ -93,8 +98,36 @@
         if (data.source !== MESSAGE_SOURCE) return;
         if (typeof data.type !== 'string') return;
 
-        const validCommands = ['set_param', 'set_params', 'reset', 'pause', 'resume', 'highlight'];
+        const validCommands = [
+          'set_param', 'set_params', 'reset', 'pause', 'resume', 'highlight',
+          'compute_result', 'compute_error',
+        ];
         if (validCommands.indexOf(data.type) === -1) return;
+
+        // ── compute RPC — intercept before user callback ──
+        if (data.type === 'compute_result' || data.type === 'compute_error') {
+          const entry = _pendingRequests.get(data.requestId);
+          if (entry) {
+            clearTimeout(entry.timer);
+            _pendingRequests.delete(data.requestId);
+            // Race-condition guard (ADR R1): drop stale responses
+            const rid = Number(data.requestId);
+            if (Number.isFinite(rid) && rid < _latestResolvedId) {
+              return; // newer response already applied, ignore
+            }
+            if (data.type === 'compute_result') {
+              _latestResolvedId = Math.max(_latestResolvedId, rid);
+              entry.resolve({
+                values: data.values || {},
+                state: data.state,
+                explanation: data.explanation,
+              });
+            } else {
+              entry.reject(new Error(data.message || 'compute_error'));
+            }
+          }
+          return; // compute RPC is fully handled internally
+        }
 
         try {
           if (data.type === 'pause') _globalPaused = true;
@@ -224,6 +257,45 @@
     entry.set(value, emit);
   }
 
+  // ---------- Compute RPC (new in v2-atomic protocol) ----------
+
+  /**
+   * Ask the host to run a registered L1 engine.compute() and return the result.
+   * Returns a Promise<{ values, state, explanation }>.
+   *
+   * - Internal requestId recycles 1..Number.MAX_SAFE_INTEGER per iframe instance
+   * - Stale responses (requestId < latest resolved) are dropped silently
+   * - Rejects with Error on timeout (default 3000ms) or compute_error from host
+   * - If not running in an iframe (e.g. standalone preview), rejects immediately
+   */
+  function requestCompute(engineId, params, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      if (!window.parent || window.parent === window) {
+        reject(new Error('requestCompute: not running inside a host iframe'));
+        return;
+      }
+      const rid = String(_nextRequestId++);
+      const timer = setTimeout(() => {
+        if (_pendingRequests.has(rid)) {
+          _pendingRequests.delete(rid);
+          reject(new Error('requestCompute: timeout waiting for host response'));
+        }
+      }, typeof timeoutMs === 'number' ? timeoutMs : 3000);
+
+      _pendingRequests.set(rid, { resolve, reject, timer });
+
+      window.parent.postMessage({
+        source: MESSAGE_SOURCE,
+        type: 'compute_request',
+        templateId: _templateId,
+        requestId: rid,
+        engineId: String(engineId || ''),
+        params: params || {},
+        timestamp: new Date().toISOString(),
+      }, '*');
+    });
+  }
+
   // ---------- Render Loop Management (new in v1.0) ----------
 
   /** Start a managed render loop. Returns loop ID for stopRenderLoop(). */
@@ -293,6 +365,7 @@
   window.setParam = setParam;
   window.startRenderLoop = startRenderLoop;
   window.stopRenderLoop = stopRenderLoop;
+  window.requestCompute = requestCompute;
   window.EurekaFormat = {
     num(value, decimals) {
       const d = typeof decimals === 'number' ? decimals : 2;
