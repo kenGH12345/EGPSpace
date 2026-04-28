@@ -42,6 +42,7 @@ export { CircuitEngine, default as circuitEngine } from './physics/circuit';
 
 // Chemistry engines
 export { TitrationEngine, default as titrationEngine } from './chemistry/titration';
+export { ChemistryReactionEngine, default as chemistryReactionEngine } from './chemistry/reaction';
 
 // Biology engines (Phase 2)
 export { OsmosisEngine, default as osmosisEngine } from './biology/osmosis';
@@ -78,6 +79,7 @@ import seismicWaveEngine from './geography/seismic-wave';
 registry.register(buoyancyEngine);
 registry.register(circuitEngine);
 registry.register(titrationEngine);
+registry.register(chemistryReactionEngine);
 registry.register(osmosisEngine);
 registry.register(enzymeEngine);
 registry.register(populationEngine);

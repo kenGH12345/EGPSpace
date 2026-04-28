@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>金属置换反应 · 组件化</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .chem-canvas-wrapper {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .chem-canvas-wrapper canvas {
+    max-width: 100%; height: auto; display: block;
+  }
+  .events-panel {
+    min-height: 28px;
+    padding: 6px 10px;
+    margin-top: 6px;
+    background: #ECFDF5;
+    border: 1px solid #10B981;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #065F46;
+    font-family: monospace;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .events-panel.empty { background: #F1F5F9; border-color: #CBD5E1; color: #64748B; }
+  .badge-info { background:#DBEAFE; color:#1E40AF; padding:2px 8px; border-radius:12px; font-size:11px; }
+</style>
+</head>
+<body>
+<div class="eureka-root">
+
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">反应进度 (mol)</p>
+      <p class="eureka-stat-value primary" id="stat-extent">0.000</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">H₂ 累计产量</p>
+      <p class="eureka-stat-value success" id="stat-h2">0.000 mol</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">剩余 Zn 质量</p>
+      <p class="eureka-stat-value" id="stat-zn">0.00 g</p>
+    </div>
+  </div>
+
+  <div class="eureka-card" style="margin-top:12px;">
+    <div class="eureka-card-header">
+      <span>反应可视化 · Zn + H₂SO₄ → ZnSO₄ + H₂↑</span>
+      <span class="badge-info" id="arch-version">v3-component · StoichiometrySolver</span>
+    </div>
+    <div class="chem-canvas-wrapper">
+      <canvas id="chem-canvas" width="640" height="300"></canvas>
+    </div>
+    <div class="events-panel empty" id="events-panel">（反应事件 · 调节下方滑块启动）</div>
+  </div>
+
+  <div class="eureka-card" style="margin-top:12px;">
+    <div class="eureka-card-header"><span>参数控制</span></div>
+    <div class="eureka-controls">
+      <div class="eureka-control">
+        <label>H₂SO₄ 浓度 (mol/L)</label>
+        <input type="range" class="eureka-slider" id="ctrl-conc" min="0.1" max="5" step="0.1" value="2">
+        <span class="eureka-slider-value" id="val-conc">2.0</span>
+      </div>
+      <div class="eureka-control">
+        <label>Zn 粒质量 (g)</label>
+        <input type="range" class="eureka-slider" id="ctrl-mass" min="0.1" max="10" step="0.1" value="1">
+        <span class="eureka-slider-value" id="val-mass">1.0</span>
+      </div>
+      <div class="eureka-control">
+        <label>反应</label>
+        <button class="eureka-btn" id="ctrl-reset" type="button">重置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- L3 Atoms -->
+<script src="/templates/_shared/experiment-core.js"></script>
+<script src="/templates/_shared/ui-core.js"></script>
+<script src="/templates/_shared/component-mirror.js"></script>
+<script src="/templates/_shared/chemistry-components-draw.js"></script>
+<script src="/templates/_shared/chemistry-builder.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // Build the experiment declaratively (L4 consumer of the new assembly layer)
+  function buildExperiment() {
+    return new ChemistryBuilder()
+      .flask({ id: 'F1', volumeML: 250, shape: 'beaker', anchor: { x: 260, y: 90 } })
+      .drop('F1', { id: 'Zn1', formula: 'Zn', massG: 1, anchor: { x: 270, y: 155 } })
+      .pour('F1', { id: 'A1', formula: 'H2SO4', moles: 0.05, concentration: 2, phase: 'aq', anchor: { x: 70, y: 140 } });
+  }
+
+  let experiment = buildExperiment();
+
+  const canvas = document.getElementById('chem-canvas');
+  const ctx = canvas.getContext('2d');
+  const eventsPanel = document.getElementById('events-panel');
+
+  function drawBackground() {
+    ctx.save();
+    ctx.fillStyle = '#FEFCE8';
+    ctx.fillRect(0, 260, canvas.width, 40);
+    ctx.fillStyle = '#A16207';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('实验台', 10, 280);
+    ctx.restore();
+  }
+
+  function render(perComponent) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    ComponentMirror.renderAll(ctx, experiment.components(), perComponent || {});
+  }
+
+  let pendingCompute = false;
+
+  async function recompute() {
+    if (pendingCompute) return;
+    pendingCompute = true;
+    try {
+      const conc = parseFloat(document.getElementById('ctrl-conc').value);
+      const mass = parseFloat(document.getElementById('ctrl-mass').value);
+
+      // Apply overrides onto live spec
+      const spec = experiment.toSpec();
+      const zn = spec.components.find(function (c) { return c.id === 'Zn1'; });
+      if (zn) zn.props.massG = mass;
+      const acid = spec.components.find(function (c) { return c.id === 'A1'; });
+      if (acid) {
+        acid.props.concentration = conc;
+        acid.props.moles = conc * 0.025;
+      }
+
+      const result = await window.requestCompute('chemistry/reaction', { graph: spec });
+      applyResult(result);
+    } catch (err) {
+      console.error('[chemistry-v3] compute failed:', err);
+      eventsPanel.classList.remove('empty');
+      eventsPanel.innerHTML = '⚠ 计算失败: ' + (err.message || err);
+    } finally {
+      pendingCompute = false;
+    }
+  }
+
+  function applyResult(result) {
+    const values = result.values || {};
+    const perComponent = values.perComponent || {};
+    const events = values.events || [];
+    const componentsDTO = values.components || [];
+
+    // Sync builder component list with engine-returned graph (so spawned components render).
+    // Strategy: keep the builder's anchors; overlay engine-side spawned ids with generated anchors.
+    const byId = {};
+    experiment.components().forEach(function (c) { byId[c.id] = c; });
+    const newComps = [];
+    let bubbleStackY = 60;
+    componentsDTO.forEach(function (dto) {
+      if (byId[dto.id]) {
+        // Update props of existing builder component
+        byId[dto.id].props = Object.assign({}, byId[dto.id].props, dto.props);
+        newComps.push(byId[dto.id]);
+      } else {
+        // Spawned component — place bubble above flask, salt below reagent
+        const baseFlask = byId['F1'];
+        const baseAnchor = baseFlask && baseFlask.anchor
+          ? { x: baseFlask.anchor.x + 15, y: baseFlask.anchor.y - 30 - bubbleStackY }
+          : { x: 300, y: 50 };
+        if (dto.kind === 'bubble') {
+          bubbleStackY += 50;
+        }
+        newComps.push({
+          id: dto.id,
+          kind: dto.kind,
+          props: dto.props,
+          anchor: dto.kind === 'bubble' ? baseAnchor : { x: 70, y: 200 + newComps.length * 24 },
+        });
+      }
+    });
+    experiment._components = newComps;
+
+    // Top KPIs
+    const extent = Number(values.spawnCount ?? 0) > 0 && perComponent['A1']
+      ? (acid0() - (perComponent['A1'].moles || 0))
+      : 0;
+    document.getElementById('stat-extent').textContent = extent.toFixed(3);
+
+    // Sum H2 bubbles
+    let h2 = 0;
+    for (const id in perComponent) {
+      const v = perComponent[id];
+      if (v && v.phase === 'g') h2 += Number(v.moles) || 0;
+    }
+    document.getElementById('stat-h2').textContent = h2.toFixed(3) + ' mol';
+
+    const znData = perComponent['Zn1'];
+    if (znData) {
+      const remaining = (znData.solidState === 'dissolved') ? 0
+        : (znData.moles ? znData.moles * 65.38 : parseFloat(document.getElementById('ctrl-mass').value));
+      document.getElementById('stat-zn').textContent = remaining.toFixed(2) + ' g';
+    }
+
+    // Events panel
+    if (events.length > 0) {
+      eventsPanel.classList.remove('empty');
+      eventsPanel.innerHTML = events.slice(0, 20).map(function (e) {
+        const icon = e.kind === 'spawn' ? '✨' : e.kind === 'remove' ? '🗑' : '🔄';
+        return icon + ' <b>' + (e.sourceRuleId || '?') + '</b> · ' + (e.reason || '');
+      }).join('<br>');
+    } else {
+      eventsPanel.classList.add('empty');
+      eventsPanel.textContent = '（无反应事件 · 调整浓度/质量以触发反应）';
+    }
+
+    render(perComponent);
+  }
+
+  function acid0() {
+    const c = parseFloat(document.getElementById('ctrl-conc').value);
+    return c * 0.025;
+  }
+
+  function bindSlider(ctrlId, valId) {
+    const ctrl = document.getElementById(ctrlId);
+    const val = document.getElementById(valId);
+    if (!ctrl || !val) return;
+    val.textContent = parseFloat(ctrl.value).toFixed(1);
+    ctrl.addEventListener('input', function () {
+      val.textContent = parseFloat(ctrl.value).toFixed(1);
+      recompute();
+    });
+  }
+  bindSlider('ctrl-conc', 'val-conc');
+  bindSlider('ctrl-mass', 'val-mass');
+
+  document.getElementById('ctrl-reset').addEventListener('click', function () {
+    experiment = buildExperiment();
+    recompute();
+  });
+
+  render({});
+  if (window.EurekaHost) EurekaHost.emitReady('chemistry/metal-acid-reaction');
+  recompute();
+})();
+</script>
+</body>
+</html>

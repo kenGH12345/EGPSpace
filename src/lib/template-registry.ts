@@ -407,6 +407,23 @@ const REGISTRY: Record<string, TemplateMetadata> = {
     auditDocPath: 'docs/audits/chemistry-iron-rusting.md',
     tags: ['corrosion', 'oxidation', 'iron', 'rust'],
   },
+  'chemistry/metal-acid-reaction': {
+    id: 'chemistry/metal-acid-reaction',
+    subject: 'chemistry',
+    title: '金属置换反应 · Zn + H₂SO₄',
+    description: '活泼金属置换稀酸产生氢气：Zn + H₂SO₄ → ZnSO₄ + H₂↑ · 组件化可视反应事件',
+    icon: '💥',
+    gradient: 'from-emerald-500 to-green-600',
+    templatePath: 'chemistry/metal-acid-reaction.html',
+    parameters: [
+      { name: 'acidConcentration', label: 'H₂SO₄ 浓度', unit: 'mol/L', min: 0.1, max: 5, defaultValue: 2, step: 0.1 },
+      { name: 'znMass', label: 'Zn 粒质量', unit: 'g', min: 0.1, max: 10, defaultValue: 1, step: 0.1 },
+    ],
+    auditStatus: 'approved',
+    auditDocPath: 'docs/audits/chemistry-metal-acid-reaction.md',
+    tags: ['metal-acid', 'displacement', 'hydrogen', 'reaction', 'component-based'],
+    atomVersion: 'v3-component',
+  },
   'chemistry/electrolysis': {
     id: 'chemistry/electrolysis',
     subject: 'chemistry',
@@ -499,6 +516,7 @@ export function getTemplate(id: string | null | undefined): TemplateMetadata | n
     // chemistry templates
     "chemistry/acid-base-titration",
     "chemistry/iron-rusting",
+    "chemistry/metal-acid-reaction",
     "chemistry/electrolysis",
     "chemistry/reaction-rate",
     "chemistry/combustion-conditions",
