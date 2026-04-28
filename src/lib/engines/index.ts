@@ -38,6 +38,7 @@ export type {
 
 // Physics engines
 export { BuoyancyEngine, default as buoyancyEngine } from './physics/buoyancy';
+export { CircuitEngine, default as circuitEngine } from './physics/circuit';
 
 // Chemistry engines
 export { TitrationEngine, default as titrationEngine } from './chemistry/titration';
@@ -60,6 +61,7 @@ export { SeismicWaveEngine, default as seismicWaveEngine } from './geography/sei
 // ─── Auto-register on module load ───
 import { registry } from './registry';
 import buoyancyEngine from './physics/buoyancy';
+import circuitEngine from './physics/circuit';
 import titrationEngine from './chemistry/titration';
 
 // Phase 2 engines
@@ -74,6 +76,7 @@ import oceanCurrentEngine from './geography/ocean-current';
 import seismicWaveEngine from './geography/seismic-wave';
 
 registry.register(buoyancyEngine);
+registry.register(circuitEngine);
 registry.register(titrationEngine);
 registry.register(osmosisEngine);
 registry.register(enzymeEngine);
