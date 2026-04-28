@@ -39,7 +39,7 @@ _No conventions detected._
 
 ## Directory Structure
 - Project has documented directory structure in AGENTS.md _(from AGENTS.md)_
-- Top-level directories: assets, coverage, docs, experiment-design-skill, physics-experiment-design, public, scripts, src _(from directory-scan)_
+- Top-level directories: analysis, assets, coverage, docs, experiment-design-skill, physics-experiment-design, public, scripts, src _(from directory-scan)_
 
 ## Toolchain
 - npm script "build": bash ./scripts/build.sh _(from package.json)_
@@ -58,4 +58,4 @@ _No conventions detected._
 
 | Version | Date | Change |
 |---------|------|--------|
-| v1.0.0 | 2026-04-26 | Auto-discovered from project config files |
+| v1.0.0 | 2026-04-28 | Auto-discovered from project config files |

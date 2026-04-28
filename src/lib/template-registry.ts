@@ -49,6 +49,14 @@ export interface TemplateMetadata {
   lastAuditedAt?: string;
   /** Free-form tags for search/filter */
   tags?: string[];
+  /**
+   * Atomization version.
+   * - `v1-legacy` (or omitted): self-contained HTML (inline formulas, own drawing, hand-written controls).
+   * - `v2-atomic`: uses L3 shared atoms (ui-core.js/physics-draw.js/...) and delegates
+   *   compute to L1 engines via postMessage compute_request protocol.
+   * Used for gradual migration tracking — does not change rendering path.
+   */
+  atomVersion?: 'v1-legacy' | 'v2-atomic' | 'v3-component';
 }
 
 /**
@@ -378,6 +386,7 @@ const REGISTRY: Record<string, TemplateMetadata> = {
     auditStatus: 'approved',
     auditDocPath: 'docs/audits/chemistry-acid-base-titration.md',
     tags: ['acid-base', 'titration', 'pH', 'indicator'],
+    atomVersion: 'v2-atomic',
   },
   'chemistry/iron-rusting': {
     id: 'chemistry/iron-rusting',
@@ -643,5 +652,40 @@ addApprovedTemplate('acid-base-titration', { auditStatus: 'approved', reviewer: 
 addApprovedTemplate('electrolysis',        { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
 addApprovedTemplate('reaction-rate',       { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
 addApprovedTemplate('combustion',          { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
+
+// ── Subject-level registry exports (T-3: capability atomization) ────────────
+/** Extract physics templates from the unified registry */
+export const PHYSICS_REGISTRY = Object.fromEntries(
+  Object.entries(REGISTRY).filter(([, v]) => v.subject === 'physics')
+);
+
+/** Extract chemistry templates from the unified registry */
+export const CHEMISTRY_REGISTRY = Object.fromEntries(
+  Object.entries(REGISTRY).filter(([, v]) => v.subject === 'chemistry')
+);
+
+/** Extract biology templates from the unified registry */
+export const BIOLOGY_REGISTRY = Object.fromEntries(
+  Object.entries(REGISTRY).filter(([, v]) => v.subject === 'biology')
+);
+
+/** Extract geography templates from the unified registry */
+export const GEOGRAPHY_REGISTRY = Object.fromEntries(
+  Object.entries(REGISTRY).filter(([, v]) => v.subject === 'geography')
+);
+
+/** Extract math templates from the unified registry */
+export const MATH_REGISTRY = Object.fromEntries(
+  Object.entries(REGISTRY).filter(([, v]) => v.subject === 'math')
+);
+
+/** All subject registries combined (same as REGISTRY, but explicit for T-5 integration) */
+export const ALL_SUBJECT_REGISTRIES: Record<string, Record<string, TemplateMetadata>> = {
+  physics: PHYSICS_REGISTRY,
+  chemistry: CHEMISTRY_REGISTRY,
+  biology: BIOLOGY_REGISTRY,
+  geography: GEOGRAPHY_REGISTRY,
+  math: MATH_REGISTRY,
+};
 
 // 示例占位 & 兜底

@@ -1,0 +1,85 @@
+{
+  "CODE": {
+    "stageName": "CODE",
+    "summary": "[新建文件（15 个）] `src/lib/framework/assembly/spec.ts` (72 行)",
+    "keyDecisions": [
+      "[新建文件（15 个）] `src/lib/framework/assembly/spec.ts` (72 行)",
+      "[Framework 通用层（5）— AC-A~AC-E 核心保证] `src/lib/framework/assembly/spec.ts` (72 行)",
+      "[Circuit Domain 绑定（4）] `src/lib/framework/domains/circuit/assembly/circuit-spec.ts` (42 行)",
+      "[浏览器 L3（3）] `public/templates/_shared/component-mirror.js` (87 行)",
+      "[测试（2）] `src/lib/framework/__tests__/assembly.test.ts` (363 行) · 34 tests · Wave 1.5 Gate"
+    ],
+    "artifacts": [
+      "output\\code.diff"
+    ],
+    "risks": [],
+    "correctionHistory": [],
+    "meta": {
+      "session": "wf-20260428120154."
+    },
+    "timestamp": "2026-04-28T13:05:00.310Z"
+  },
+  "_meta": {
+    "requirementFingerprint": "ac 全学科通用性 电路集成 装配层框架化"
+  },
+  "TEST": {
+    "stageName": "TEST",
+    "summary": "[Test Report · Session wf-20260428120154.] 执行: `npm test` (Jest) + `npx tsc --noEmit`",
+    "keyDecisions": [
+      "[Test Report · Session wf-20260428120154.] 执行: `npm test` (Jest) + `npx tsc --noEmit`",
+      "[总览] Test Suites: 18 passed, 18 total",
+      "[新增覆盖（本轮 +10 tests）] | 测试文件 | 测试数 | 覆盖对象 |",
+      "[AC 验收（强制条款）逐条证据] 测试：`AC-A · framework/assembly is domain-agnostic · no domain-specific keyword appears in framework/assembly/*.ts`",
+      "[AC-A 通用化 ✅] 测试：`AC-A · framework/assembly is domain-agnostic · no domain-specific keyword appears in framework/assembly/*.ts`"
+    ],
+    "artifacts": [
+      "output\\test-report.md"
+    ],
+    "risks": [],
+    "correctionHistory": [],
+    "meta": {
+      "session": "wf-20260428120154."
+    },
+    "timestamp": "2026-04-28T13:07:18.776Z"
+  },
+  "REVIEW": {
+    "stageName": "REVIEW",
+    "summary": "[需求达成度审查] |---------|---------|------|",
+    "keyDecisions": [
+      "[需求达成度审查] |---------|---------|------|",
+      "[架构 Scorecard 复核] 14 项 ARCH 检查全部 PASS。关键亮点：",
+      "[Failure Model 复核] | 故障 ID | 在 CODE 中的实现 |",
+      "[单文件体积检查（AC-D）] | `assembly/spec.ts` | 72 |",
+      "[依赖方向检查（AC-A 支撑）] framework/assembly/* → framework/components/*        ✅（合法：顶层抽象）"
+    ],
+    "artifacts": [
+      "output\\review-output.md"
+    ],
+    "risks": [],
+    "correctionHistory": [],
+    "meta": {
+      "session": "wf-20260428120154."
+    },
+    "timestamp": "2026-04-28T13:12:42.015Z"
+  },
+  "DEPLOY": {
+    "stageName": "DEPLOY",
+    "summary": "[Deploy Output · Session wf-20260428120154.] 本地落盘（local-writeback）—— Next.js 项目在 IDE 环境完成重构；运行 `pnpm dev` 即可加载新版 circuit.html v3 进行浏览器端验证。",
+    "keyDecisions": [
+      "[Deploy Output · Session wf-20260428120154.] 本地落盘（local-writeback）—— Next.js 项目在 IDE 环境完成重构；运行 `pnpm dev` 即可加载新版 circuit.html v3 进行浏览器端验证。",
+      "[部署模式] 本地落盘（local-writeback）—— Next.js 项目在 IDE 环境完成重构；运行 `pnpm dev` 即可加载新版 circuit.html v3 进行浏览器端验证。",
+      "[已交付文件清单] src/lib/framework/assembly/",
+      "[新建（15）] src/lib/framework/assembly/",
+      "[修改（5）] src/lib/framework/index.ts                — 新增 assembly 层的所有 export"
+    ],
+    "artifacts": [
+      "output\\deploy-output.md"
+    ],
+    "risks": [],
+    "correctionHistory": [],
+    "meta": {
+      "session": "wf-20260428120154."
+    },
+    "timestamp": "2026-04-28T13:13:50.618Z"
+  }
+}

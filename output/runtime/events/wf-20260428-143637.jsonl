@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260428-143637","createdAt":"2026-04-28T06:36:38.056Z"}
+{"seq":1,"ts":"2026-04-28T06:36:38.056Z","sessionId":"wf-20260428-143637","kind":"stage_started","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageInput":"output/architecture.md section 14"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

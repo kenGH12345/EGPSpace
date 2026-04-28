@@ -3,7 +3,7 @@ name: EGPSpace Skill Knowledge
 project: egpspace
 type: project-knowledge
 version: 1.0.0
-generated_at: 2026-04-26T14:41:42.614Z
+generated_at: 2026-04-28T12:02:24.248Z
 sources:
   - skill-discovery
 deprecated: false
@@ -26,7 +26,7 @@ _No conventions detected._
 
 ## Directory Structure
 - Project has documented directory structure in AGENTS.md _(from AGENTS.md)_
-- Top-level directories: assets, coverage, docs, experiment-design-skill, physics-experiment-design, public, scripts, src _(from directory-scan)_
+- Top-level directories: analysis, assets, coverage, docs, experiment-design-skill, physics-experiment-design, public, scripts, src _(from directory-scan)_
 
 ## Toolchain
 - npm script "build": bash ./scripts/build.sh _(from package.json)_

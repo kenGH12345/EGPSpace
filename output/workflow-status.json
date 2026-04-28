@@ -1,12 +1,12 @@
 {
   "activeWorkflow": {
-    "session": "wf-20260426-225458",
-    "startedAt": "2026-04-26T14:54:59.224Z",
-    "currentStage": "TEST",
+    "session": "wf-20260428120154.",
+    "startedAt": "2026-04-28T12:27:18.484Z",
+    "currentStage": "DEPLOY",
     "completedStages": [],
-    "requirement": "将化学实验迁移到统一声明式框架",
-    "requirementFingerprint": "将化学实验迁移到统一声明式框架",
-    "ttlExpiry": "2026-04-26T16:54:59.224Z",
-    "stageStartTime": 1777215299224
+    "requirement": "装配层框架化+电路集成（全学科通用性 AC）",
+    "requirementFingerprint": "ac 全学科通用性 电路集成 装配层框架化",
+    "ttlExpiry": "2026-04-28T14:02:24.280Z",
+    "stageStartTime": 1777381981601
   }
 }

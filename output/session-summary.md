@@ -1,27 +1,27 @@
 # 📊 /wf Session Summary
 
-> **Requirement**: 接受三重锁方案；第一批迁移到HTML模板的4个物理实验是：浮力、杠杆、折射、电路（后续要继续完成全部所有学科所有实验）；模板技术栈参考对方的
-> **Session**: `unknown`
-> **Generated**: 2026-04-24T10:28:26.679Z
+> **Requirement**: L2 Schema/L4 HTML 模板按原子化 组合化方向重构
+> **Session**: `wf-20260428083531.`
+> **Generated**: 2026-04-28T10:20:53.636Z
 
 ---
 
 ## 🔍 Analysis Highlights
 
-# EGPSpace 架构转向：HTML 模板 + 三重锁 —— 根因诊断分析
+# L2 Schema / L4 HTML 模板原子化重构 · 需求分析
 
-> **会话**：wf-20260424091211. · **需求 fingerprint**：`后续要继续完成全部所有学科所有实验 折射 接受三重锁方案 杠杆 模板技术栈参考对方`
-> **本文档仅限诊断性分析**（根因/受影响位置/变更范围/风险评估）。需求规约、用户故事、验收标准等内容写入 `output/requirement.md`。
-
----
+> Session: `wf-20260428083531.` · Stage: ANALYSE · Date: 2026-04-28
 
 ## 根因 / Root Cause
 
-### 核心根因：LLM 参与"画面生成"导致不确定性
+**一句话根因**：系统存在两套**设计精良但执行脱节**的原子库（L1 引擎 + L2 CanvasElement + L3 `_shared/*.js`），而 L4 的 23 个 HTML 实验模板**既不通过 L1 获取计算结果、也不使用 L2 声明式元素、更不加载 L3 已写好的共享绘图函数**，导致每个实验都是 300~500 行自包含的"孤岛 HTML"，出现三重重复：**公式重写、绘图重写、控件重写**。
 
-**EGPSpace 当前实验系统的本质缺陷**：将"LLM 生成内容"与"实验画面渲染"耦合在同一条数据流中，LLM 输出的 `ExperimentSchema` 会**直接**驱动 Canvas 绘制，任何概率性失误（参数错误、拓扑错误、坐标错位）都会**直接投影到用户看到的画面上**。
+**证据链**：
 
-**对比 EurekaFinder 的关键差异**（基于对 `output/eureka2-page.js` bundle 第 48/106/107/173 行的反向分析）：
+1. **引擎双写证据**（计算层漂移）
+   - `src/lib/engines/physics/buoyancy.ts:43-81` 实现了 `compute()`：浮力 = ρ液·g·V浸
+   - `public/templates/physics/buoyancy.html:104-153` 又写了一遍 `updateDisplay()`：同样的浮力公式
+   - 两者**无任何通信**——iframe 内部自己算，外部引擎没被调用过
 
 
 > 📄 Full analysis: `output/analysis.md`
@@ -30,16 +30,16 @@
 
 ## 🏗️ Architecture Decisions
 
-# EGPSpace 架构设计：HTML 模板 + 三重锁
+# L2 Schema / L4 HTML 模板原子化重构 · 架构设计
 
-> Session: `wf-20260424091211.`
-> Stage: ARCHITECT
-> Upstream: `output/analysis.md`（根因：LLM 参与画面生成导致不确定性）
-> Decision Type: **Architecture Pivot — Template-First + Triple-Lock**
+> Session: `wf-20260428083531.` · Stage: ARCHITECT · Date: 2026-04-28
 
----
+## 🧠 Architecture Reasoning
 
-## 架构总览
+### 关键质量属性
+- **可复用性（首要）**：消除公式/绘图/控件三重重复，让新增实验的代码量从 ~350 行降到 ~130 行
+- **安全性**：保持 Triple-Lock 边界（origin check + schema validate + whitelist）零回归
+- **可观测性**：消息协议扩展必须可追踪（requestId 对齐 async 响应）
 
 > 📄 Full architecture: `output/architecture.md`
 

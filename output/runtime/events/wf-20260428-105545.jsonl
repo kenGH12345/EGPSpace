@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260428-105545","createdAt":"2026-04-28T02:55:45.817Z"}
+{"seq":1,"ts":"2026-04-28T02:55:45.817Z","sessionId":"wf-20260428-105545","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"Read output/analysis.md, read src/lib/experiment-schema.ts, read src/components/experiment-canvas.tsx"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
