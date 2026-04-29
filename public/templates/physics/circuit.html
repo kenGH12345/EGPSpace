@@ -111,19 +111,56 @@
   // Rendering helpers (use ComponentMirror's dispatch table)
   // ════════════════════════════════════════════════════════════════════════
 
+  // Port position convention (matches circuit-draw.js):
+  //   Every component occupies a 50×40 rect starting at anchor (ax, ay).
+  //   Horizontal lead wire is at y = ay + 20.
+  //   Left port  = (ax,      ay + 20)
+  //   Right port = (ax + 50, ay + 20)
+  function portPos(comp, side) {
+    const ax = (comp.anchor && comp.anchor.x) || 0;
+    const ay = (comp.anchor && comp.anchor.y) || 0;
+    return side === 'left'
+      ? { x: ax,      y: ay + 20 }
+      : { x: ax + 50, y: ay + 20 };
+  }
+
   function drawConnectionLines(components) {
-    // Draw simple horizontal connection lines between consecutive anchor points.
-    // Full graph layout is out of scope; for 4-component demo the loop is visually clear.
+    // Draw a real closed loop: connect each component's right port to the
+    // next component's left port, then add a return wire from the last
+    // component back to the first (going up → left → down around the top).
+    // This makes the circuit visually closed — matching the .loop() semantics
+    // in CircuitBuilder.
+    if (!components || components.length < 2) return;
+
     ctx.save();
-    ctx.strokeStyle = '#94A3B8';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 3]);
-    // Top bus line (return loop)
+    ctx.strokeStyle = '#334155';   // slate-700 · solid dark line
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(50, 40); ctx.lineTo(590, 40); ctx.lineTo(590, 130);
-    ctx.moveTo(50, 40); ctx.lineTo(50, 130);
+
+    // 1) Sequential connections between adjacent components
+    for (let i = 0; i < components.length - 1; i++) {
+      const a = portPos(components[i], 'right');
+      const b = portPos(components[i + 1], 'left');
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+    }
+
+    // 2) Return wire: last component's right → up → left → down → first component's left
+    const first = portPos(components[0], 'left');
+    const last  = portPos(components[components.length - 1], 'right');
+    const topY  = Math.max(10, Math.min(first.y, last.y) - 70);
+    const leftX = Math.max(10, first.x - 20);
+    const rightX = last.x + 20;
+
+    ctx.moveTo(last.x,  last.y);
+    ctx.lineTo(rightX,  last.y);     // short stub right
+    ctx.lineTo(rightX,  topY);       // up to bus
+    ctx.lineTo(leftX,   topY);       // horizontal bus across top
+    ctx.lineTo(leftX,   first.y);    // down to first component's y
+    ctx.lineTo(first.x, first.y);    // short stub into first component's left port
+
     ctx.stroke();
-    ctx.setLineDash([]);
     ctx.restore();
   }
 
