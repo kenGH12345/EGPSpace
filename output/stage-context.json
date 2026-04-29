@@ -1,13 +1,36 @@
 {
+  "ARCHITECT": {
+    "stageName": "ARCHITECT",
+    "summary": "[ARCHITECTURE · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险",
+    "keyDecisions": [
+      "[ARCHITECTURE · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险",
+      "[🧠 思考摘要] B 是一层鼠标事件 → Builder DSL 调用的输入适配器。architecture 核心解决 5 个问题：",
+      "[关键架构决策] `EditorState` 包含交互态（选中、draft 连线、相机偏移），这些不属于导出的 Bundle。Bundle 是 state 的派生物。",
+      "[D-1 · EditorState 是 Bundle 的超集而非 Bundle 本身] `EditorState` 包含交互态（选中、draft 连线、相机偏移），这些不属于导出的 Bundle。Bundle 是 state 的派生物。",
+      "[D-2 · Reducer 纯函数 + 无 React 依赖] // src/lib/editor/editor-state-reducer.ts"
+    ],
+    "artifacts": [
+      "output\\architecture.md"
+    ],
+    "risks": [],
+    "correctionHistory": [],
+    "meta": {
+      "session": "wf-20260428234611."
+    },
+    "timestamp": "2026-04-29T00:00:27.808Z"
+  },
+  "_meta": {
+    "requirementFingerprint": "framework 编辑器"
+  },
   "PLAN": {
     "stageName": "PLAN",
-    "summary": "[Execution Plan · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+    "summary": "[EXECUTION PLAN · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `architecture.md` 的 5 决策 + 14 AC + 20 新文件",
     "keyDecisions": [
-      "[Execution Plan · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
-      "[依赖图] W0_START([Wave 0 · 类型层 + FluentAssembly 分流])",
-      "[Wave 0 · 类型层 + FluentAssembly 分流（90 min）] File: `src/lib/framework/assembly/layout.ts`",
-      "[T-1 · `assembly/layout.ts` 新文件（20 min）] File: `src/lib/framework/assembly/layout.ts`",
-      "[T-2 · `assembly/fluent.ts` 内部分流（30 min）] File: `src/lib/framework/assembly/fluent.ts`"
+      "[EXECUTION PLAN · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `architecture.md` 的 5 决策 + 14 AC + 20 新文件",
+      "[关键路径与 Wave 依赖] subgraph W0 [\"Wave 0 · 纯 TS 数据层（可独立 jest）\"]",
+      "[关键路径（最长依赖链）] `T-1 → T-2 → T-4 → T-6(Gate) → T-7 → T-8 → T-12 → T-14 → T-18 → T-19 → T-22 → T-24`",
+      "[22 任务详解] | T | 文件 | AC | 估时 | 依赖 |",
+      "[Wave 0 · 纯 TS 数据层（~40min）] | T | 文件 | AC | 估时 | 依赖 |"
     ],
     "artifacts": [
       "output\\execution-plan.md"
@@ -15,22 +38,19 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428153150."
+      "session": "wf-20260428234611."
     },
-    "timestamp": "2026-04-28T16:05:29.618Z"
-  },
-  "_meta": {
-    "requirementFingerprint": "anchor layoutspec 解耦"
+    "timestamp": "2026-04-29T00:06:10.621Z"
   },
   "CODE": {
     "stageName": "CODE",
-    "summary": "[DEVELOP Stage · Code Changes Summary (D)] > Session: `wf-20260428153150.`",
+    "summary": "[Code Diff · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 22 任务全部完成 · 493/493 测试 PASS",
     "keyDecisions": [
-      "[DEVELOP Stage · Code Changes Summary (D)] > Session: `wf-20260428153150.`",
-      "[新建文件（3）] | # | File | LOC | Purpose |",
-      "[修改文件（10）] | # | File | Change | AC |",
-      "[Framework 层关键 AC 审计] AC-D1 · layout.ts 不 import AssemblySpec",
-      "[意外红利：T-12 测试迁移工作量 = 0] ARCHITECT 阶段原预估 T-12（老测试迁移）60 min，因上轮 446 测试都是结构级断言（没有硬断言具体 anchor 值），零迁移即零回归。原因："
+      "[Code Diff · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 22 任务全部完成 · 493/493 测试 PASS",
+      "[文件清单（23 新 + 1 改 + 7 工作流）] `editor-state.ts` — EditorState + cloneEditorState + emptyEditorState (78 行)",
+      "[新增 · 数据层 `src/lib/editor/` (7 文件)] `editor-state.ts` — EditorState + cloneEditorState + emptyEditorState (78 行)",
+      "[新增 · Drawer TS 镜像 `src/lib/editor/drawers/` (2 文件)] `circuit-drawers.ts` — 7 个电路元件 drawer (~200 行)",
+      "[新增 · Domain 配置 `src/lib/editor/domain-configs/` (3 文件)] `circuit.ts` — palette + portLayout + drawers + validateBundle"
     ],
     "artifacts": [
       "output\\code.diff"
@@ -38,19 +58,19 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428153150."
+      "session": "wf-20260428234611."
     },
-    "timestamp": "2026-04-28T17:15:55.457Z"
+    "timestamp": "2026-04-29T00:22:15.302Z"
   },
   "TEST": {
     "stageName": "TEST",
-    "summary": "[TEST · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+    "summary": "[Test Report · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 14 AC 逐条验证",
     "keyDecisions": [
-      "[TEST · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
-      "[Overall] | Test Suites | 24 passed / 24 total |",
-      "[14 AC 逐条证据] | AC | 要求 | 验证方式 | 结果 |",
-      "[新增 19 测试清单] AC-D1 · layout.ts 不 import AssemblySpec type",
-      "[风险验证] | Risk (PLAN) | Mitigation | 结果 |"
+      "[Test Report · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 14 AC 逐条验证",
+      "[Test Command] npx tsc --noEmit       # TypeScript check",
+      "[Unit / Integration] Test Suites: 25 passed, 25 total",
+      "[TypeScript] npx tsc --noEmit → exit code 0 (零输出)",
+      "[Lint] `src/lib/editor/` → 0 diagnostics"
     ],
     "artifacts": [
       "output\\test-report.md"
@@ -58,19 +78,19 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428153150."
+      "session": "wf-20260428234611."
     },
-    "timestamp": "2026-04-28T17:23:32.870Z"
+    "timestamp": "2026-04-29T00:23:11.126Z"
   },
   "REVIEW": {
     "stageName": "REVIEW",
-    "summary": "[REVIEW · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+    "summary": "[Review · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 需求达成 · 决策对比 · 遗留债务",
     "keyDecisions": [
-      "[REVIEW · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
-      "[需求达成度] | 把 anchor 从 AssemblySpec 分离为独立 LayoutSpec | ✅ 100% |",
-      "[5 决策对比（ARCHITECT vs DEVELOP）] | 决策 | 原承诺 | 实际交付 | 偏差 |",
-      "[3 意外红利] | 1. T-12 迁移工作量 = 0 | ARCHITECT 原预估 60min，实际因上轮 test 都是结构级断言，零迁移即零回归 |",
-      "[Failure Model 实际覆盖] | FM | Architecture 承诺 | 实际验证 |"
+      "[Review · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 需求达成 · 决策对比 · 遗留债务",
+      "[需求达成 · 100%] | In-Scope 功能 | 状态 | 实现位置 |",
+      "[决策对比 · 0 偏差] | # | ARCHITECT 决策 | 实际实现 | 状态 |",
+      "[Failure Model 覆盖审计] | # | 模式 | 对策 | 代码位置 |",
+      "[文件与层级分布] src/lib/editor/            纯 TS · 零 React · 可测"
     ],
     "artifacts": [
       "output\\review-output.md"
@@ -78,19 +98,19 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428153150."
+      "session": "wf-20260428234611."
     },
-    "timestamp": "2026-04-28T17:31:44.410Z"
+    "timestamp": "2026-04-29T00:24:03.659Z"
   },
   "DEPLOY": {
     "stageName": "DEPLOY",
-    "summary": "[DEPLOY · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
+    "summary": "[Deploy Output · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 本地落盘部署完成",
     "keyDecisions": [
-      "[DEPLOY · anchor-LayoutSpec 解耦（D）] > Session: `wf-20260428153150.`",
-      "[文件变更总清单] |------|------|------|",
-      "[前置检查（已在 TEST/REVIEW 完成）] ✅ TSC `--noEmit` 零错误",
-      "[回滚方案] |------|------|------|",
-      "[提交建议] feat(framework): anchor-LayoutSpec 解耦（为编辑器 framework 做前置清理）"
+      "[Deploy Output · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 本地落盘部署完成",
+      "[文件清单（23 新 + 1 改 + 7 工作流 = 31 文件）] 数据层 `src/lib/editor/` (8)",
+      "[新增（23）] 数据层 `src/lib/editor/` (8)",
+      "[修改（1）] `docs/component-framework.md` — Sibling documents 索引加入 editor-framework.md",
+      "[工作流产出（7）] `output/analysis.md`"
     ],
     "artifacts": [
       "output\\deploy-output.md"
@@ -98,8 +118,8 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428153150."
+      "session": "wf-20260428234611."
     },
-    "timestamp": "2026-04-28T17:34:03.054Z"
+    "timestamp": "2026-04-29T00:24:51.757Z"
   }
 }

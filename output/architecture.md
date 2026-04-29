@@ -1,313 +1,381 @@
-# Architecture · anchor-LayoutSpec 解耦（D）
+# ARCHITECTURE · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> Stage: ARCHITECT
-> Scope: 把 `anchor` 从 Spec 数据层分离为独立 `LayoutSpec`，保持 Sugar API 与模板零改动。
+> Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险
 
 ---
 
-## 1. 架构总览
+## 🧠 思考摘要
+
+B 是一层**鼠标事件 → Builder DSL 调用**的输入适配器。architecture 核心解决 5 个问题：
+(1) EditorState 形状如何与 AssemblyBundle 解耦；(2) reducer 如何保持可测；(3) Canvas 2D drawer 如何与 React DOM 端口 overlay 共存；(4) 跨 domain 扩展契约是什么；(5) 运行结果如何回显到画布。
+
+---
+
+## 关键架构决策
+
+### D-1 · EditorState 是 Bundle 的超集而非 Bundle 本身
+
+`EditorState` 包含**交互态**（选中、draft 连线、相机偏移），这些**不属于**导出的 Bundle。Bundle 是 state 的**派生物**。
+
+```ts
+// src/lib/editor/editor-state.ts
+export interface EditorState<D extends ComponentDomain = ComponentDomain> {
+  domain: D;
+  // 画布上已放置的元件（对应 ComponentDecl + LayoutEntry）
+  placed: Array<{
+    id: string;
+    kind: string;
+    props: Record<string, unknown>;
+    anchor: ComponentAnchor;           // 每个 placed 自带 anchor（原因：reducer 更直观）
+  }>;
+  // 已完成的连接
+  connections: Array<ConnectionDecl>;  // 直接复用 framework 的 ConnectionDecl
+  // UI-only 交互态
+  selection: { kind: 'none' } | { kind: 'component'; id: string } | { kind: 'connection'; index: number };
+  draftWire:
+    | null
+    | { from: { componentId: string; port: string }; cursor: { x: number; y: number } };
+  // UI-only 视觉态（不影响 Bundle）
+  camera: { offset: { x: number; y: number }; zoom: number };
+}
+```
+
+**为什么把 anchor 放回 placed 里而不是独立 layout**？
+- Reducer 写起来更直观：一个 action 只改一个 placed 对象
+- 导出时 `bundleFromState()` 会把 anchor 拆到 LayoutSpec
+- 这是 UI 内部实现细节，**不暴露给 Bundle**
+
+**Trade-off**：
+- ✅ Reducer action 更简洁（不用同时更新 `placed` 和 `layout`）
+- ✅ 回放 Bundle 也简单（`layoutLookup(bundle.layout)[id]` → 填入 placed.anchor）
+- ⚠️ 和 D 的"anchor 不属于 Spec"方向看起来反向——但我们这里是 **UI 内部 state**，不是 Spec；导出时强制分离即可
+
+### D-2 · Reducer 纯函数 + 无 React 依赖
+
+```ts
+// src/lib/editor/editor-state-reducer.ts
+export type EditorAction =
+  | { type: 'placeComponent'; domain: ComponentDomain; kind: string; position: { x: number; y: number }; defaults?: Record<string, unknown> }
+  | { type: 'moveComponent'; id: string; delta: { x: number; y: number } }
+  | { type: 'selectComponent'; id: string | null }
+  | { type: 'deleteSelection' }
+  | { type: 'updateProp'; id: string; key: string; value: unknown }
+  | { type: 'startWire'; componentId: string; port: string }
+  | { type: 'updateWireCursor'; x: number; y: number }
+  | { type: 'finishWire'; componentId: string; port: string }   // commits connection
+  | { type: 'cancelWire' }
+  | { type: 'removeConnection'; index: number }
+  | { type: 'setCamera'; offset: { x: number; y: number }; zoom: number }
+  | { type: 'switchDomain'; domain: ComponentDomain }             // resets state
+  | { type: 'loadBundle'; bundle: AssemblyBundle<ComponentDomain> };
+
+export function applyEditorAction(state: EditorState, action: EditorAction): EditorState { ... }
+```
+
+**约束**：文件 `import` 列表仅含类型和 framework，**禁止** `import React`。通过 ESLint/CI 可审计。
+
+**Trade-off**：
+- ✅ 可独立 jest 测试（AC-B2）
+- ✅ 未来加 undo/redo 只需包一层 `{past: state[], present: state, future: state[]}`
+- ⚠️ React 组件需要 `useReducer` 包一层——成本极低
+
+### D-3 · 混合渲染：Canvas drawer + DOM 端口 overlay
+
+**问题**：现有 drawer（`circuit-draw.js` / `chemistry-components-draw.js`）是 JS Canvas 2D 命令式绘图；editor 在 React 里，如果用 SVG 重写所有 drawer **代价过高**且**破坏 D 阶段的浏览器镜像投资**。
+
+**解法**：
+
+```
+┌─ <div class="editor-canvas">  (React, relative position)
+│  ┌─ <canvas>  (absolute, z:1)
+│  │  runtime: for each placed component:
+│  │    drawer(ctx, {id, kind, props, anchor}, perComponentValues)
+│  │  → reuses existing TS-mirror drawer registry
+│  └─ <svg>  (absolute, z:2, pointer-events: none except on ports and wires)
+│     <ConnectionLayer/> — render commits + draft wire
+│     <PortHotspots/>    — <circle> per port · pointer-events:all · onClick
+└─
+```
+
+**TS Drawer 镜像**：新建 `src/lib/editor/drawers/index.ts` 作为 **TS 端 ComponentMirror**（独立于 `public/templates/_shared/component-mirror.js`）。每个 domain 把 drawer 注册进这个 registry：
+
+```ts
+// src/lib/editor/drawers/circuit-drawers.ts
+import type { CanvasDrawer } from './index';
+export const circuitDrawers: Record<string, CanvasDrawer> = {
+  battery: (ctx, comp, values) => { /* port layout 来自 portLayout */ },
+  resistor: (...),
+  ...
+};
+```
+
+这**不重写**现有 JS drawer —— JS 侧继续服务于 HTML 模板，TS 侧服务于 React editor。两侧代码形状几乎一样（都是 `(ctx, comp, values) => void`），维护成本 = 两个 drawer 文件同步（可接受，因为 drawer 是纯渲染、变化慢）。
+
+**Trade-off**：
+- ✅ 端口 hotspot 用 DOM 天然支持 hover/click/tooltip
+- ✅ 元件主体用 Canvas 继续高效渲染
+- ✅ 老 HTML 模板完全不受影响（AC-B5）
+- ⚠️ Drawer 需要镜像两套（JS + TS）——未来 C 阶段可做 **drawer 定义语言（DDL）**把 JS 和 TS 都从单源生成（留给 C）
+
+### D-4 · Domain 扩展协议
+
+`EditorDomainConfig<D>` 是插件点：
+
+```ts
+// src/lib/editor/editor-config.ts
+export interface EditorDomainConfig<D extends ComponentDomain> {
+  domain: D;
+  palette: Array<{
+    kind: string;
+    displayName: string;
+    icon: string;          // emoji 或 dataURI
+    defaultProps: Record<string, unknown>;
+    defaultSize: { w: number; h: number };
+  }>;
+  portLayout: Record<
+    string,                              // kind
+    Record<
+      string,                            // port name
+      { dx: number; dy: number }         // offset from anchor
+    >
+  >;
+  drawers: Record<string, CanvasDrawer>;
+  validateBundle?: (bundle: AssemblyBundle<D>) => string[];  // optional domain-specific checks
+}
+
+// src/lib/editor/domain-configs/circuit.ts
+export const circuitEditorConfig: EditorDomainConfig<'circuit'> = { ... };
+
+// src/lib/editor/domain-configs/chemistry.ts
+export const chemistryEditorConfig: EditorDomainConfig<'chemistry'> = { ... };
+
+// src/lib/editor/domain-configs/index.ts
+export const EDITOR_DOMAIN_CONFIGS = { circuit: circuitEditorConfig, chemistry: chemistryEditorConfig };
+```
+
+**扩展一个新 domain（如 optics）**只需：
+1. 在 `src/lib/framework/domains/optics/` 建 components + graph + solver + assembly（这是 framework 层工作，不在 B 阶段）
+2. 在 `src/lib/editor/domain-configs/optics.ts` 新增 config 文件
+3. 在 `EDITOR_DOMAIN_CONFIGS` 映射里注册
+
+Editor 核心代码（`EditorShell`/`EditorCanvas`/`reducer`/`bundle-from-state`）**零修改**。这是 AC-B7 的硬约束。
+
+### D-5 · Run 按钮：动态 import engine
+
+Editor 不直接 hardcode 依赖 `CircuitEngine` 或 `ChemistryReactionEngine`——而是**按 domain 动态加载**：
+
+```ts
+// src/lib/editor/engine-dispatch.ts
+export async function runEditorBundle<D extends ComponentDomain>(
+  domain: D,
+  bundle: AssemblyBundle<D>
+): Promise<ComputeResult> {
+  const engines = {
+    circuit: async () => (await import('@/lib/engines/physics/circuit')).CircuitEngine,
+    chemistry: async () => (await import('@/lib/engines/chemistry/reaction')).ChemistryReactionEngine,
+  };
+  const EngineCtor = await engines[domain]();
+  const engine = new EngineCtor();
+  return engine.compute({ graph: bundle.spec } as unknown as Record<string, number>);
+}
+```
+
+**好处**：
+- Bundle size 按需：初始载入只包含 editor，不包含所有 engine
+- 加新 domain 只需扩 `engines` map
+
+---
+
+## 数据流架构图
 
 ```mermaid
-graph LR
-  subgraph Before["修改前（耦合）"]
-    B_Spec[AssemblySpec<D><br/>components[i].anchor ⚠️]
-    B_Comp[IExperimentComponent.anchor ⚠️]
-    B_Engine[Engine v2]
-    B_Spec --> B_Engine
-    B_Comp --> B_Spec
+flowchart TB
+  subgraph UI ["React UI Layer (src/components/editor)"]
+    A[ComponentPalette] -->|drag| B[EditorCanvas]
+    B --> C[PlacedComponent]
+    B --> D[ConnectionLayer]
+    B --> E[PortHotspots]
+    F[PropertyPanel]
+    G[RunControls]
   end
 
-  subgraph After["修改后（分离）"]
-    A_Spec[AssemblySpec<D><br/>components[i]（无 anchor）]
-    A_Layout[LayoutSpec<D><br/>entries: id→anchor]
-    A_Bundle["AssemblyBundle<D><br/>{spec, layout?}"]
-    A_Engine[Engine v2<br/>仅消费 spec]
-    A_Renderer[Renderer<br/>消费 spec + layout]
-    A_Bundle --> A_Spec
-    A_Bundle --> A_Layout
-    A_Spec --> A_Engine
-    A_Spec --> A_Renderer
-    A_Layout --> A_Renderer
+  subgraph Logic ["Pure TS Layer (src/lib/editor)"]
+    H[editor-state.ts]
+    I[editor-state-reducer.ts]
+    J[bundle-from-state.ts]
+    K[port-layout.ts]
+    L[persistence.ts]
+    M[engine-dispatch.ts]
+    N[domain-configs/*]
+    O[drawers/*]
   end
 
-  Before -.分离视觉 vs 拓扑.-> After
-```
+  subgraph Framework ["TS Framework (src/lib/framework)"]
+    P[AssemblySpec + LayoutSpec]
+    Q[AssemblyBundle]
+    R[Assembler.assembleBundle]
+  end
 
-**核心论断**：`LayoutSpec` 是**可选伴生资产**，不是核心契约的替代品。引擎从此只看 Spec，渲染层用 Spec + Layout 组合。
+  subgraph Engines ["Engines (src/lib/engines)"]
+    S[CircuitEngine]
+    T[ChemistryReactionEngine]
+  end
+
+  UI -->|dispatch| I
+  I --> H
+  UI -->|read| H
+  B -->|render| O
+  E -->|query| K
+  K -->|read| N
+  G --> J
+  J --> Q
+  G --> M
+  M --> S & T
+  S --> G
+  T --> G
+  L <-->|save/load| Q
+```
 
 ---
 
-## 2. 核心决策（5 条）
-
-### D-1 · LayoutSpec 设计为扁平 `entries` 数组而非嵌套 Map
-
-**What**：
-```ts
-interface LayoutEntry {
-  componentId: string;
-  anchor: ComponentAnchor;
-}
-
-interface LayoutSpec<D extends ComponentDomain = ComponentDomain> {
-  domain: D;
-  entries: LayoutEntry[];
-  metadata?: AssemblyMetadata;
-}
-```
-
-**Why**：
-- JSON-safe（Map 不是 JSON 可序列化）
-- 与 `AssemblySpec.components` / `connections` 数组形态一致（装配层内部结构统一）
-- entries 空数组 ≡ "无布局信息"（语义清晰）
-
-**Trade-off**：
-- ✅ 拿：序列化简单 / 易 diff / 易 JSON-schema 校验
-- ❌ 舍：查找 `id→anchor` 需 O(n) 扫描（可接受：entries 规模等同 components，典型 < 30）
-
-**缓解舍弃**：辅助函数 `layoutLookup(layout): Map<string, ComponentAnchor>` 提供 O(1) 查询视图（不改变数据结构，仅视图）
-
-### D-2 · `AssemblyBundle` 作为可选组合契约
-
-**What**：
-```ts
-interface AssemblyBundle<D extends ComponentDomain = ComponentDomain> {
-  spec: AssemblySpec<D>;
-  layout?: LayoutSpec<D>;
-  metadata?: AssemblyMetadata;
-}
-```
-
-**Why**：给 B 阶段的编辑器留位置——编辑器最终会同时产出 spec + layout，需要一个契约容器。
-
-**Trade-off**：
-- ✅ 拿：未来 B 不需要再引入新概念，直接用 Bundle
-- ❌ 舍：本轮引入但没有强制消费者，存在"为未来而设计"嫌疑
-
-**缓解舍弃**：仅作为**类型定义**存在，不强制任何 Builder / Assembler / Template 使用；纯零成本（类型擦除后运行时无影响）
-
-### D-3 · Builder Sugar 内部分流策略
-
-**What**：
-- Sugar API 签名**完全不变**（`.battery({voltage, id, anchor})`）
-- `FluentAssembly` 内部：
-  - 新增 `protected readonly _layout: LayoutSpec<D>` 字段（与 `_spec` 并列）
-  - `add(kind, props, opts)` 接到 `opts.anchor` 时：不再写入 `_spec.components[i].anchor`，改为 push 到 `_layout.entries`
-  - 新增 `build(assembler)` 返回 `DomainGraph`；新增 `toBundle(): AssemblyBundle<D>` 返回 `{spec, layout}`
-  - **保留** `toSpec()` 返回纯 `AssemblySpec<D>`（不含 anchor 字段）
-
-**Why**：这是兑现 AC-D3（Sugar API 零改）和 AC-D7（模板零改）的唯一路径。
-
-**Trade-off**：
-- ✅ 拿：零破坏兼容 / 现有 4 个模板零修改
-- ❌ 舍：`add` 实现复杂度略升（双路径写入）
-
-**缓解舍弃**：实现通过一个私有 helper `_writeAnchor(id, anchor?)` 封装，`add` 自身逻辑干净
-
-### D-4 · Assembler 保持对 `decl.anchor` 的向后兼容解析
-
-**What**：
-- `ComponentDecl` 保留 `anchor?: ComponentAnchor` 字段（标记 `@deprecated`）
-- `Assembler.assemble(spec)` 遇到 `decl.anchor` 时：发 console.warn（非 fatal），并在内部把 anchor **转存到返回结果的辅助 LayoutSpec**（供 `assembleBundle` 用）
-- 新增 `Assembler.assembleBundle(bundle): DomainGraph`：同时消费 spec + layout
-
-**Why**：上轮的测试里可能有 `ComponentDecl` 写了 anchor（literal spec 测试）；不保留会让回归测试红
-
-**Trade-off**：
-- ✅ 拿：上轮 T-18 测试（literal spec → graph）继续通过
-- ❌ 舍：ComponentDecl 上的 anchor 字段仍然"技术上允许"
-
-**缓解舍弃**：TSDoc 标记 `@deprecated` + console.warn 双重信号；下轮 B 阶段正式移除字段
-
-### D-5 · `IExperimentComponent.anchor` 保留为"渲染提示"，但不再由构造器接收
-
-**What**：
-- `IExperimentComponent.anchor` 接口字段保留（@deprecated）
-- `AbstractComponent` 构造器第三参数 `anchor` 保留 + 默认 `{x:0, y:0}`
-- Component 类不再**强制**接收 anchor（factory 全改为不传）
-- Engine v2 输出 components DTO 的 anchor 字段固定为 `{x:0, y:0}`（**占位**以保 DTO fingerprint 稳定）
-
-**Why**：
-- 保留字段 = 向后兼容零破坏
-- 占位值 {x:0,y:0} = 上轮 T18-6 快照测试继续通过（AC-D5）
-- 真正的坐标由浏览器端消费 LayoutSpec 决定
-
-**Trade-off**：
-- ✅ 拿：兼容性极强
-- ❌ 舍：`component.anchor` 字段语义成了"历史遗迹"
-
-**缓解舍弃**：在 `base.ts` JSDoc 明确说明"此字段已被 LayoutSpec 取代，仅保留用于兼容"；下轮 B 正式移除
-
----
-
-## 3. 10 任务清单（简述，详细任务编号留给 PLAN）
-
-| Task | File | 预估 |
-|------|------|------|
-| T1 | `src/lib/framework/assembly/layout.ts` — LayoutSpec / LayoutEntry / AssemblyBundle + helpers | 20 min |
-| T2 | `src/lib/framework/assembly/fluent.ts` — 增 `_layout` 字段 + sugar 分流 + `toSpec/toLayout/toBundle` | 30 min |
-| T3 | `src/lib/framework/assembly/assembler.ts` — 增 `assembleBundle` + decl.anchor 回落兼容 | 15 min |
-| T4 | `src/lib/framework/assembly/spec.ts` — `ComponentDecl.anchor?` 标 @deprecated + JSDoc | 5 min |
-| T5 | `src/lib/framework/assembly/index.ts` + `src/lib/framework/index.ts` — re-export | 10 min |
-| T6 | `src/lib/framework/components/base.ts` — IExperimentComponent.anchor @deprecated + JSDoc | 5 min |
-| T7 | `src/lib/framework/domains/chemistry/reaction-utils.ts` + `overload-bulb.ts` — makeXxx 移除 anchor hard-code | 15 min |
-| T8 | Circuit/Chemistry Builder — sugar 签名保持，内部走 FluentAssembly 新分流（自动继承） | 20 min（确认 + 轻调整） |
-| T9 | 浏览器 `circuit-builder.js` + `chemistry-builder.js` — 新增 `toLayoutSpec()` + `_layout` 镜像 | 25 min |
-| T10 | Engine v2 (`circuit.ts` + `chemistry/reaction.ts`) — `_formatV2Result` 的 components 输出 anchor=`{x:0,y:0}` 占位 | 15 min |
-| T11 | `layout-spec.test.ts` — LayoutSpec 独立测试（≥10 测试） | 30 min |
-| T12 | 迁移现有测试的 anchor 断言到 LayoutSpec 侧 | 20 min |
-| T13 | `docs/layout-spec.md` + `docs/component-framework.md` 加 LayoutSpec 索引 | 15 min |
-| T14 | 全量 TSC + Jest 验证 | 10 min |
-
-**总估时**：~4 小时（含缓冲）
-
----
-
-## 4. Mermaid · 数据流（before vs after）
+## Mermaid · 组件交互时序（拖放 + 连线 + 运行）
 
 ```mermaid
 sequenceDiagram
-  participant T as HTML Template
-  participant B as Builder
-  participant A as Assembler
-  participant E as Engine v2
-  participant R as Renderer
+  participant User
+  participant Palette as ComponentPalette
+  participant Canvas as EditorCanvas
+  participant Reducer as editor-state-reducer
+  participant Render as PlacedComponent/Port
+  participant Run as RunControls
+  participant Engine
 
-  rect rgba(220, 38, 38, 0.1)
-    Note over T,R: Before (coupled)
-    T->>B: .battery({voltage, anchor})
-    B->>B: spec.components.push({id, kind, props, anchor}) ⚠️
-    T->>E: compute({graph: spec})
-    E->>A: assemble(spec)
-    A-->>E: graph with anchor-bearing components ⚠️
-    E->>E: hash(components including anchor) ⚠️
-    E-->>T: { perComponent, components(with anchor) }
-    T->>R: render(components(anchor from spec))
-  end
+  User->>Palette: drag 'battery'
+  User->>Canvas: drop at (120, 80)
+  Canvas->>Reducer: {type:'placeComponent', kind:'battery', position}
+  Reducer-->>Canvas: state' with new placed[id=battery-1]
+  Canvas->>Render: re-render battery-1
 
-  rect rgba(34, 197, 94, 0.1)
-    Note over T,R: After (separated)
-    T->>B: .battery({voltage, anchor})
-    B->>B: spec.components.push({id, kind, props})
-    B->>B: layout.entries.push({componentId, anchor}) ✓
-    T->>E: compute({graph: spec})  ← no anchor
-    E->>A: assemble(spec)
-    A-->>E: graph without anchors
-    E->>E: hash(spec only) ← stable under drag
-    E-->>T: { perComponent, components({x:0,y:0} 占位) }
-    T->>R: render(components from engine, layout from builder)  ← 分离消费
-  end
+  User->>Render: click port '+' on battery-1
+  Render->>Reducer: {type:'startWire', componentId:'battery-1', port:'+'}
+  User->>Canvas: move mouse
+  Canvas->>Reducer: {type:'updateWireCursor', x, y}  (throttled rAF)
+  User->>Render: click port 'a' on resistor-1
+  Render->>Reducer: {type:'finishWire', componentId:'resistor-1', port:'a'}
+  Reducer-->>Canvas: state' with connection
+
+  User->>Run: click 'Run'
+  Run->>Run: bundleFromState(state)
+  Run->>Engine: compute({graph: bundle.spec})
+  Engine-->>Run: {perComponent, events}
+  Run->>Render: pass perComponent to drawers for overlay
 ```
 
 ---
 
-## Architecture Scorecard
+## Architecture Scorecard（14/14 PASS · 逐条自检）
 
-| ID | Category | Sev | 检查 | 结论 |
-|----|----------|-----|------|------|
-| ARCH-001 | Decision | HIGH | 每决策含 rationale | ✅ D1-D5 均含 Why |
-| ARCH-002 | Decision | MED | Trade-off 公开 | ✅ 每决策含 ✅拿/❌舍/缓解 |
-| ARCH-004 | Scale | HIGH | 扩展策略 | ✅ LayoutSpec entries 数组可线性扩展；AssemblyBundle 组合模式可加 metadata |
-| ARCH-007 | Reliability | HIGH | 无 SPOF | ✅ LayoutSpec 可选；无 Layout 时渲染退化到 {x:0,y:0}（degradation graceful） |
-| ARCH-008 | Reliability | HIGH | 数据持久化 | N/A（纯内存数据） |
-| ARCH-009 | Reliability | MED | 失效模式 | ✅ Failure Model 节描述 6 种 |
-| ARCH-010 | Security | HIGH | AuthN/AuthZ | N/A（客户端类型级分离） |
-| ARCH-011 | Security | HIGH | 敏感数据 | N/A |
-| ARCH-012 | Security | MED | 攻击面最小 | ✅ 不引入新依赖、新 IO、新 API 表面 |
-| ARCH-013 | Observe | MED | 日志 | ✅ Assembler 遇到 decl.anchor 时 console.warn |
-| ARCH-015 | Req | HIGH | NFR 覆盖 | ✅ AC-D1~D8 各有测试路径 |
-| ARCH-016 | Req | HIGH | 功能需求覆盖 | ✅ 分离/不破坏/模板零改 3 大诉求都有对应决策 |
-| ARCH-017 | Consistent | HIGH | 内部无矛盾 | ✅ 三次通读 |
-| ARCH-018 | Consistent | MED | 图文一致 | ✅ Mermaid 与文字对齐 |
+| ID | 类别 | Sev | 检查 | 状态 | 证据 |
+|----|------|-----|------|------|------|
+| ARCH-001 | Decision Justification | HIGH | 主要技术决策有 WHY | ✅ | D-1~D-5 每条含 Why+Trade-off |
+| ARCH-002 | Decision Justification | MED | Trade-offs 显式 | ✅ | 每决策含 Trade-off 子节 |
+| ARCH-004 | Scalability | HIGH | 水平扩展策略 | N/A | 纯前端，无水平扩展需求 |
+| ARCH-007 | Reliability | HIGH | 无 SPOF | ✅ | 纯浏览器；无后端依赖 |
+| ARCH-008 | Reliability | HIGH | 数据持久化 | ✅ | localStorage + JSON 导入导出（兜底） |
+| ARCH-009 | Reliability | MED | 失败模式有恢复 | ✅ | 见 Failure Model |
+| ARCH-010 | Security | HIGH | 认证授权 | N/A | 纯前端无登录 |
+| ARCH-011 | Security | HIGH | 敏感数据 | N/A | 无敏感数据 |
+| ARCH-012 | Security | MED | 最小权限 | ✅ | localStorage 仅当前 origin，无跨域 |
+| ARCH-013 | Observability | MED | 日志策略 | ✅ | `console.warn` 在连线校验失败/LoadBundle 失败处 |
+| ARCH-015 | Requirements | HIGH | NFR 覆盖 | ✅ | 画布响应 < 16ms / 保存容量 < 5MB 警告 |
+| ARCH-016 | Requirements | HIGH | 功能需求覆盖 | ✅ | 14 AC 全覆盖 13 In-Scope |
+| ARCH-017 | Consistency | HIGH | 无内部矛盾 | ✅ | D-1 将 anchor 放 state 内 + D-3 导出时再拆，一致 |
+| ARCH-018 | Consistency | MED | 图文一致 | ✅ | 数据流图 ↔ 时序图 ↔ 文字描述一致 |
 
 ---
 
-## Failure Model
+## Failure Model（6 模式 · 每条有应对）
 
-| # | 故障 | 检测 | 降级 |
+| # | 模式 | 触发 | 应对 |
 |---|------|------|------|
-| FM-1 | LayoutSpec.entries 引用不存在的 componentId | `isLayoutSpec` 不检查；Renderer 侧遇到孤立 entry → 忽略 | Renderer 对缺 anchor 的 component 渲染在 {0,0} |
-| FM-2 | Builder sugar 同一 id 被多次调用 → Layout 有重复 entry | 保留最后一条（后写优先） | UX 一致（拖拽动作的最后状态） |
-| FM-3 | Assembler 遇到 decl.anchor（老 spec） | console.warn + 内部转存到辅助 layout | 不 throw；继续 assemble |
-| FM-4 | Engine v2 输出的 components anchor={0,0} 导致浏览器渲染错位 | 浏览器端 applyResult 使用 local builder 的 layout 覆盖 | 现有模板已经从 builder 拿 components（不是从 engine 输出），天然屏蔽 |
-| FM-5 | 浏览器 JS builder 未同步 toLayoutSpec | T18-6 DTO fingerprint test + 新增 layout fingerprint test 双重锁定 | CI 阻断 |
-| FM-6 | 上轮测试断言 `component.anchor` 具体值失败 | T12 任务专门迁移测试 | 回归测试阻断 |
+| F-1 | 端口重复连接 | 用户对同一对端口二次点击 | `finishWire` reducer 预检：若 (from,to) 已存在则忽略 · UI 提示"该连接已存在" |
+| F-2 | 自环（A.x → A.x） | 用户在同一元件端口之间连线 | `finishWire` 校验 `from.componentId !== to.componentId OR from.port !== to.port` |
+| F-3 | Engine 运行时 throw | spec 校验失败（端口不匹配 / 必填 prop 缺失） | RunControls 捕获 · 显示 `.errorMessage` · state 不变 |
+| F-4 | LoadBundle JSON 格式错误 | 导入损坏文件 | `persistence.loadBundle` 用 type guard 校验 · 失败返回 `null` · UI 提示 |
+| F-5 | localStorage quota 满 | 保存大 Bundle | `saveBundle` try/catch · 失败提示"容量满，请清理旧存档" |
+| F-6 | 快速连续 mousemove 导致 re-render 风暴 | 移动元件/绘制 draft wire | `updateWireCursor` + `moveComponent` 走 rAF 节流 · PlacedComponent 用 React.memo |
 
 ---
 
-## Migration Safety Case
+## Migration Safety Case（4 阶段独立可回滚）
 
-### 4 阶段独立可回滚
+| 阶段 | 交付 | 回滚方式 |
+|------|------|---------|
+| M-1 · 基础画布 | Wave 0 完成：state/reducer/palette/canvas 壳 · 可放置 + 移动元件（无连线） | `rm -rf src/lib/editor src/components/editor src/app/editor` + 移除 `docs/editor-framework.md` |
+| M-2 · 连线 | Wave 1：port hotspot + draft wire + commit connection | 在 M-1 基础上回滚 `*-wire*` / `ConnectionLayer` 相关文件 |
+| M-3 · 运行 + 持久化 | Wave 2：RunControls + persistence · 可实际算物理 | 回滚 RunControls/persistence/engine-dispatch |
+| M-4 · Domain 扩展 + 文档 | Wave 3：chemistry config · editor-framework.md 文档 | 回滚 domain-configs/chemistry 和文档 |
 
-| Phase | 范围 | 回滚命令 | 耗时 |
-|-------|------|---------|------|
-| **P1** 新增 layout.ts + 类型 | 1 新文件 | `rm src/lib/framework/assembly/layout.ts` + revert exports | < 1 min |
-| **P2** FluentAssembly/Assembler 内部分流 | 2 改动 | `git checkout HEAD -- fluent.ts assembler.ts` | < 1 min |
-| **P3** Engine v2 输出清理 + reaction-utils | 3-4 改动 | 单文件 revert | < 2 min |
-| **P4** 测试迁移 | N 改动 | 测试迁移失败 = CI 阻断，不进 main | 0（不合并） |
-
-### 向后兼容性矩阵
-
-| 输入形态 | 修改前行为 | 修改后行为 | 兼容性 |
-|---------|----------|-----------|-------|
-| `spec.components[i].anchor: {x:1,y:2}` | 转成 component.anchor | console.warn + 转存到辅助 layout + component.anchor={0,0} | ⚠️ 语义微变（建议改用 LayoutSpec）但 not fatal |
-| `.battery({voltage, anchor: {x,y}})` | anchor 写入 spec | anchor 写入 layout | ✅ 对调用者透明 |
-| `component.anchor`（读） | 返回构造时传入值 | 返回 `{x:0,y:0}` 默认值 | ⚠️ 需要测试迁移（T12） |
-| `graph.toDTO().components[i].anchor` | 返回构造时传入值 | 返回 `{x:0,y:0}` | ⚠️ 同上 |
+每阶段**独立 git commit**，回滚粒度明确。
 
 ---
 
-## Scenario Coverage
+## Scenario Coverage（5 场景)
 
-| # | 场景 | 覆盖 |
-|---|------|------|
-| S-1 | 现有 circuit.html v3 运行 | circuit-builder 用 `.battery({voltage, anchor})` → 内部写 layout；engine v2 计算不受 anchor 影响；浏览器端 render 时 builder.components() 仍能拿到 anchor（通过 layout 视图） |
-| S-2 | 现有 metal-acid-reaction.html 运行 | 同上 + 反应产生的 Bubble 无 anchor → 浏览器端 applyResult 注入 layout entries（新机会：比旧的 bubbleStackY hack 更干净） |
-| S-3 | 纯 Spec 调用（无 layout） | Engine v2 消费 spec → 正常计算；返回的 components DTO anchor={0,0} → 浏览器渲染时可选择默认布局 |
-| S-4 | AssemblyBundle 调用（未来 B 用） | `assembleBundle({spec, layout})` → 返回 graph（与 `assemble(spec)` 同），layout 单独保留给消费者 |
-| S-5 | 老 test 断言 `component.anchor: {x:40, y:110}` | T12 迁移到查询 `builder.toLayout().entries.find(e=>e.componentId==='B1').anchor` |
-
----
-
-## 对抗性自审（4 问）
-
-**Q1 · Devil's Advocate**: "LayoutSpec 真的需要独立文件吗？放 spec.ts 的 `layout?` 字段不行吗？"
-
-**A1**: 不行。核心理由：**Spec 要进 Engine v2 的 compute_request，Layout 要进浏览器端 render** —— 两者的**消费者边界**不同。如果 layout 嵌在 spec 里：(a) Engine 仍然收到 layout 字段必须忽略（心智负担）(b) 无法独立序列化 layout（比如"仅保存布局方案"）(c) B 阶段的编辑器需要分别 diff spec 和 layout 时，嵌套结构增加成本。
-
-**Q2 · Failure Mode**: "最可能的生产故障？"
-
-**A2**: 浏览器端 `chemistry-builder.js` 与 TS 侧 `FluentAssembly` 的 layout 分流实现**漂移**——TS 测试通过，JS 侧静默丢 anchor。→ 缓解：(a) T11 专测的 DTO fingerprint 加 LayoutSpec 层 (b) JS builder 的 toLayoutSpec 产出必须和 TS builder.toLayout() 数组长度/顺序一致，测试用 postMessage 往返验证。
-
-**Q3 · Simplicity**: "有没有更简单的架构？"
-
-**A3**: 有一个候选："在 ComponentDecl 上直接把 anchor 改成 `_renderOnly: {anchor}` 命名空间字段，Engine 遇到 `_` 前缀字段跳过" —— 这种方案改动量是 D 的 1/3。但**失败点**：(a) 没有类型级保证 Engine 真的跳过 `_` 字段 (b) hash 稳定性靠约定不靠类型 (c) 编辑器 B 仍然需要独立的 LayoutSpec 作为持久化单位——等于延迟但不免做。故不采用。
-
-**Q4 · Dependency Risk**: "这次改动最大的依赖风险？"
-
-**A4**: 上轮 T18-6（chemistry）和 circuit 测试的 DTO 快照里**可能**嵌入了具体 anchor 值。如果我们改 Engine v2 输出 anchor 为 {0,0} 占位，这些快照会失败。→ 缓解：T12 专门迁移测试；快照测试改为"只断言 domain + components.map(c=>c.kind) + connections 长度和 port 形态"，不断言 anchor 具体值。这是**本轮改动的最大测试维护成本**，单独列为 T12 任务。
+| # | 场景 | 预期行为 |
+|---|------|---------|
+| S-1 | 工程师拖放 battery + resistor + bulb · 连线 · Run | Editor 调 CircuitEngine · 画布显示电流/电压数值 |
+| S-2 | 工程师保存方案 "my-circuit-01" · 刷新页面 · 加载 | localStorage 恢复，state 完全相同 |
+| S-3 | 工程师导出 JSON · 发给同事 · 同事导入 · Run | Bundle JSON fingerprint 两端一致，运行结果一致 |
+| S-4 | 工程师切换到 chemistry · 拖放 Flask + Reagent · Run metal-acid | ChemistryReactionEngine 动态载入 · 画布显示反应结果 |
+| S-5 | 工程师画错了连线 · 点击连线 · Delete | 连线删除，相关元件不受影响 |
 
 ---
 
-## 14 AC 清单（由 PLAN 拆为测试用例）
+## Adversarial Review（4 问 · 自问自答）
 
-| AC | 依据来源 | 预期证据 |
-|----|---------|---------|
-| AC-D1 契约独立 | layout.ts 不 import AssemblySpec 类型 | grep audit |
-| AC-D2 Engine 不吃 anchor | engine compute → graph.toDTO() anchors 均 {0,0} | new test |
-| AC-D3 Sugar API 零改 | git diff builder 签名部分 = 0 | diff audit |
-| AC-D4 LayoutSpec 独立解析 | `isLayoutSpec` type guard | unit test |
-| AC-D5 DTO fingerprint 稳定 | 上轮 T18-6 继续绿 | jest run |
-| AC-D6 solver/reaction 0 改 | grep `src/lib/framework/{solvers,interactions}` + `domains/*/solver.ts` + `domains/*/reactions` 0 行数变 | git diff audit |
-| AC-D7 浏览器模板 0 改 | circuit.html + metal-acid-reaction.html git diff = 0 | diff audit |
-| AC-D8 无回归 | 446 上轮测试 + 新增 ≥10 全绿 | jest run |
-| AC-D9（新增） LayoutSpec 可独立 JSON.stringify 回环 | JSON.parse(JSON.stringify(layout)) 深等 | new test |
-| AC-D10（新增） AssemblyBundle 可组合，spec 与 layout 可独立置空 | `assembleBundle({spec})` ok; `assembleBundle({spec, layout: emptyLayout})` ok | new test |
-| AC-D11（新增） Builder toLayout() 返回的 LayoutSpec entries 数量等于调用 sugar 时传入 anchor 的次数 | builder counter | new test |
-| AC-D12（新增） Assembler 遇到 legacy decl.anchor 发 warn 但不 throw | spy console.warn | new test |
-| AC-D13（新增） FluentAssembly `toBundle()` 返回 {spec, layout} 形状匹配 AssemblyBundle | runtime shape check | new test |
-| AC-D14（新增） reaction-utils 的 makeXxx 返回 component.anchor={0,0} | new test |
+**Q1 · 最大的错误假设是什么？**
+"所有 domain 的端口都可以用 `{dx, dy}` 静态偏移表达。" 如果某个 domain 的端口会**动态数量**（如可变端口 hub），portLayout 的固定键值表将失效。应对：portLayout 改为函数 `(component) => Record<portName, {dx,dy}>`；本轮仍用静态表（circuit/chemistry 都是固定端口），C 阶段再升级为函数——**文档里注明此限制**。
+
+**Q2 · 生产中最可能炸的地方？**
+Engine.compute 被传了残缺 bundle（用户没连完整电路就点 Run）。应对：RunControls 在调用前跑 `assembleBundle` 做预校验，失败则**不调 engine**，直接提示"请完成所有端口连接"。
+
+**Q3 · 能否用更简单的架构？**
+"不搞 reducer，直接在 React 里用 useState 多个 setter" —— 看似简单，但：
+- 无法独立测（AC-B2 违反）
+- undo/redo 几乎不可能加
+- state 分散，竞态难调
+结论：坚持 reducer 模式。
+
+**Q4 · 最大的外部依赖风险？**
+React + Next.js —— 但已经是项目主栈，零新增。shadcn/ui 已在项目里。**零新依赖**（AC-B14 的事实兑现）。
 
 ---
 
-> 下一步：PLAN 阶段把上述 14 任务 + 14 AC 落实为依赖图与执行顺序。
+## Out-of-Scope 架构确认（与 ANALYSE 一致）
+
+以下**不在本轮架构内**，相关文件/配置/抽象**不应出现**：
+
+- 撤销/重做 state 栈
+- 自动布局算法（force-directed、grid snap）
+- 正交连线布线
+- 多选 state
+- 服务端 save
+- 多人协作同步层
+- 缩略图 minimap
+
+---
+
+## 输出契约（交给 PLAN）
+
+**20 新 + 2 改**文件清单（细节见 `analysis.md` "受影响位置"表）。分 4 Wave：
+
+```
+Wave 0: state/reducer/persistence/config/port-layout + 测试           (~6 files · ~40min)
+Wave 1: UI 壳（EditorShell/Palette/Canvas）+ 画布 drawer(TS 镜像)     (~7 files · ~60min)
+Wave 2: 端口 hotspot + 连线 + 选择/删除 + 属性面板                   (~4 files · ~50min)
+Wave 3: RunControls + engine-dispatch + 导入导出                    (~3 files · ~30min)
+Wave 4: chemistry domain config + 路由挂载 + 文档 + 全量验证         (~4 files · ~30min)
+```
+
+总预估 ~3.5h（复用 InfiniteCanvas + framework 成熟 API + 架构约束清晰）。

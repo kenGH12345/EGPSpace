@@ -1,63 +1,83 @@
-# DEVELOP Stage · Code Changes Summary (D)
+# Code Diff · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> 14 tasks complete. 465/465 tests PASS. TSC zero errors.
+> Session: `wf-20260428234611.` · 22 任务全部完成 · 493/493 测试 PASS
 
-## 新建文件（3）
+## 文件清单（23 新 + 1 改 + 7 工作流）
 
-| # | File | LOC | Purpose |
-|---|------|-----|---------|
-| 1 | `src/lib/framework/assembly/layout.ts` | ~130 | LayoutSpec / LayoutEntry / AssemblyBundle + helpers |
-| 2 | `src/lib/framework/__tests__/layout-spec.test.ts` | ~220 | 19 测试 · 覆盖 AC-D1/D2a/D2b/D4/D9/D10a/D10b/D10c/D11/D11b/D11c/D12/D13/D14 |
-| 3 | `docs/layout-spec.md` | ~150 | 契约文档 · 迁移指南 · FAQ |
+### 新增 · 数据层 `src/lib/editor/` (7 文件)
+- `editor-state.ts` — EditorState + cloneEditorState + emptyEditorState (78 行)
+- `editor-state-reducer.ts` — 15 action reducer 纯函数 (214 行)
+- `port-layout.ts` — screen/canvas 转换 + 端口坐标 + hit-test (114 行)
+- `bundle-from-state.ts` — EditorState → AssemblyBundle 转换 (38 行)
+- `persistence.ts` — localStorage save/load + JSON import/export (184 行)
+- `editor-config.ts` — EditorDomainConfig 类型 + palette/portLayout/drawers 接口 (94 行)
+- `engine-dispatch.ts` — 按 domain 动态 import engine (65 行)
+- `index.ts` — barrel re-export
 
-## 修改文件（10）
+### 新增 · Drawer TS 镜像 `src/lib/editor/drawers/` (2 文件)
+- `circuit-drawers.ts` — 7 个电路元件 drawer (~200 行)
+- `chemistry-drawers.ts` — 5 个化学元件 drawer (~150 行)
 
-| # | File | Change | AC |
-|---|------|--------|----|
-| 1 | `src/lib/framework/assembly/fluent.ts` | 增 `_layout` 字段 + `_writeAnchor` helper + `toLayout/toBundle` · add() 内部分流 | AC-D11 |
-| 2 | `src/lib/framework/assembly/assembler.ts` | 增 `assembleBundle` + `_warnLegacyAnchor` | AC-D12 |
-| 3 | `src/lib/framework/assembly/spec.ts` | `ComponentDecl.anchor` @deprecated JSDoc | AC-D4 |
-| 4 | `src/lib/framework/assembly/index.ts` | barrel 增 `./layout` re-export | AC-D5 |
-| 5 | `src/lib/framework/index.ts` | 顶层 re-export LayoutSpec 相关 | AC-D5 |
-| 6 | `src/lib/framework/components/base.ts` | `ComponentAnchor` / `IExperimentComponent.anchor` @deprecated JSDoc | AC-D5 |
-| 7 | `src/lib/framework/domains/chemistry/reaction-utils.ts` | 移除 3 处 `anchor: {x:0, y:0}` hardcode → `PLACEHOLDER_ANCHOR` 常量 | AC-D14 |
-| 8 | `src/lib/engines/physics/circuit.ts` | `_normaliseToSpec` 的 components map 移除 `anchor: c.anchor`（保留注释说明） | AC-D2a |
-| 9 | `public/templates/_shared/circuit-builder.js` | JS 镜像分流（_layout + toLayoutSpec + components() 合并视图） | 跨语言一致性 |
-| 10 | `public/templates/_shared/chemistry-builder.js` | 同上 | 跨语言一致性 |
-| 11 | `docs/component-framework.md` | 顶部索引加 LayoutSpec + Chemistry 链接 | 文档索引 |
+### 新增 · Domain 配置 `src/lib/editor/domain-configs/` (3 文件)
+- `circuit.ts` — palette + portLayout + drawers + validateBundle
+- `chemistry.ts` — 同上（第二 domain 证明 AC-B7）
+- `index.ts` — EDITOR_DOMAIN_CONFIGS 注册表 + getDomainConfig()
 
-## Framework 层关键 AC 审计
+### 新增 · React UI `src/components/editor/` (5 文件)
+- `EditorShell.tsx` — 顶层容器 + reducer 挂载 + header/sidebar/footer 布局
+- `ComponentPalette.tsx` — 左侧可拖拽元件列表
+- `EditorCanvas.tsx` — 中心画布 · Canvas 2D + SVG overlay + DOM 端口 hotspot + pan/zoom
+- `PropertyPanel.tsx` — 右侧属性编辑 + 实时运行值
+- `RunControls.tsx` — 运行/保存/加载/导出/导入按钮
+
+### 新增 · 路由 (1 文件)
+- `src/app/editor/page.tsx` — Next.js `/editor` 入口
+
+### 新增 · 测试 (1 文件)
+- `src/lib/editor/__tests__/editor-data-layer.test.ts` — 28 测试覆盖 reducer + bundle + port-layout + persistence + integration
+
+### 新增 · 文档 (1 文件)
+- `docs/editor-framework.md` — 总览 + 扩展指南 + 使用手册
+
+### 修改 (1 文件)
+- `docs/component-framework.md` — Sibling documents 索引加入 `editor-framework.md`
+
+### 工作流产出 (7 文件)
+- `output/analysis.md` / `architecture.md` / `execution-plan.md` / `code.diff` / `test-report.md` / `review-output.md` / `deploy-output.md`
+
+---
+
+## 硬约束 AC 审计
+
+| AC | 约束 | 验证命令 | 结果 |
+|----|------|---------|------|
+| **AC-B5** | 老模板零改 | `git diff --stat HEAD -- public/templates/physics/circuit.html public/templates/chemistry/metal-acid-reaction.html public/templates/chemistry/acid-base-titration.html` | ✅ 空输出 |
+| **AC-B6** | framework 核心零改 | `git diff --shortstat HEAD -- src/lib/framework/{components,solvers,interactions,assembly}` | ✅ 空输出 |
+| **AC-B9** | TSC 零错 | `npx tsc --noEmit` | ✅ 零输出退出 |
+| **AC-B2** | reducer 零 React | grep `react` in `src/lib/editor/` | ✅ 仅注释提到 React |
+| **AC-B14** | 零新依赖 | `package.json` diff | ✅ 无变动 |
+| **AC-B8** | ≥20 新测 | 28 新测 (reducer 10 + bundle 3 + port-layout 4 + persistence 10 + integration 1) | ✅ |
+
+## 测试增量
 
 ```
-AC-D1 · layout.ts 不 import AssemblySpec
-  grep "^import.*AssemblySpec" layout.ts → 0 hits ✅
-
-AC-D3 · Builder Sugar 签名零改
-  circuit-builder.ts / chemistry-builder.ts 方法签名 git diff → 0 行 API 面改动 ✅
-
-AC-D6 · solver/reactions 零改
-  git diff --shortstat -- solvers/ interactions/ domains/*/solver.ts domains/*/reactions
-  → empty output = 0 行改动 ✅
-  (注：reaction-utils.ts 的 hardcode 删除是语义改善，不改变 reaction 逻辑)
-
-AC-D7 · 浏览器模板零改
-  git diff --stat -- circuit.html metal-acid-reaction.html
-  → empty output = 0 byte 变动 ✅
+465 上轮基线 + 28 editor 新增 = 493/493 PASS
 ```
 
-## 意外红利：T-12 测试迁移工作量 = 0
+**28 个测试覆盖**：
+- Reducer (10): placeComponent × 2 · moveComponent · startWire/finishWire × 2 · duplicate rejection · delete cascade · updateProp · switchDomain · loadBundle
+- bundle-from-state (3): no-anchor in spec · layout mirrors placed · state→bundle→load→bundle roundtrip
+- port-layout (4): screen/canvas inverse · port offset applied · findPortAtScreen · unknown port fallback
+- persistence (10): storageKey · save+load · not-found · parse-error · shape-invalid · quota-exceeded · listSlots × 2 · removeSlot · export/import roundtrip · domain-mismatch
+- integration (1): full state JSON roundtrip preserves everything
 
-ARCHITECT 阶段原预估 T-12（老测试迁移）60 min，因上轮 446 测试都是结构级断言（没有硬断言具体 anchor 值），**零迁移即零回归**。原因：
-- 大部分 test 只断言 `component.domain === 'circuit'` 类型/结构
-- 唯一读 anchor 的地方（circuit-assembly.test 第 179 行）写的是 `{x:0, y:0}` 占位，这正是新契约的行为（component.anchor 默认值）
+## 路径演进回顾
 
-## Test Results
+| 轮次 | 阶段 | 核心交付 |
+|------|------|---------|
+| Wave 1-3 | 三层原子化 | 元件 + 图 + 求解器 + 反应引擎 |
+| 化学域 | 第二 domain | framework 零改扩展 chemistry |
+| D 阶段 | 架构清理 | anchor → LayoutSpec 解耦 |
+| **B 阶段** | **交互层** | **画布 + 拖拽 + 端口连线 + 持久化** |
 
-```
-Test Suites: 24 passed, 24 total
-Tests:       465 passed, 465 total   (上轮 446 基线 + 19 新增)
-Time:        ~5 s
-```
-
-`npx tsc --noEmit`: **zero errors**
+C 阶段（未来）：自动布局 · 撤销重做 · 美化 · 协作 · C 端用户平台。

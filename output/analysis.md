@@ -1,137 +1,196 @@
-# ANALYSE · anchor-Spec 解耦（D）
+# ANALYSE · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> Scope: 把视觉坐标 `anchor` 从 Spec / Component 的数据层分离为独立 `LayoutSpec`，为后续 B（编辑器 framework）做架构前置清理。
+> Session: `wf-20260428234611.` · 承接 D 阶段（LayoutSpec 解耦已完成）
 
 ---
 
 ## 根因 / Root Cause
 
-当前 `AssemblySpec<D>.components[i].anchor` 与 `IExperimentComponent.anchor` **把"视觉信息"和"拓扑信息"强绑定在同一数据结构上**。这带来 3 个具体症状：
+### 用户终极目标（跨越 B/C 多阶段）
+让**用户在浏览器里拖拽元件 + 点击连线**完成一个实验搭建——不写 TS/JS 代码，鼠标即可。等价于工业界的 **CircuitJS / EveryCircuit / PhET** 级别体验。
 
-### 症状 1 · **Engine 被迫接收它不需要的坐标**
+### 当前阻塞（即 B 必须解决的）
+三层原子化重构完成 A→D 四轮之后，**全链条具备"程序化搭建"能力**但**零"交互式搭建"能力**：
 
-`ChemistryReactionEngine / CircuitEngine` 在 v2 path 里收到 `spec.components[i]` 时，`anchor` 也跟着来。引擎做 MNA/化学计量完全不用坐标，但必须把它纳入 **DTO serialize** → **postMessage 载荷** → **hash 计算**。结果：**用户拖一下元件（仅改 anchor），整个 spec hash 变化**，任何基于 hash 的缓存/比对都要重算，尽管拓扑没变。
+| 能力 | 现状 | 缺口 |
+|------|------|------|
+| 元件抽象 + 端口 + 连接语义 | ✅ 完备（`AbstractComponent` / `DomainGraph` / `ConnectionDecl`） | 0 |
+| 数据序列化（Spec 纯 POJO） | ✅ 完备（D 阶段分离为 `{spec, layout}` Bundle） | 0 |
+| 程序化装配 DSL | ✅ 完备（`CircuitBuilder` / `ChemistryBuilder` fluent API） | 0 |
+| 反应引擎循环 | ✅ 完备（`InteractionEngine.tick`） | 0 |
+| **画布 + 拖拽放置元件** | ❌ 零 | **本轮目标** |
+| **端口点击连线** | ❌ 零 | **本轮目标** |
+| **Bundle 持久化 + 回放** | ❌ 零 | **本轮目标** |
+| **自动布局（力导向/栅格）** | ❌ 零 | C 阶段（不在 B 范围） |
+| **撤销/重做 undo/redo** | ❌ 零 | C 阶段 |
+| **端口可视锚点** | ❌ 零（drawer 只画外形，不画端口点） | **本轮必须加** |
 
-### 症状 2 · **HTML 模板必须硬编码坐标才能渲染**
+### 本质洞察
 
-`circuit.html` 第 98-101 行和 `metal-acid-reaction.html` 第 99-101 行各写了 4 次 `anchor: {x: 40, y: 110}`——Builder 强制要求 anchor 才能出现在画布上。**没有 anchor 就是 `{x:0, y:0}`**，所有元件挤在左上角，实验不可读。
+B 的**最小可行路径**不是"新做一个自由搭建平台"——而是**把现有 framework 暴露给 React Client Component，让用户通过 DOM 事件构造 `AssemblyBundle`**。这是交互层的**输入适配器**：鼠标事件 → Builder DSL 调用 → Bundle。输出端复用现有 engine/drawer/ComponentMirror 管线。
 
-→ 这意味着**"自由搭建"的前置条件不成立**：用户不可能会手写 `anchor: {x: 280, y: 110}`，而当前架构要求他写。
-
-### 症状 3 · **Reaction 产生的新元件缺省坐标是 (0,0)**
-
-`makeBubble/makeReagent/makeSolid` 都硬编码 `anchor: { x: 0, y: 0 }`，所以 `metal-acid-reaction.html` 的 `applyResult` 里被迫**客户端临时补 anchor**（第 168-175 行的 `bubbleStackY` hack）——这正是耦合最尖锐的体现：**数据层的 anchor 必选字段，强迫渲染层偷偷塞值**。
-
-### 核因（1 句话）
-
-> `anchor` 是**渲染关注点**，却被放在**数据层契约**里，导致所有下游消费者（engine / hash / 序列化 / reaction-rule）被迫携带它。
+本质上：
+```
+old:  开发者编程 → CircuitBuilder.battery(...).toSpec() → Engine → Canvas
+new:  用户鼠标 → EditorState → buildFromEditorState() → Bundle → Engine → Canvas
+```
 
 ---
 
 ## 受影响位置
 
-| # | File | 触及形式 | 改动性质 |
-|---|------|---------|---------|
-| 1 | `src/lib/framework/components/base.ts` | `IExperimentComponent.anchor` / `AbstractComponent.anchor` / `ComponentDTO.anchor` | **核心契约** |
-| 2 | `src/lib/framework/assembly/spec.ts` | `ComponentDecl.anchor?` / 新增 `LayoutSpec<D>` / `LayoutEntry` | **核心契约** |
-| 3 | `src/lib/framework/assembly/fluent.ts` | `FluentAddOptions.anchor` → 转为 `layout` 分支写入 | 新增 `layout(id, anchor)` API |
-| 4 | `src/lib/framework/assembly/assembler.ts` | Assembler 不再把 anchor 传给 ComponentBuilder | 轻度改动 |
-| 5 | `src/lib/framework/assembly/index.ts` | export LayoutSpec 相关 | 新增 export |
-| 6 | `src/lib/framework/index.ts` | 同上，顶层 re-export | 新增 export |
-| 7 | `src/lib/framework/domains/circuit/assembly/circuit-builder.ts` | 9 处 `{ id, anchor }` opts → `{ id, anchor }` 走新 layout 分支 | 内部改造 |
-| 8 | `src/lib/framework/domains/circuit/assembly/circuit-assembler.ts` | ComponentBuilder 收到的 decl 不含 anchor | 轻度 |
-| 9 | `src/lib/framework/domains/chemistry/assembly/chemistry-builder.ts` | 同 circuit-builder 模式 | 内部改造 |
-| 10 | `src/lib/framework/domains/chemistry/assembly/chemistry-assembler.ts` | 同上 | 轻度 |
-| 11 | `src/lib/framework/domains/chemistry/reaction-utils.ts` | `makeReagent/makeBubble/makeSolid` 不再 hard-code anchor | 轻度 |
-| 12 | `src/lib/framework/domains/circuit/reactions/overload-bulb.ts` | 同上（若有 anchor） | 轻度 |
-| 13 | `src/lib/framework/domains/circuit/components.ts` | factory 不接收 anchor（由 DTO 兼容层保留） | 向后兼容 |
-| 14 | `src/lib/framework/domains/chemistry/components.ts` | 同上 | 向后兼容 |
-| 15 | `public/templates/_shared/circuit-builder.js` | 浏览器 Builder 镜像的 anchor opts 走 layout 分支 | 镜像同步 |
-| 16 | `public/templates/_shared/chemistry-builder.js` | 同上 | 镜像同步 |
-| 17 | `public/templates/physics/circuit.html` | DSL 调用 `.battery({voltage, id, anchor})` 保持不变但语义变为"通过 sugar 同时写 anchor" | 零修改（API 兼容） |
-| 18 | `public/templates/chemistry/metal-acid-reaction.html` | 同上 + `applyResult` 里的 `bubbleStackY` hack 可简化 | 简化 |
-| 19 | `src/lib/engines/physics/circuit.ts` | `_formatV2Result` components 输出不再包含 anchor | 产出清理 |
-| 20 | `src/lib/engines/chemistry/reaction.ts` | 同上 | 产出清理 |
-| 21 | `src/lib/framework/__tests__/assembly.test.ts` | anchor 相关断言从 Spec 侧转移到 LayoutSpec 侧 | 测试迁移 |
-| 22 | `src/lib/framework/domains/circuit/__tests__/circuit-assembly.test.ts` | 同上 | 测试迁移 |
-| 23 | `src/lib/framework/domains/chemistry/__tests__/chemistry-*.test.ts` | 同上（3 测试文件） | 测试迁移 |
+### 新增层（集中在 `src/components/editor/` + `src/lib/editor/`）
 
-**合计** ≈ **23 文件改动**（其中 2 新增概念 · 21 轻度修改 / 测试迁移）
+| 文件 | 类型 | 职责 |
+|------|------|------|
+| `src/lib/editor/editor-state.ts` | 新 · 类型 | `EditorState` 定义：placed components + draft connections + selection + active domain |
+| `src/lib/editor/editor-state-reducer.ts` | 新 · 逻辑 | `applyEditorAction(state, action) → state` 纯 reducer（不含 React） |
+| `src/lib/editor/bundle-from-state.ts` | 新 · 逻辑 | `EditorState → AssemblyBundle`：把 UI 状态转换为框架可消费的 Bundle |
+| `src/lib/editor/editor-config.ts` | 新 · 类型/数据 | `EditorDomainConfig<D>`：每个 domain 注册 palette 元件列表 + port 视觉偏移 + 默认 props |
+| `src/lib/editor/port-layout.ts` | 新 · 逻辑 | `getPortScreenPos(component, layout, portName, config)` 纯函数 |
+| `src/lib/editor/persistence.ts` | 新 · 逻辑 | `saveBundle(key, bundle)` / `loadBundle(key)` localStorage 封装 |
+| `src/lib/editor/domain-configs/circuit.ts` | 新 · 配置 | circuit palette（5 元件）+ 端口偏移表 |
+| `src/lib/editor/domain-configs/chemistry.ts` | 新 · 配置 | chemistry palette（5 元件）+ 端口偏移表 |
+| `src/components/editor/EditorShell.tsx` | 新 · 组件 | 顶层容器 · 左 palette · 中画布 · 右属性面板 |
+| `src/components/editor/ComponentPalette.tsx` | 新 · 组件 | 左侧可拖拽元件列表（kind + 预览图标） |
+| `src/components/editor/EditorCanvas.tsx` | 新 · 组件 | 中间画布：React/SVG 渲染 placed components + draft wires |
+| `src/components/editor/PlacedComponent.tsx` | 新 · 组件 | 单个元件视图：外形 + 端口 hotspot + 选中态 |
+| `src/components/editor/ConnectionLayer.tsx` | 新 · 组件 | 渲染所有 connection + draft wire |
+| `src/components/editor/PropertyPanel.tsx` | 新 · 组件 | 右侧：选中元件时编辑 props（如 resistor.resistance） |
+| `src/components/editor/RunControls.tsx` | 新 · 组件 | 运行按钮 · 触发 engine.compute(bundle) · 展示 perComponent 结果 |
+| `src/app/editor/page.tsx` | 新 · 路由 | `/editor` 页面入口 · 承载 EditorShell |
+| `src/lib/editor/__tests__/editor-state-reducer.test.ts` | 新 · 测试 | reducer 纯函数测试 |
+| `src/lib/editor/__tests__/bundle-from-state.test.ts` | 新 · 测试 | state → Bundle 转换正确性 |
+| `src/lib/editor/__tests__/persistence.test.ts` | 新 · 测试 | localStorage 保存/加载（mock storage） |
+| `src/lib/editor/__tests__/port-layout.test.ts` | 新 · 测试 | 端口坐标计算 |
+
+### 修改层（最小侵入）
+
+| 文件 | 修改内容 |
+|------|---------|
+| `src/lib/framework/index.ts` | 顶层 re-export 已足（`AssemblyBundle` 已导出） — **零改动** |
+| 现有 circuit.html / metal-acid-reaction.html | **零改动**（editor 是并列路径，不影响老实验模板） |
+| `docs/editor-framework.md` | 新文档（B 阶段总览 + 扩展指南） |
+| `docs/component-framework.md` | 索引新增 editor 章节链接 |
+| `output/{analysis,architecture,execution-plan,code.diff,test-report,review-output,deploy-output}.md` | 工作流产出 |
+
+### 复用既有（零改动但关键依赖）
+
+| 文件 | 复用方式 |
+|------|---------|
+| `src/components/infinite-canvas.tsx` | pan/zoom 基础壳 · EditorCanvas 包在它里面 |
+| `src/lib/framework/assembly/*` | FluentAssembly/Assembler/LayoutSpec/AssemblyBundle 作为输出契约 |
+| `src/lib/framework/domains/*/assembly/*-builder.ts` | Builder DSL（editor reducer 最终调用它们产出 Bundle） |
+| `src/lib/framework/domains/*/components.ts` | 运行时元件类（画布渲染需要 port 名字等元数据） |
+| `src/lib/framework/components/registry.ts` | `componentRegistry.create(dto)` 产出元件实例 |
+| `src/lib/engines/physics/circuit.ts` + `src/lib/engines/chemistry/reaction.ts` | RunControls 调用 `engine.compute({graph: bundle.spec})` 得 perComponent |
+| `src/components/ui/*` | shadcn/ui 按钮/卡片/面板等 UI 原语 |
+
+**估算总文件影响**：20 新 + 2 改 + 7 工作流 = **29 文件**
 
 ---
 
 ## 修改范围
 
-### In-Scope（本轮必做）
+### In-Scope（本轮 B 必做 · P0）
 
-| 目标 | 说明 |
-|------|------|
-| **T1** 新增 `LayoutSpec<D>` 类型 | `{ domain, entries: Array<{componentId, anchor}> }`，独立于 AssemblySpec |
-| **T2** 新增 `AssemblyBundle<D>` 类型 | `{ spec: AssemblySpec<D>; layout?: LayoutSpec<D> }`——把两者组合但不合并 |
-| **T3** FluentAssembly 新增 `.layout(id, anchor)` + 保留 `add(kind, props, {id, anchor})` sugar | sugar 内部自动分流：props→Spec，anchor→LayoutSpec |
-| **T4** `IExperimentComponent.anchor` 标记 `deprecated` 但保留 | 向后兼容；组件不再从 ctor 接收 anchor 作为必需 |
-| **T5** Engine v2 path 输出不再包含 anchor | `_formatV2Result` 的 components DTO 去掉 anchor 字段 |
-| **T6** 浏览器 Builder 镜像同步 API | JS 端 `.flask({id, anchor})` 内部走 layout 分支 |
-| **T7** Reaction-utils 的 makeXxx 不再 hard-code anchor | 改为返回"无 anchor 纯拓扑元件"，anchor 由消费者（template 的 applyResult）补 |
-| **T8** 测试迁移 | anchor 相关测试从 Spec 侧 describe 块移到 LayoutSpec 专用 describe |
-| **T9** 文档 `docs/layout-spec.md` | 说明为什么分离、如何协同使用、迁移指南 |
-| **T10** 全量 TSC + Jest 验证 | 0 新增 error · 446+ 测试全绿 |
+| # | 功能 | 描述 |
+|---|------|------|
+| **IS-1** | 画布基础 | 基于 `InfiniteCanvas` 的 pan/zoom · 栅格背景（无吸附） |
+| **IS-2** | 元件面板 | 左侧列出当前 domain 的所有可用 kind（从 `EditorDomainConfig.palette`） |
+| **IS-3** | 从面板拖到画布 | HTML5 drag API · drop 后 `placeComponent` action · 生成唯一 id |
+| **IS-4** | 画布内移动元件 | mousedown + mousemove 改 `LayoutEntry.x/y`（实时） |
+| **IS-5** | 端口视觉化 | 每个元件绘制端口小圆点（颜色区分 + hover 高亮） |
+| **IS-6** | 端口点击连线 | 点端口 A → 鼠标跟随 draft 线 → 点端口 B 完成 connection · Esc 取消 |
+| **IS-7** | 选择 + 删除 | 点选元件（高亮边框） · Delete/Backspace 删除 + 级联删相关 connection |
+| **IS-8** | 属性面板编辑 | 选中元件后右侧显示其 props，input change 实时写入 state |
+| **IS-9** | 运行按钮 | RunControls 调 `bundleFromState(state)` + `engine.compute(bundle.spec)` · 结果展示在侧边 |
+| **IS-10** | 持久化 | "保存"按钮 → localStorage（key=`egpspace-editor-<domain>-<slot>`） · "加载"下拉 |
+| **IS-11** | Domain 切换 | 顶部 tab 切换 `circuit` / `chemistry` · 切换清空当前 state（提示保存） |
+| **IS-12** | 画布 → Bundle 导出 JSON | "导出"按钮 → 下载 .json（Bundle 格式） |
+| **IS-13** | JSON → 画布导入 | "导入"按钮 → 读取 .json → validate → 恢复 state |
 
-### Out-of-Scope（本轮明确不做）
+### Out-of-Scope（明确不做 · 留给 C）
 
-- ❌ 自动布局算法（force-directed / orthogonal routing）— 是 Level 1 的主题，下一轮
-- ❌ 编辑器 UI（画布拖拽、元件面板、连线模式）— 是 B 的主题
-- ❌ LayoutSpec 的 JSON 文件导入导出接口 — 未来需要再加
-- ❌ anchor 迁移到后端持久化 — 未来需要再加
-- ❌ 修改任何 solver / reaction 逻辑 — 这些原本就不读 anchor
-- ❌ 修改 circuit.html / metal-acid-reaction.html 的视觉表现 — 保持用户可见零变化
+- ❌ 自动布局算法（力导向、栅格吸附）
+- ❌ 正交布线（wire 走 L 形直角）
+- ❌ 撤销/重做 undo/redo（stack-based）
+- ❌ 多选（框选/多选批量操作）
+- ❌ 缩略图 minimap
+- ❌ 美化（过渡动画、主题色定制、元件图形精修）
+- ❌ 分享/协作（URL 分享、多人协作）
+- ❌ 服务端持久化（只做 localStorage，不连后端）
+- ❌ 模板库（仅基础空白画布起步，不含"载入示例实验"按钮——但可通过导入 JSON 实现）
+- ❌ 端口吸附（mouse hover 自动吸附到最近端口）
+- ❌ 连线样式定制（颜色/粗细/类型）
+
+---
+
+## 关键设计约束（Acceptance Criteria）
+
+| ID | 约束 | 验证方式 |
+|----|------|---------|
+| **AC-B1** | `EditorState` 是纯数据 · 可 JSON.stringify | 测试 roundtrip |
+| **AC-B2** | `editor-state-reducer.ts` 无 React 依赖 · 可在 Node 测试 | jest 直接 import |
+| **AC-B3** | `bundleFromState(state)` 产出的 Bundle 能被现有 Assembler 成功 `assembleBundle` | 测试 assembler 不抛错 |
+| **AC-B4** | Editor 导出的 Bundle JSON 与 Builder DSL 产出的 Bundle JSON 字节完全一致（同样 input） | fingerprint 比对 |
+| **AC-B5** | circuit.html / metal-acid-reaction.html 零 byte 变动 | git diff 空 |
+| **AC-B6** | framework/{components,solvers,interactions,assembly} 零修改 | git diff --stat 空 |
+| **AC-B7** | `EditorDomainConfig` 可扩展：新 domain 只需加 1 个 config 文件 | 类型签名审查 |
+| **AC-B8** | 新增测试 ≥ 20 · 总量 465 → ≥485 全绿 | jest |
+| **AC-B9** | TSC 零错误 | `npx tsc --noEmit` |
+| **AC-B10** | 运行按钮 → engine.compute → 画布显示 perComponent 数值（电流/电压/反应摩尔等） | 浏览器 Runbook |
+| **AC-B11** | 保存到 localStorage + 刷新页面 + 加载 → state 完全恢复 | 浏览器 Runbook |
+| **AC-B12** | 端口点击连线正确形成 ConnectionDecl（端口名+组件 id 匹配） | 测试 + Runbook |
+| **AC-B13** | Port 视觉偏移来自 `EditorDomainConfig.portLayout` · drawer 可独立演化 | 代码审查 |
+| **AC-B14** | 属性面板编辑 props 实时反映在画布 drawer | Runbook |
 
 ---
 
 ## 风险评估
 
-| # | 风险 | 严重度 | 缓解 |
-|---|------|-------|------|
-| R-1 | **向后兼容性破坏**：已有代码依赖 `component.anchor` 或 `spec.components[i].anchor` 会编译失败 | **P0** | 保留 `ComponentDecl.anchor?` 字段（@deprecated 标注）且字段仍可读写；`IExperimentComponent.anchor` 保留但 setter 写入内部默认值 {x:0,y:0}；真正改动仅"引入 LayoutSpec + sugar 分流"——老代码路径零破坏 |
-| R-2 | **DTO 序列化漂移**：TS 侧与浏览器 JS 侧 Builder 的 DTO fingerprint 测试已锁定 `anchor` 字段，改 DTO 形状会让 T18-6 快照测试失败 | **P0** | 保留 `ComponentDTO.anchor` 字段（向后兼容）；Engine v2 output 的 components 项保留 anchor 为 `{x:0,y:0}` 占位；由消费者/编辑器通过 LayoutSpec 覆盖 |
-| R-3 | **Reaction-utils 的 makeXxx 改动影响现有反应**：如 metalAcidRule 产生的 Bubble 之前 anchor=(0,0)，现在仍 (0,0)——看似无变化，但若反应多次产生同 id Bubble，anchor 永远是 (0,0) 堆叠 | **P1** | 反应产生的元件由 InteractionEngine 消费时 anchor 保持 (0,0) · 浏览器端 applyResult 的"bubbleStackY 堆叠"逻辑改为消费 LayoutSpec.entries（新机会：反应产生元件时同时 spawn LayoutEntry） |
-| R-4 | **Fluent sugar API 改动破坏模板**：circuit.html/metal-acid-reaction.html 当前调用 `.battery({voltage, anchor: {...}})`——若 sugar 签名变则模板改 | **P0** | **Sugar API 严格保持不变**：`{id, anchor}` 两个 opts 字段保留；内部实现由把 anchor 写入 ComponentDecl 改为写入 LayoutSpec。API 兼容 = 模板零改 |
-| R-5 | **浏览器镜像漂移**：JS `chemistry-builder.js` 的 toSpec() 与 TS 侧返回形状必须对齐 | **P1** | T18-6 快照测试保留；JS builder 新增 `toLayoutSpec()` 方法镜像 TS 侧；DTO fingerprint 依然检查 |
-| R-6 | **测试覆盖不足导致回归**：anchor 分离涉及 20+ 文件，漏改测试可能意外删除 anchor 行为 | **P1** | 新增 `layout-spec.test.ts` 覆盖 LayoutSpec 类型定义 + AssemblyBundle 协同 + Fluent sugar 分流三类场景（≥10 测试） |
-| R-7 | **API 边界膨胀**：增加 LayoutSpec 概念让装配层从 5 件套变 6 件套 | **P2** | 文档 `docs/layout-spec.md` 显式说明"LayoutSpec 是可选的并列资产，装配层核心仍是 5 件套"；Builder 不强制用户感知 LayoutSpec（sugar API 自动分流） |
-| R-8 | **过度设计风险**：仅为 B 做前置就分离 LayoutSpec 是否过早？ | **P2** | 不过早。现状诊断已明确 3 症状（Engine 被迫 hash 坐标 / 模板硬编码 / Reaction 0,0 堆叠）都是今天就在受损。LayoutSpec 本身不引入运行时开销（可选字段），仅是类型级分离 |
-| R-9 | **回滚成本**：若 Review Gate 拒绝 | **P2** | 新增概念独立在 `assembly/layout.ts`；回滚 = 删新文件 + revert 5 处 builder 改动，< 10min |
-| R-10 | **下轮 B 方案变更导致 D 白做**：编辑器 framework 最终选别的架构（比如直接用第三方拖拽库），LayoutSpec 成孤儿 | **P1** | LayoutSpec 本身独立有价值（Engine 不吃 anchor + hash 不受视觉干扰），即使 B 换路线仍有收益；且 LayoutSpec shape 极简（`{componentId, anchor}[]`），和任何编辑器库都容易桥接 |
+### P0 风险（4 条）
+
+| ID | 风险 | 影响 | 缓解 |
+|----|------|------|------|
+| **R-1** | React 渲染开销：placed components > 50 时 mousemove 卡顿 | UX 劣化 · 工程师放弃 | ① PlacedComponent 用 React.memo · props 用 ref 稳定 · ② mousemove 走 requestAnimationFrame 节流 · ③ 本轮不做大规模实验（< 50 元件内是 sweet spot） |
+| **R-2** | DOM 坐标系 vs 画布逻辑坐标系混淆 | 点错位置/端口抓不到 | 抽 `screenToCanvas(e, canvasRef) → {x,y}` 单一函数 · 所有事件都走它 · 写测试 |
+| **R-3** | Bundle 导出导入 roundtrip 不等价（Map 序列化、undefined 丢失等） | 加载后 state 损坏 | `persistence.ts` 用 JSON schema 验证 · 新增 roundtrip 测试（AC-B4） |
+| **R-4** | Engine.compute 对 editor 空画布崩溃（spec.components=[]） | 运行按钮闪退 | `RunControls` 加前置 validation · 空画布禁用运行按钮 |
+
+### P1 风险（3 条）
+
+| ID | 风险 | 缓解 |
+|----|------|------|
+| **R-5** | `EditorDomainConfig` 和 framework Builder DSL 出现字段漂移 | config 从 `componentRegistry` 派生元件 kind 列表 · 新增元件 config 加不上就报错 |
+| **R-6** | localStorage 满了（>5MB）保存失败 | try/catch 包保存逻辑 · UI 显示"保存失败，容量已满"提示 |
+| **R-7** | 拖拽时鼠标移出画布后丢失事件 | mouseup 监听挂在 `window` 不是 canvas |
+
+### P2 风险（3 条）
+
+| ID | 风险 | 缓解 |
+|----|------|------|
+| **R-8** | 连线交叉杂乱（无自动布线） | 本轮明确不做，文档里注明"请用户自行编排" |
+| **R-9** | iPad/触屏事件不完善 | 本轮只保证桌面体验 · 文档注明"建议桌面使用" |
+| **R-10** | 刷新页面丢失未保存 state | 本轮不做自动保存 · UI 提示"记得手动保存" |
 
 ---
 
-## AC 验收预定（最终由 TEST 阶段校核）
+## Domain 分层（架构约束延续）
 
-| AC | 要求 | 验收方法 |
-|----|------|---------|
-| **AC-D1 · 契约独立** | `LayoutSpec<D>` 与 `AssemblySpec<D>` 类型上完全独立，两者可分别序列化 | grep: `LayoutSpec` 定义里不 import `AssemblySpec` 类型 |
-| **AC-D2 · Engine 不吃 anchor** | `ChemistryReactionEngine._computeV2` 的 `spec.components` 在序列化给 solver 之前 anchor 被剥离 | 新 test：compute({graph:spec-with-anchors}) → engine 内部 graph.toDTO().components 的 anchor 应为 {x:0,y:0} 占位 |
-| **AC-D3 · Sugar API 保持不变** | `.battery({voltage, id, anchor})` / `.flask({id, volumeML, anchor})` 签名与上轮完全一致 | circuit.html / metal-acid-reaction.html 两个模板文件零修改 |
-| **AC-D4 · LayoutSpec 可独立解析** | `LayoutSpec` 能单独 JSON.parse 后经 `isLayoutSpec` type guard | layout-spec.test 专测 |
-| **AC-D5 · DTO fingerprint 稳定** | 上轮的 T18-6 快照测试继续通过（DTO 形状兼容） | 回归测试不变 |
-| **AC-D6 · 零 solver/reaction 改动** | framework/solvers/** + framework/interactions/** + framework/domains/*/solver.ts + framework/domains/*/reactions/** 零行数改动 | grep audit |
-| **AC-D7 · 浏览器零改动** | `circuit.html` + `metal-acid-reaction.html` 文件内容 diff 为空 | git diff |
-| **AC-D8 · 无回归** | 上轮 446 测试 + 本轮新增（≥10）全绿 | jest 总量检查 |
+| 层 | 归属 | 能否访问 React？ | 能否访问 framework？ |
+|----|------|----------------|-------------------|
+| `src/lib/framework/*` | 纯 TS · 通用装配 | ❌ 不得 | — |
+| `src/lib/engines/*` | 纯 TS · 计算引擎 | ❌ 不得 | ✅ |
+| `src/lib/editor/*` | 纯 TS · editor 数据/逻辑层（reducer/state/config/persistence） | ❌ 不得（保持可测） | ✅ |
+| `src/components/editor/*` | React TSX · UI | ✅ 可以 | ✅ 通过 `@/lib/editor` 和 `@/lib/framework` |
+
+> **这是本轮最关键的架构约束**：`src/lib/editor/` 必须纯 TS 零 React，让 reducer 和 bundle 转换可独立测试。
 
 ---
 
-## 关键前提假设
+## 总结
 
-1. **装配层 5 件套（Spec/Validator/Assembler/Fluent/Errors）已稳定** — 上轮 34+10 测试验证通过，本轮在其基础上**追加** LayoutSpec 而非修改
-2. **DTO 向后兼容优先于纯洁性** — 保留 `ComponentDTO.anchor: {x:0,y:0}` 字段而非移除，确保上轮 T18-6 快照测试零破坏
-3. **Sugar API 稳定优先于实现改动** — 模板作者接触的 `.battery({voltage, anchor})` 调用方式不变
-4. **"清理"≠"重构"** — 本轮不动 solver/reaction/base-framework；仅在 assembly/ 增加新概念 + builder 内部分流
+B 是 D 的直接延续。D 把"数据契约"擦干净了，B 把"交互层"接上去。核心 ~20 新文件集中在 `src/lib/editor/` 和 `src/components/editor/` 两个目录，framework 核心**零修改**（AC-B6），老实验模板**零改动**（AC-B5），不碰服务端。
 
----
-
-## 关键边界（防止 Scope Creep）
-
-- 本轮产出"LayoutSpec 类型 + Builder 内部分流"三件事就结束
-- 不做任何 UI · 不做自动布局 · 不做持久化接口
-- `AssemblyBundle` 在 TS 类型层面引入但不强制任何模板使用它——保留作为未来 B 阶段的"spec + layout 配对契约"位置
+14 AC / 10 风险（4 P0 + 3 P1 + 3 P2）/ 13 In-Scope 功能 / 11 Out-of-Scope 明确划线 / 29 文件影响。

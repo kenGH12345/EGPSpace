@@ -10,6 +10,7 @@
 
 - **[Assembly Framework](./assembly-framework.md)** — 跨学科装配层（Spec / Assembler / FluentAssembly），含 5 学科扩展示例
 - **[Layout Spec](./layout-spec.md)** — 视觉坐标 `anchor` 独立契约（D 阶段交付，为后续编辑器框架做前置清理）
+- **[Editor Framework](./editor-framework.md)** — 交互式实验搭建器（B 阶段）· `/editor` 路由 · 拖拽+端口连线+持久化
 - **[Chemistry Domain](./domains/chemistry.md)** — 第二个全框架 domain 实例（元件+图+求解器+反应+装配）
 - `output/architecture.md` — 当前重构轮次的架构决策
 - `output/execution-plan.md` — 任务执行计划

@@ -1,9 +1,23 @@
 ---
 name: EGPSpace Skill Knowledge
-project: egpspace
-type: project-knowledge
 version: 1.0.0
-generated_at: 2026-04-28T15:32:22.561Z
+type: project-knowledge
+description: |
+  Unified project knowledge skill for EGPSpace — fused from 1 source(s): skill-discovery. Covers conventions, architecture patterns, and reusable components discovered through static analysis.
+domains: [egpspace, project-knowledge]
+triggers:
+  keywords:
+    - egpspace
+    - EGPSpace
+    - skill-discovery
+    - project-knowledge
+  roles:
+    - developer
+    - architect
+load_level: session
+max_tokens: 1200
+generatedAt: 2026-04-28T23:46:25.079Z
+project: egpspace
 sources:
   - skill-discovery
 deprecated: false

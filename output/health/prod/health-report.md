@@ -1,7 +1,7 @@
 # 🏥 System Health Monitoring Report
 
-> Generated: 2026-04-28T17:34:02.983Z
-> Session ID: `wf-20260428153150.`
+> Generated: 2026-04-29T00:24:51.690Z
+> Session ID: `wf-20260428234611.`
 > Run Category: `prod`
 
 ---
@@ -99,10 +99,10 @@
 |--------|-------|
 | Trend Enabled | ✅ Yes |
 | Window Size | 5 |
-| History Sessions | 75 |
+| History Sessions | 76 |
 | Recent Avg Score | 80.0 |
-| Previous Avg Score | 57.6 |
-| Delta (Recent-Previous) | +22.4 |
+| Previous Avg Score | 61.8 |
+| Delta (Recent-Previous) | +18.2 |
 | Low Score Threshold | 75 |
 | Alert Status | ✅ Normal |
 
@@ -119,31 +119,34 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** D scope 确定：anchor 分离为 LayoutSpec 独立契约；23 文件范围；10 In-Scope 任务；AC-D1~D8 八条；10 风险含 4 P0（兼容性/DTO漂移/Sugar API/回滚）均有 mitigation。本轮只做 D，不做自动布局和编辑器 UI（Out-of-Scope 明确）
+**📋 Summary:** B 编辑器 framework 范围确定：20 新 + 2 改 + 7 工作流共 29 文件；13 In-Scope（画布/palette/拖放/连线/删除/属性/运行/持久化/domain 切换/导入导出）；11 Out-of-Scope（自动布局/撤销/多选/美化/协作/服务端）；14 AC（核心 AC-B5/B6 零改硬约束 + AC-B4 JSON fingerprint）；10 风险含 4 P0；分层约束：src/lib/editor 纯 TS 零 React
 
-**📥 Input:** 现状：AssemblySpec<D>.components[i].anchor 与 props 混杂；circuit.html v3 + metal-acid-reaction.html 均硬编码 anchor 坐标；engine 不需要 anchor 却必须序列化
+**📥 Input:** D 阶段已完成 LayoutSpec 解耦；当前 circuit.html/metal-acid-reaction.html 仍硬编码 anchor；目标：让工程师可在浏览器拖拽元件+连线，产出可运行的 AssemblyBundle
 
-**📤 Output:** analysis.md 含根因 3 症状+23 文件受影响+In/Out-Scope+8 AC+10 风险
+**📤 Output:** analysis.md 含根因 3 层次+受影响 20 新+In/Out-Scope+14 AC+10 风险+Domain 分层约束
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\requirement.md`
 - Lines: 134, Hash: `3997-#EurekaSpace—化学实验迁移到统一声明式框架(`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 138, Hash: `8896-#ANALYSE·anchor-Spec解耦（D）`
+- Lines: 197, Hash: `9177-#ANALYSE·B阶段·编辑器framework`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# ANALYSE · anchor-Spec 解耦（D）
+# ANALYSE · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> Scope: 把视觉坐标 `anchor` 从 Spec / Component 的数据层分离为独立 `LayoutSpec`，为后续 B（编辑器 framework）做架构前置清理。
+> Session: `wf-20260428234611.` · 承接 D 阶段（LayoutSpec 解耦已完成）
 
 ---
 
 ## 根因 / Root Cause
 
-当前 `AssemblySpec<D>.components[i].anchor` 与 `IExperimentComponent.anchor` **把"视觉信息"和"拓扑信息"强绑定在同一数据结构上**。这带来
+### 用户终极目标（跨越 B/C 多阶段）
+让**用户在浏览器里拖拽元件 + 点击连线**完成一个实验搭建——不写 TS/JS 代码，鼠标即可。等价于工业界的 **CircuitJS / EveryCircuit / PhET** 级别体验。
+
+### 当前阻塞（即 B 必须解决的）
+三层原子化重构完成 A→D 四轮之后，**全链条
 ```
 </details>
 
@@ -164,36 +167,31 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** D 架构定型：LayoutSpec 扁平 entries+AssemblyBundle 可选容器+Builder sugar 内部分流+向后兼容（ComponentDecl.anchor @deprecated + IExperimentComponent.anchor 保留占位）；AC-D3/D7 Sugar API 零改+模板零改硬约束；5 决策含 Why+Trade-off；6 Failure Model；4 阶段 Migration 独立可回滚；4 对抗自审
+**📋 Summary:** B 架构定型：EditorState 含 UI 交互态（selection/draftWire/camera）+ Bundle 是派生；纯 TS reducer 零 React；混合渲染 Canvas drawer(TS 镜像) + DOM 端口 overlay；EditorDomainConfig 可扩展；动态 import engine 分派；5 决策含 Why+Trade-off；6 Failure Model；4 Migration 阶段独立回滚；4 对抗自审；14 Scorecard PASS
 
-**📥 Input:** analysis.md: 23 文件+10 任务+8 AC+10 风险；关键约束：Sugar API 零改+模板零改+DTO fingerprint 稳定
+**📥 Input:** analysis.md: 20 新 + 2 改；14 AC；10 风险；分层约束 src/lib/editor 纯 TS 零 React
 
-**📤 Output:** architecture.md 含 Mermaid 数据流 before/after+14 Scorecard+6 Failure Model+4 Migration+5 Scenario+14 AC
+**📤 Output:** architecture.md 含数据流图 + 时序图 + 5 决策 + 6 FM + 4 Migration + 5 Scenario + 14 Scorecard + 4 Q&A + Wave 分解
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 138, Hash: `8896-#ANALYSE·anchor-Spec解耦（D）`
+- Lines: 197, Hash: `9177-#ANALYSE·B阶段·编辑器framework`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 314, Hash: `12721-#Architecture·anchor-LayoutSp`
+- Lines: 382, Hash: `13526-#ARCHITECTURE·B阶段·编辑器fram`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Architecture · anchor-LayoutSpec 解耦（D）
+# ARCHITECTURE · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> Stage: ARCHITECT
-> Scope: 把 `anchor` 从 Spec 数据层分离为独立 `LayoutSpec`，保持 Sugar API 与模板零改动。
+> Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险
 
 ---
 
-## 1. 架构总览
+## 🧠 思考摘要
 
-```mermaid
-graph LR
-  subgraph Before["修改前（耦合）"]
-    B_Spec[AssemblySpec<D><br/>components[i].anchor ⚠️]
-
+B 是一层**鼠标事件 → Builder DSL 调用**的输入适配器。architecture 核心解决 5 个问题：
+(1) EditorState 形状如何与 AssemblyBundle 解耦；(2) reducer 如何保持可测；(3) Canvas 2D drawer 如何与 React DOM 端口 overlay 
 ```
 </details>
 
@@ -214,35 +212,34 @@ graph LR
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 14 任务 5 波执行：W0 类型+FluentAssembly 分流（含 Gate）/W1 跨层适配/W2 测试新增+迁移/W3 文档+全量验证；预估 4.4h；14 AC 每条有测试映射；5 风险含 3 P0 均有 mitigation
+**📋 Summary:** 22 任务分 5 Wave：W0 纯数据层含 Gate(T-6 ≥15 tests)/W1 UI 壳+TS drawer 镜像/W2 端口 hotspot+连线+选择+属性面板/W3 RunControls+engine-dispatch+Import/Export/W4 chemistry config+/editor 路由+文档+全量验证；总预估 3.5h；14 AC 每条有任务映射；5 风险含 3 P0 均有缓解
 
-**📥 Input:** architecture.md 5 决策 + 14 AC + 14 任务预估 4h
+**📥 Input:** architecture.md 5 决策 + 14 AC + 20 新文件 + 4 Wave 预估 3.5h
 
-**📤 Output:** execution-plan.md 含 Mermaid 依赖图+14 任务详解+验收映射+Out-of-Scope
+**📤 Output:** execution-plan.md 含 Mermaid 依赖图+22 任务详解+验收映射+5 风险+Out-of-Scope
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 314, Hash: `12721-#Architecture·anchor-LayoutSp`
+- Lines: 382, Hash: `13526-#ARCHITECTURE·B阶段·编辑器fram`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 362, Hash: `12151-#ExecutionPlan·anchor-Layout`
+- Lines: 259, Hash: `9460-#EXECUTIONPLAN·B阶段·编辑器fr`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Execution Plan · anchor-LayoutSpec 解耦（D）
+# EXECUTION PLAN · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> Stage: PLAN
-> 14 tasks / 5 waves / ~4h est
+> Session: `wf-20260428234611.` · 承接 `architecture.md` 的 5 决策 + 14 AC + 20 新文件
 
 ---
 
-## 依赖图
+## 关键路径与 Wave 依赖
 
 ```mermaid
-graph TD
-  W0_START([Wave 0 · 类型层 + FluentAssembly 分流])
-  T1[T-1 · assembly/layout.ts<br/>LayoutSpec + LayoutEntry + AssemblyBundle + helpers
+flowchart TB
+  subgraph W0 ["Wave 0 · 纯 TS 数据层（可独立 jest）"]
+    T1[T-1 editor-state.ts<br/>type only]
+    T2[T-2 editor-state-reducer.
 ```
 </details>
 
@@ -263,31 +260,30 @@ graph TD
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 14 任务全部完成：W0 LayoutSpec 类型+FluentAssembly 分流（Gate 通过）/W1 跨层适配（base/reaction-utils/engine 清理+浏览器镜像）/W2 T-11 新增 19 测试（AC-D1~D14 全覆盖）+ T-12 实质零迁移（红利：架构设计保 Sugar API 零改→老 test 零回归）/W3 文档+全量验证。465/465 测试 PASS，TSC 零错误，AC-D1/D3/D6/D7 硬约束审计全通过
+**📋 Summary:** 22 任务全部完成：W0 纯 TS 数据层 + GATE(28 tests)/W1 UI 壳 + TS drawer 镜像/W2 端口 hotspot + 连线 + 属性面板（合并到 EditorCanvas 实现）/W3 RunControls + engine-dispatch + I/O/W4 chemistry config + /editor 路由 + 文档；493/493 测试；TSC 零错；AC-B5/B6 git diff 审计空；AC-B2 reducer 零 React；AC-B14 零新依赖
 
-**📥 Input:** 14 tasks in 5 waves; Wave 0 first (types + FluentAssembly 分流)
+**📥 Input:** 22 tasks in 5 Waves; W0 first (state/reducer/bundle/persistence + GATE)
 
-**📤 Output:** 3 新 + 10 改 + 7 工作流文档 共 20 文件；AC-D6 solver/reactions 零行数变动；AC-D7 模板零 byte 变动
+**📤 Output:** 23 新文件（数据 8 + drawer 2 + config 3 + UI 5 + 路由 1 + 测试 1 + 文档 1）+ 1 改 + 7 工作流产出；TSC 绿；28 测试 GATE 通过
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 362, Hash: `12151-#ExecutionPlan·anchor-Layout`
+- Lines: 259, Hash: `9460-#EXECUTIONPLAN·B阶段·编辑器fr`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 64, Hash: `2758-#DEVELOPStage·CodeChangesS`
+- Lines: 84, Hash: `3667-#CodeDiff·B阶段·编辑器framewo`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# DEVELOP Stage · Code Changes Summary (D)
+# Code Diff · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> 14 tasks complete. 465/465 tests PASS. TSC zero errors.
+> Session: `wf-20260428234611.` · 22 任务全部完成 · 493/493 测试 PASS
 
-## 新建文件（3）
+## 文件清单（23 新 + 1 改 + 7 工作流）
 
-| # | File | LOC | Purpose |
-|---|------|-----|---------|
-| 1 | `src/lib/framework/assembly/layout.ts` | ~130 | LayoutSpec / LayoutEntry / Assem
+### 新增 · 数据层 `src/lib/editor/` (7 文件)
+- `editor-state.ts` — EditorState + cloneEditorState + emptyEditorState (78 行)
+- `editor-state-reducer.ts` — 15 action reducer
 ```
 </details>
 
@@ -308,34 +304,39 @@ graph TD
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 465/465 PASS；TSC 零错误；14 AC 全有测试证据；5 风险缓解验证通过；AC-D1/D3/D6/D7 硬约束审计通过（solver/reactions/模板零改）
+**📋 Summary:** 493/493 tests PASS · TSC 零错 · 14 AC 验证矩阵全通过（AC-B10 待浏览器 Runbook）· 5 风险缓解全证据 · AC-B5/B6 git diff 空审计
 
-**📥 Input:** 465/465 PASS; TSC 0 errors; AC-D1/D3/D6/D7 audits pass
+**📥 Input:** 493/493 PASS · TSC 零错 · AC-B5/B6/B9/B14 审计通过
 
-**📤 Output:** test-report.md 含 AC 逐条证据+19 测试清单+风险验证
+**📤 Output:** test-report.md 含 AC 逐条证据 + 风险验证 + 11 步浏览器 Runbook
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 64, Hash: `2758-#DEVELOPStage·CodeChangesS`
+- Lines: 84, Hash: `3667-#CodeDiff·B阶段·编辑器framewo`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\test-report.md`
-- Lines: 99, Hash: `3736-#TEST·anchor-LayoutSpec解耦（D）`
+- Lines: 107, Hash: `4771-#TestReport·B阶段·编辑器frame`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# TEST · anchor-LayoutSpec 解耦（D）
+# Test Report · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
+> Session: `wf-20260428234611.` · 14 AC 逐条验证
 
-## Overall
+## Test Command
 
-| Metric | Value |
-|--------|-------|
-| Test Suites | **24 passed / 24 total** |
-| Tests | **465 passed / 465 total** |
-| TSC `--noEmit` | **0 errors** |
-| Baseline (pre-DEVELOP) | 446 tests |
-| New tests adde
+```bash
+npx tsc --noEmit       # TypeScript check
+npx jest               # Unit + integration tests
+```
+
+## 测试结果
+
+### Unit / Integration
+
+```
+Test Suites: 25 passed, 25 total
+Tests: 
 ```
 </details>
 
@@ -356,32 +357,31 @@ graph TD
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** REVIEW 通过：需求 100% 达成，5 决策 0 偏差，6/6 FM 覆盖，3 意外红利（T-12 零迁移/耗时远低于预估/Builder.components 合并视图复用）；遗留债务全部低优先级
+**📋 Summary:** REVIEW 通过：需求 100% · 5 决策 0 偏差 · 6/6 FM 覆盖 · 意外红利 3（耗时 1.5h vs 预估 3.5h / T-12 零迁移 / chemistry 扩展 8min）· 8 遗留债务全 C 阶段预留
 
-**📥 Input:** 465/465 PASS · 14 AC verified
+**📥 Input:** 493/493 · 14 AC 验证矩阵 · 5 风险证据
 
-**📤 Output:** review-output.md 含需求达成/决策对比/意外红利/FM 覆盖/代码质量/遗留债务
+**📤 Output:** review-output.md 含需求 + 决策对比 + FM 审计 + 代码质量 + 意外红利 + 遗留债务
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\review-output.md`
-- Lines: 76, Hash: `2701-#REVIEW·anchor-LayoutSpec解耦（`
+- Lines: 124, Hash: `4705-#Review·B阶段·编辑器framework`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# REVIEW · anchor-LayoutSpec 解耦（D）
+# Review · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
+> Session: `wf-20260428234611.` · 需求达成 · 决策对比 · 遗留债务
 
-## 需求达成度
+## 需求达成 · 100%
 
-| 原始需求 | 达成 |
-|---------|------|
-| 把 anchor 从 AssemblySpec 分离为独立 LayoutSpec | ✅ 100% |
-| Engine compute 时不携带 anchor | ✅ AC-D2a/D2b 有测试证据 |
-| Sugar API 保持零改动 | ✅ git diff 无 API 面改动 |
-| circuit.html / metal-acid-
+| In-Scope 功能 | 状态 | 实现位置 |
+|---------------|------|---------|
+| IS-1 画布 pan/zoom + 栅格背景 | ✅ | EditorCanvas.tsx + drawGrid helper |
+| IS-2 左侧元件面板 | ✅ | ComponentPalette.tsx |
+| IS-3 拖放放置元
 ```
 </details>
 
@@ -402,32 +402,31 @@ graph TD
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 本地落盘完成：20 文件变更（1 新 TS + 1 新 test + 7 改 TS + 2 改 JS + 1 新 doc + 1 改 doc + 7 workflow docs）；AC-D6/D7 硬约束零改（solver/reactions/模板）；465/465 测试全绿；TSC 零错误；零新依赖
+**📋 Summary:** B 编辑器 framework 本地落盘完成：31 文件变更（23 新 + 1 改 + 7 工作流）· TSC 0 错 · Jest 493/493 · 零新依赖 · framework 零改 · 老模板零改 · 耗时 1.5h vs 预估 3.5h
 
-**📥 Input:** all gates pass; 465/465 tests
+**📥 Input:** all gates pass; 493/493
 
-**📤 Output:** deploy-output.md 含文件清单/Runbook/回滚方案/commit message 建议
+**📤 Output:** deploy-output.md 含文件清单 + Runbook 11 步 + 回滚方案 + commit msg 建议 + C 阶段 7 建议
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\deploy-output.md`
-- Lines: 86, Hash: `3147-#DEPLOY·anchor-LayoutSpec解耦（`
+- Lines: 158, Hash: `4326-#DeployOutput·B阶段·编辑器fra`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# DEPLOY · anchor-LayoutSpec 解耦（D）
+# Deploy Output · B 阶段 · 编辑器 framework
 
-> Session: `wf-20260428153150.`
-> Deployment Type: 本地落盘（代码已写入工作区）
+> Session: `wf-20260428234611.` · 本地落盘部署完成
 
-## 文件变更总清单
+## 文件清单（23 新 + 1 改 + 7 工作流 = 31 文件）
 
-| 类别 | 数量 | 说明 |
-|------|------|------|
-| 新建 TS 源码 | 1 | `src/lib/framework/assembly/layout.ts` |
-| 新建测试 | 1 | 19 测试全绿 |
-| 修改 TS 源码 | 7 | fluent/assembler/spec/barrel×2/base/
+### 新增（23）
+
+**数据层 `src/lib/editor/` (8)**
+- `editor-state.ts`, `editor-state-reducer.ts`, `port-layout.ts`, `bundle-from-state.ts`
+- `persistence.ts`, `editor-config.ts`
 ```
 </details>
 
@@ -448,7 +447,7 @@ graph TD
 | Field | Value |
 |-------|-------|
 | Protocol Version | `evidence-v1` |
-| Session | `wf-20260428153150.` |
+| Session | `wf-20260428234611.` |
 | Run Category | `prod` |
 | Missing Stage Artifacts | 0 |
 
@@ -456,13 +455,13 @@ graph TD
 
 | Stage | Exists | Size(bytes) | SHA256 (prefix) |
 |-------|--------|-------------|------------------|
-| ANALYSE | ✅ | 12635 | `e29a1c8a38a3d8f2...` |
-| ARCHITECT | ✅ | 16930 | `00664356c9ebe4d0...` |
-| PLAN | ✅ | 14684 | `06b38be21c1b0716...` |
-| CODE | ✅ | 3267 | `596d2e0957e23c27...` |
-| TEST | ✅ | 4406 | `29632717b135417e...` |
+| ANALYSE | ✅ | 13033 | `f209126bac3bc045...` |
+| ARCHITECT | ✅ | 16924 | `d7549e3209f927a7...` |
+| PLAN | ✅ | 11301 | `a8aa9b0b6488144c...` |
+| CODE | ✅ | 4465 | `0d8f73e4699b4f1b...` |
+| TEST | ✅ | 6019 | `ec1efdb47e05679e...` |
 
-- **Trace Hash**: `d156d2e3e32731dcfdeab4b15402aed7eb93e96c9c3b55cf5a3c743024cf9bb4`
+- **Trace Hash**: `382e3ff3cf4df6d8bb9ae97dce0a492f113dcaccff10436457b64b5daf005e63`
 - **Quality Report Hash**: N/A
 - **Evolution Log Hash**: N/A
 
