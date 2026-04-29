@@ -111,63 +111,142 @@
   // Rendering helpers (use ComponentMirror's dispatch table)
   // ════════════════════════════════════════════════════════════════════════
 
-  // Port position convention (matches circuit-draw.js):
-  //   Every component occupies a 50×40 rect starting at anchor (ax, ay).
-  //   Horizontal lead wire is at y = ay + 20.
+  // ════════════════════════════════════════════════════════════════════════
+  // Port-name → geometry mapping (semantic convention, matches circuit-draw.js)
+  // ════════════════════════════════════════════════════════════════════════
+  //
+  // Every component occupies a 50×40 rect starting at anchor (ax, ay).
+  // Horizontal lead wire is at y = ay + 20.
   //   Left port  = (ax,      ay + 20)
   //   Right port = (ax + 50, ay + 20)
-  function portPos(comp, side) {
+  //
+  // Port-name convention per kind (see src/lib/framework/domains/circuit/assembly/circuit-spec.ts):
+  //   battery:            negative (left) | positive (right)
+  //   switch / ammeter:   in       (left) | out      (right)
+  //   wire/resistor/bulb/voltmeter: a (left) | b (right)
+  //
+  // This mapping is the single source of truth for "which geometric point
+  // does this named port live at". It is what gives components connectivity
+  // and makes the whole graph a coherent system — not a bunch of loose symbols.
+  const PORT_SIDE = {
+    battery:   { negative: 'left',  positive: 'right' },
+    switch:    { in: 'left',        out: 'right' },
+    ammeter:   { in: 'left',        out: 'right' },
+    wire:      { a: 'left',         b: 'right' },
+    resistor:  { a: 'left',         b: 'right' },
+    bulb:      { a: 'left',         b: 'right' },
+    burnt_bulb:{ a: 'left',         b: 'right' },
+    voltmeter: { a: 'left',         b: 'right' },
+  };
+
+  function portPos(comp, portName) {
     const ax = (comp.anchor && comp.anchor.x) || 0;
     const ay = (comp.anchor && comp.anchor.y) || 0;
-    return side === 'left'
-      ? { x: ax,      y: ay + 20 }
-      : { x: ax + 50, y: ay + 20 };
+    const sideTable = PORT_SIDE[comp.kind];
+    const side = sideTable ? sideTable[portName] : null;
+    // Fallback: unknown kind or port → best-guess right port
+    const isLeft = side === 'left';
+    return {
+      x: ax + (isLeft ? 0 : 50),
+      y: ay + 20,
+      side: isLeft ? 'left' : 'right',
+    };
   }
 
-  function drawConnectionLines(components) {
-    // Draw a real closed loop: connect each component's right port to the
-    // next component's left port, then add a return wire from the last
-    // component back to the first (going up → left → down around the top).
-    // This makes the circuit visually closed — matching the .loop() semantics
-    // in CircuitBuilder.
-    if (!components || components.length < 2) return;
+  // Build a quick id→component lookup (components() returns a small array but
+  // this keeps the connection walk O(|E|) instead of O(|E|·|V|)).
+  function buildCompIndex(components) {
+    const idx = Object.create(null);
+    for (const c of components) idx[c.id] = c;
+    return idx;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // drawConnectionLines — semantic connectivity rendering
+  // ════════════════════════════════════════════════════════════════════════
+  //
+  // Walks circuit._spec.connections (the same graph the solver consumes),
+  // and for every connection draws a wire between the two named ports'
+  // geometric positions. If the two ports are on opposite sides (right→left)
+  // of adjacent-ish components, a straight horizontal wire suffices; if
+  // they're both on the same side or far apart (e.g. the closing wire
+  // from last component's right back to first component's left), an
+  // L-shaped or U-shaped bus wire is drawn, routing up over the row of
+  // components to avoid crossing their bodies.
+  //
+  // This is the single source of graph visualization — any CircuitBuilder
+  // topology (series, parallel, bridge …) will render correctly as long
+  // as components have anchors.
+  function drawConnectionLines(components, connections) {
+    if (!components || !components.length) return;
+    if (!connections || !connections.length) return;
+
+    const compIndex = buildCompIndex(components);
+
+    // Compute top bus Y: one "lane" above the highest component row.
+    // All U-shaped return wires route through this bus to avoid overlap.
+    let minAy = Infinity;
+    for (const c of components) {
+      const ay = (c.anchor && c.anchor.y) || 0;
+      if (ay < minAy) minAy = ay;
+    }
+    const busY = Math.max(12, minAy - 50);
 
     ctx.save();
-    ctx.strokeStyle = '#334155';   // slate-700 · solid dark line
+    ctx.strokeStyle = '#334155';     // slate-700 · solid dark
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
-    ctx.beginPath();
+    ctx.lineJoin = 'round';
 
-    // 1) Sequential connections between adjacent components
-    for (let i = 0; i < components.length - 1; i++) {
-      const a = portPos(components[i], 'right');
-      const b = portPos(components[i + 1], 'left');
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
+    for (const conn of connections) {
+      const fromComp = compIndex[conn.from.componentId];
+      const toComp   = compIndex[conn.to.componentId];
+      if (!fromComp || !toComp) continue;  // skip orphan references
+
+      const a = portPos(fromComp, conn.from.portName);
+      const b = portPos(toComp,   conn.to.portName);
+
+      ctx.beginPath();
+      if (a.y === b.y && a.side === 'right' && b.side === 'left' && a.x < b.x) {
+        // Short horizontal wire between a right-port and a following left-port
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+      } else if (a.y === b.y && a.side === 'right' && b.side === 'left' && a.x >= b.x) {
+        // Closing return wire: last.right → up → over → down → first.left
+        const rightStub = a.x + 20;
+        const leftStub  = Math.max(12, b.x - 20);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(rightStub, a.y);
+        ctx.lineTo(rightStub, busY);
+        ctx.lineTo(leftStub,  busY);
+        ctx.lineTo(leftStub,  b.y);
+        ctx.lineTo(b.x, b.y);
+      } else {
+        // Generic case (parallel branches, different rows, same-side ports):
+        // route via the top bus using an elbow path.
+        const midY = Math.min(a.y, b.y, busY) - 10;
+        const aExit = a.side === 'left' ? a.x - 15 : a.x + 15;
+        const bExit = b.side === 'left' ? b.x - 15 : b.x + 15;
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(aExit, a.y);
+        ctx.lineTo(aExit, midY);
+        ctx.lineTo(bExit, midY);
+        ctx.lineTo(bExit, b.y);
+        ctx.lineTo(b.x, b.y);
+      }
+      ctx.stroke();
     }
 
-    // 2) Return wire: last component's right → up → left → down → first component's left
-    const first = portPos(components[0], 'left');
-    const last  = portPos(components[components.length - 1], 'right');
-    const topY  = Math.max(10, Math.min(first.y, last.y) - 70);
-    const leftX = Math.max(10, first.x - 20);
-    const rightX = last.x + 20;
-
-    ctx.moveTo(last.x,  last.y);
-    ctx.lineTo(rightX,  last.y);     // short stub right
-    ctx.lineTo(rightX,  topY);       // up to bus
-    ctx.lineTo(leftX,   topY);       // horizontal bus across top
-    ctx.lineTo(leftX,   first.y);    // down to first component's y
-    ctx.lineTo(first.x, first.y);    // short stub into first component's left port
-
-    ctx.stroke();
     ctx.restore();
   }
 
   function render(perComponent) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const components = circuit.components();
-    drawConnectionLines(components);
+    // Pull the connection graph from the live builder — this is the SAME
+    // data the host-side solver consumes. Visual and semantic truth align.
+    const connections = circuit.toSpec().connections;
+    drawConnectionLines(components, connections);
     ComponentMirror.renderAll(ctx, components, perComponent);
   }
 
