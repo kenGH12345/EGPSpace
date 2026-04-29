@@ -7,6 +7,7 @@
  */
 
 import type { CanvasDrawer } from '../editor-config';
+import { drawHoverFrame } from './draw-helpers';
 
 const STROKE = '#0F172A';
 const LBL = '#334155';
@@ -28,11 +29,23 @@ function selFrame(ctx: CanvasRenderingContext2D, ax: number, ay: number) {
   ctx.restore();
 }
 
-export const flaskDrawer: CanvasDrawer = (ctx, c, v, selected) => {
+/** D 阶段 · selected/hover 统一入口（selected 优先级高） */
+function drawInteractionFrame(
+  ctx: CanvasRenderingContext2D,
+  ax: number,
+  ay: number,
+  selected: boolean,
+  hovered?: boolean,
+): void {
+  if (selected) selFrame(ctx, ax, ay);
+  else if (hovered) drawHoverFrame(ctx, { x: ax, y: ay, width: 60, height: 60 });
+}
+
+export const flaskDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const volume = (c.props.volumeML as number) || 100;
-  if (selected) selFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;
@@ -74,13 +87,13 @@ function pHToColor(pH: number): string {
   return '#A78BFA'; // purple
 }
 
-export const reagentDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
+export const reagentDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const formula = (c.props.formula as string) || '?';
   const moles = (c.props.moles as number) || 0;
   const phase = (c.props.phase as string) || 'aq';
-  if (selected) selFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;
@@ -104,11 +117,11 @@ export const reagentDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
   ctx.restore();
 };
 
-export const bubbleDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
+export const bubbleDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const gas = (c.props.gas as string) || 'H2';
-  if (selected) selFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = '#0369A1';
   ctx.lineWidth = 1;
@@ -125,13 +138,13 @@ export const bubbleDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
   ctx.restore();
 };
 
-export const solidDrawer: CanvasDrawer = (ctx, c, v, selected) => {
+export const solidDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const formula = (c.props.formula as string) || '?';
   const mass = (c.props.massG as number) || 0;
   const state = (v?.state as string) || (c.props.state as string) || 'intact';
-  if (selected) selFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   // Color by state
   ctx.fillStyle = state === 'rusting' ? '#B45309' : state === 'dissolved' ? '#E5E7EB' : '#94A3B8';
@@ -152,12 +165,12 @@ export const solidDrawer: CanvasDrawer = (ctx, c, v, selected) => {
   ctx.restore();
 };
 
-export const indicatorDrawer: CanvasDrawer = (ctx, c, v, selected) => {
+export const indicatorDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const dyeType = (c.props.dyeType as string) || 'phenolphthalein';
   const currentColor = (v?.color as string) || '#D1D5DB';
-  if (selected) selFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.fillStyle = currentColor;
   ctx.strokeStyle = STROKE;

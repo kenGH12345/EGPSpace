@@ -1,13 +1,19 @@
 'use client';
 
-import React, { useReducer, useState, useCallback } from 'react';
+import React, { useReducer, useState, useCallback, useEffect, useMemo } from 'react';
 import {
   applyEditorAction,
   emptyEditorState,
   getDomainConfig,
   getAvailableDomains,
+  withHistory,
+  emptyHistory,
+  canUndo as historyCanUndo,
+  canRedo as historyCanRedo,
   type EditorState,
   type EditorAction,
+  type HistoryState,
+  type HistoryAction,
 } from '@/lib/editor';
 import type { ComponentDomain } from '@/lib/framework';
 import { ComponentPalette } from './ComponentPalette';
@@ -19,23 +25,58 @@ export interface EditorShellProps {
   initialDomain?: ComponentDomain;
 }
 
+// Squash: 连续 moveComponent / updateProp / updateWireCursor 合并为一条历史
+const HISTORY_OPTIONS = {
+  maxPast: 50,
+  squash: {
+    squashActions: new Set(['moveComponent', 'updateProp', 'updateWireCursor', 'setCamera']),
+    windowMs: 500,
+    targetIdOf: (action: unknown): string | undefined => {
+      const a = action as { id?: string; componentId?: string };
+      return a.id ?? a.componentId;
+    },
+  },
+  // D 阶段: transient action 白名单 · 不污染 undo 栈
+  ignoreActions: new Set(['hoverComponent']),
+};
+
+type HEditorState = HistoryState<EditorState>;
+type HEditorAction = HistoryAction<EditorAction, EditorState>;
+
 /**
- * Top-level editor container. Owns the reducer state and layout.
+ * Top-level editor container. Owns the history-wrapped reducer state.
  *
- * Layout:
- *   ┌──────────────────────────────────────────────────┐
- *   │  Header: domain switch + RunControls + I/O       │
- *   ├────────┬──────────────────────────┬──────────────┤
- *   │Palette │       EditorCanvas       │  Property    │
- *   │ (left) │        (center)          │  (right)     │
- *   └────────┴──────────────────────────┴──────────────┘
+ * C 阶段：引入 withHistory 包装，支持撤销/重做
  */
 export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
-  const [state, dispatch] = useReducer(
-    applyEditorAction as (s: EditorState, a: EditorAction) => EditorState,
-    initialDomain,
-    (d) => emptyEditorState(d),
+  // 用 useMemo 保证 reducer 稳定引用（withHistory 内部有 squash meta 状态，不能每次 render 新建）
+  const historyReducer = useMemo(
+    () =>
+      withHistory<EditorState, EditorAction>(
+        applyEditorAction as (s: EditorState, a: EditorAction) => EditorState,
+        HISTORY_OPTIONS,
+      ),
+    [],
   );
+
+  const [historyState, hDispatch] = useReducer(
+    historyReducer as (s: HEditorState, a: HEditorAction) => HEditorState,
+    initialDomain,
+    (d) => emptyHistory(emptyEditorState(d)),
+  );
+
+  const state = historyState.present;
+  const canUndo = historyCanUndo(historyState);
+  const canRedo = historyCanRedo(historyState);
+
+  // 兼容层：外部组件仍然 dispatch 业务 action，内部透传给 history reducer
+  const dispatch = useCallback((action: EditorAction) => {
+    hDispatch(action as HEditorAction);
+  }, []);
+
+  const undo = useCallback(() => hDispatch({ type: '__UNDO__' }), []);
+  const redo = useCallback(() => hDispatch({ type: '__REDO__' }), []);
+
   const [runResult, setRunResult] = useState<Record<string, Record<string, unknown>> | undefined>(undefined);
   const [statusMsg, setStatusMsg] = useState<string>('');
 
@@ -52,8 +93,34 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
       setRunResult(undefined);
       setStatusMsg('');
     },
-    [state.placed.length],
+    [state.placed.length, dispatch],
   );
+
+  // ── 键盘快捷键 Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y ──────────────────────────
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // 输入框内不拦截（AC-C15）
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) {
+        return;
+      }
+      const ctrlOrMeta = e.ctrlKey || e.metaKey;
+      if (!ctrlOrMeta) return;
+      if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      } else if (e.key === 'y' || e.key === 'Y') {
+        e.preventDefault();
+        redo();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [undo, redo]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
@@ -84,6 +151,11 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
         <RunControls
           state={state}
           config={config}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
+          onAutoLayout={(algorithm) => dispatch({ type: 'autoLayout', algorithm })}
           onResult={(r, msg) => {
             setRunResult(r);
             setStatusMsg(msg);
@@ -125,7 +197,7 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
           {state.selection.kind === 'connection' && `选中连线 #${state.selection.index}`}
           {state.selection.kind === 'none' && '未选中'}
         </span>
-        <span className="flex-1 text-right">Esc 取消连线 · Delete 删除选中</span>
+        <span className="flex-1 text-right">Ctrl+Z 撤销 · Ctrl+Y 重做 · Esc 取消连线 · Delete 删除选中</span>
       </footer>
     </div>
   );

@@ -20,6 +20,8 @@ import {
   type EditorSelection,
   cloneEditorState,
 } from './editor-state';
+import { autoLayout, type LayoutAlgorithm } from './layout';
+import { snapToGrid } from './port-layout';
 
 // ── Action types ──────────────────────────────────────────────────────────
 
@@ -31,7 +33,7 @@ export type EditorAction =
       defaults?: Record<string, unknown>;
       id?: string; // optional explicit id (for replay/import); otherwise auto-generated
     }
-  | { type: 'moveComponent'; id: string; delta: { x: number; y: number } }
+  | { type: 'moveComponent'; id: string; delta: { x: number; y: number }; snapGrid?: number }
   | { type: 'setComponentAnchor'; id: string; anchor: { x: number; y: number } }
   | { type: 'selectComponent'; id: string | null }
   | { type: 'selectConnection'; index: number | null }
@@ -44,7 +46,9 @@ export type EditorAction =
   | { type: 'removeConnection'; index: number }
   | { type: 'setCamera'; offset?: { x: number; y: number }; zoom?: number }
   | { type: 'switchDomain'; domain: ComponentDomain }
-  | { type: 'loadBundle'; bundle: AssemblyBundle<ComponentDomain> };
+  | { type: 'loadBundle'; bundle: AssemblyBundle<ComponentDomain> }
+  | { type: 'autoLayout'; algorithm?: LayoutAlgorithm }
+  | { type: 'hoverComponent'; id: string | null };
 
 // ── Id generator ──────────────────────────────────────────────────────────
 
@@ -80,9 +84,12 @@ export function applyEditorAction<D extends ComponentDomain>(
     case 'moveComponent': {
       const p = next.placed.find((x) => x.id === action.id);
       if (p) {
+        const rawX = p.anchor.x + action.delta.x;
+        const rawY = p.anchor.y + action.delta.y;
+        const grid = action.snapGrid;
         p.anchor = {
-          x: p.anchor.x + action.delta.x,
-          y: p.anchor.y + action.delta.y,
+          x: grid && grid > 0 ? snapToGrid(rawX, grid) : rawX,
+          y: grid && grid > 0 ? snapToGrid(rawY, grid) : rawY,
           rotation: p.anchor.rotation,
         };
       }
@@ -211,6 +218,7 @@ export function applyEditorAction<D extends ComponentDomain>(
         selection: { kind: 'none' },
         draftWire: null,
         camera: { offset: { x: 0, y: 0 }, zoom: 1 },
+        hoveredId: null,
       };
     }
 
@@ -222,27 +230,87 @@ export function applyEditorAction<D extends ComponentDomain>(
           layoutMap.set(e.componentId, e.anchor);
         }
       }
+
+      // Build placed list first (可能先全部为 (0, 0))
+      const placedList: PlacedComponent[] = bundle.spec.components.map((c) => ({
+        id: c.id,
+        kind: c.kind,
+        props: { ...c.props },
+        anchor: layoutMap.get(c.id) ?? { x: 0, y: 0 },
+      }));
+
+      const connectionList = (bundle.spec.connections as Array<{
+        from: { componentId: string; portName: string };
+        to: { componentId: string; portName: string };
+        kind?: string;
+      }>).map((c) => ({
+        from: { componentId: c.from.componentId, portName: c.from.portName },
+        to: { componentId: c.to.componentId, portName: c.to.portName },
+        kind: c.kind,
+      }));
+
+      // Auto-fill layout when: no layout entries AND all placed are at (0,0) AND有元件
+      // （保护：用户有任何非零坐标都不覆盖；AC-C2 R-15）
+      const hasLayoutEntries = bundle.layout && bundle.layout.entries.length > 0;
+      const allAtOrigin = placedList.length > 0 && placedList.every(
+        (p) => p.anchor.x === 0 && p.anchor.y === 0,
+      );
+
+      if (!hasLayoutEntries && allAtOrigin) {
+        const result = autoLayout(
+          {
+            componentIds: placedList.map((p) => p.id),
+            connections: connectionList.map((c) => ({
+              from: c.from.componentId,
+              to: c.to.componentId,
+            })),
+          },
+          'grid',
+        );
+        for (const p of placedList) {
+          const pos = result.positions[p.id];
+          if (pos) {
+            p.anchor = { x: pos.x, y: pos.y, rotation: p.anchor.rotation };
+          }
+        }
+      }
+
       return {
         domain: bundle.spec.domain as D,
-        placed: bundle.spec.components.map((c) => ({
-          id: c.id,
-          kind: c.kind,
-          props: { ...c.props },
-          anchor: layoutMap.get(c.id) ?? { x: 0, y: 0 },
-        })),
-        connections: (bundle.spec.connections as Array<{
-          from: { componentId: string; portName: string };
-          to: { componentId: string; portName: string };
-          kind?: string;
-        }>).map((c) => ({
-          from: { componentId: c.from.componentId, portName: c.from.portName },
-          to: { componentId: c.to.componentId, portName: c.to.portName },
-          kind: c.kind,
-        })),
+        placed: placedList,
+        connections: connectionList,
         selection: { kind: 'none' },
         draftWire: null,
         camera: { offset: { x: 0, y: 0 }, zoom: 1 },
+        hoveredId: null,
       };
+    }
+
+    case 'autoLayout': {
+      const algorithm: LayoutAlgorithm = action.algorithm ?? 'grid';
+      const result = autoLayout(
+        {
+          componentIds: next.placed.map((p) => p.id),
+          connections: next.connections.map((c) => ({
+            from: c.from.componentId,
+            to: c.to.componentId,
+          })),
+        },
+        algorithm,
+      );
+      for (const p of next.placed) {
+        const pos = result.positions[p.id];
+        if (pos) {
+          p.anchor = { x: pos.x, y: pos.y, rotation: p.anchor.rotation };
+        }
+      }
+      return next;
+    }
+
+    case 'hoverComponent': {
+      // D 阶段: 交互态反馈 · 由 history.ignoreActions 过滤不进 undo past
+      next.hoveredId = action.id;
+      return next;
     }
 
     default: {

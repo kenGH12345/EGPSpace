@@ -19,6 +19,10 @@ import {
   storageKey,
   exportBundleJson,
   importBundleJson,
+  componentBounds,
+  isPointInBounds,
+  snapToGrid,
+  snapPointToGrid,
   type EditorState,
   type PortLayoutTable,
 } from '../index';
@@ -418,5 +422,264 @@ describe('integration · full roundtrip', () => {
     const s2 = applyEditorAction(emptyEditorState('circuit'), { type: 'loadBundle', bundle: parsed });
     const bundle2 = bundleFromState(s2);
     expect(JSON.stringify(bundle2)).toBe(JSON.stringify(bundle1));
+  });
+});
+
+// ── C 阶段 · autoLayout action + loadBundle 自动补 layout ────────────────
+
+describe('reducer · autoLayout action (C 阶段)', () => {
+  test('R-11 · autoLayout action 后所有 placed.anchor 非 (0,0)', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'battery', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'resistor', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'bulb', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'autoLayout' });
+    expect(s.placed.length).toBe(3);
+    // 至少 1 个 anchor 非 (0,0)（grid 从 60,60 起算，全部非零）
+    expect(s.placed.every((p) => p.anchor.x !== 0 || p.anchor.y !== 0)).toBe(true);
+  });
+
+  test('R-12 · autoLayout 保持 placed 数量和 id 不变', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'battery', position: { x: 100, y: 100 } });
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'resistor', position: { x: 200, y: 200 } });
+    const idsBefore = s.placed.map((p) => p.id).sort();
+    s = applyEditorAction(s, { type: 'autoLayout', algorithm: 'grid' });
+    const idsAfter = s.placed.map((p) => p.id).sort();
+    expect(idsAfter).toEqual(idsBefore);
+  });
+
+  test('R-13 · loadBundle 无 layout + 全零 anchor → 自动补 layout (anchor 非 0)', () => {
+    const bundle: AssemblyBundle = {
+      spec: {
+        domain: 'circuit',
+        components: [
+          { id: 'b1', kind: 'battery', props: {} },
+          { id: 'r1', kind: 'resistor', props: {} },
+          { id: 'l1', kind: 'bulb', props: {} },
+        ],
+        connections: [],
+      },
+      // 注意：无 layout 字段
+    } as AssemblyBundle;
+    const s = applyEditorAction(emptyEditorState('circuit'), { type: 'loadBundle', bundle });
+    expect(s.placed.length).toBe(3);
+    // grid 布局 → 至少一个 anchor 非 0
+    const nonZeroCount = s.placed.filter((p) => p.anchor.x !== 0 || p.anchor.y !== 0).length;
+    expect(nonZeroCount).toBe(3); // grid 从 (60,60) 起所有都非 0
+  });
+
+  test('R-14 · loadBundle 有 layout → 保留原 layout（不覆盖）', () => {
+    const bundle: AssemblyBundle = {
+      spec: {
+        domain: 'circuit',
+        components: [
+          { id: 'b1', kind: 'battery', props: {} },
+          { id: 'r1', kind: 'resistor', props: {} },
+        ],
+        connections: [],
+      },
+      layout: {
+        domain: 'circuit',
+        entries: [
+          { componentId: 'b1', anchor: { x: 500, y: 500 } },
+          { componentId: 'r1', anchor: { x: 700, y: 300 } },
+        ],
+      },
+    };
+    const s = applyEditorAction(emptyEditorState('circuit'), { type: 'loadBundle', bundle });
+    const b1 = s.placed.find((p) => p.id === 'b1');
+    const r1 = s.placed.find((p) => p.id === 'r1');
+    expect(b1?.anchor).toEqual({ x: 500, y: 500 });
+    expect(r1?.anchor).toEqual({ x: 700, y: 300 });
+  });
+
+  test('R-15 · loadBundle 有部分非零 anchor → 保留不自动补（保护用户数据）', () => {
+    const bundle: AssemblyBundle = {
+      spec: {
+        domain: 'circuit',
+        components: [
+          { id: 'b1', kind: 'battery', props: {} },
+          { id: 'r1', kind: 'resistor', props: {} },
+        ],
+        connections: [],
+      },
+      layout: {
+        domain: 'circuit',
+        entries: [
+          { componentId: 'b1', anchor: { x: 42, y: 42 } },
+          // r1 无 entry → 默认 (0, 0)
+        ],
+      },
+    };
+    const s = applyEditorAction(emptyEditorState('circuit'), { type: 'loadBundle', bundle });
+    const b1 = s.placed.find((p) => p.id === 'b1');
+    const r1 = s.placed.find((p) => p.id === 'r1');
+    // 有 layout entries → 走保留路径，不触发 autoLayout
+    expect(b1?.anchor).toEqual({ x: 42, y: 42 });
+    expect(r1?.anchor).toEqual({ x: 0, y: 0 }); // 未自动补
+  });
+
+  test('R-16 · loadBundle 空 placed → 不 throw 不 autoLayout', () => {
+    const bundle: AssemblyBundle = {
+      spec: { domain: 'circuit', components: [], connections: [] },
+    } as AssemblyBundle;
+    const s = applyEditorAction(emptyEditorState('circuit'), { type: 'loadBundle', bundle });
+    expect(s.placed.length).toBe(0);
+  });
+});
+
+// ── D 阶段 · port-layout: componentBounds + snapToGrid ──────────────────
+
+describe('D · componentBounds + snapToGrid', () => {
+  const circuitPalette = [
+    { kind: 'battery', hintSize: { width: 50, height: 40 } },
+    { kind: 'resistor', hintSize: { width: 50, height: 40 } },
+  ];
+  const chemistryPalette = [
+    { kind: 'flask', hintSize: { width: 60, height: 60 } },
+    { kind: 'reagent', hintSize: { width: 60, height: 60 } },
+  ];
+
+  test('B-1 · componentBounds 走 palette.hintSize (circuit 50×40)', () => {
+    const c = { kind: 'battery', anchor: { x: 100, y: 200 } };
+    const b = componentBounds(c, circuitPalette);
+    expect(b).toEqual({ x: 100, y: 200, width: 50, height: 40 });
+  });
+
+  test('B-2 · componentBounds 走 palette.hintSize (chemistry 60×60)', () => {
+    const c = { kind: 'flask', anchor: { x: 300, y: 400 } };
+    const b = componentBounds(c, chemistryPalette);
+    expect(b).toEqual({ x: 300, y: 400, width: 60, height: 60 });
+  });
+
+  test('B-3 · componentBounds 对未知 kind fallback 50×40', () => {
+    const c = { kind: 'unknown-kind', anchor: { x: 10, y: 20 } };
+    const b = componentBounds(c, circuitPalette);
+    expect(b).toEqual({ x: 10, y: 20, width: 50, height: 40 });
+  });
+
+  test('B-3b · componentBounds 对 palette entry 无 hintSize → fallback', () => {
+    const palette = [{ kind: 'battery' }]; // 无 hintSize
+    const c = { kind: 'battery', anchor: { x: 0, y: 0 } };
+    const b = componentBounds(c, palette);
+    expect(b).toEqual({ x: 0, y: 0, width: 50, height: 40 });
+  });
+
+  test('B-4 · isPointInBounds: 点在 AABB 内', () => {
+    const b = { x: 100, y: 200, width: 50, height: 40 };
+    expect(isPointInBounds({ x: 125, y: 220 }, b)).toBe(true);
+    expect(isPointInBounds({ x: 100, y: 200 }, b)).toBe(true); // 左上角
+    expect(isPointInBounds({ x: 150, y: 240 }, b)).toBe(true); // 右下角
+  });
+
+  test('B-4b · isPointInBounds: 点在 AABB 外', () => {
+    const b = { x: 100, y: 200, width: 50, height: 40 };
+    expect(isPointInBounds({ x: 99, y: 220 }, b)).toBe(false);
+    expect(isPointInBounds({ x: 151, y: 220 }, b)).toBe(false);
+    expect(isPointInBounds({ x: 125, y: 199 }, b)).toBe(false);
+    expect(isPointInBounds({ x: 125, y: 241 }, b)).toBe(false);
+  });
+
+  test('B-5 · snapToGrid: grid=20 value=33 → 40', () => {
+    expect(snapToGrid(33, 20)).toBe(40);
+    expect(snapToGrid(30, 20)).toBe(40); // 30/20 = 1.5, round 到 2 → 40
+    expect(snapToGrid(29, 20)).toBe(20);
+    expect(snapToGrid(10, 20)).toBe(20); // 10/20 = 0.5, round 到 1 → 20
+    expect(snapToGrid(9, 20)).toBe(0);
+  });
+
+  test('B-6 · snapToGrid: grid=0 → 不变', () => {
+    expect(snapToGrid(33, 0)).toBe(33);
+    expect(snapToGrid(-15.7, 0)).toBe(-15.7);
+  });
+
+  test('B-7 · snapToGrid: grid 负数/NaN/Infinity → 不变', () => {
+    expect(snapToGrid(33, -5)).toBe(33);
+    expect(snapToGrid(33, NaN)).toBe(33);
+    expect(snapToGrid(33, Infinity)).toBe(33);
+  });
+
+  test('B-8 · snapToGrid: value 已经是 grid 倍数 → 不变', () => {
+    expect(snapToGrid(40, 20)).toBe(40);
+    expect(snapToGrid(0, 20)).toBe(0);
+    expect(snapToGrid(-60, 20)).toBe(-60);
+  });
+
+  test('B-9 · snapPointToGrid 同时 snap x 和 y', () => {
+    expect(snapPointToGrid({ x: 33, y: 47 }, 20)).toEqual({ x: 40, y: 40 });
+  });
+});
+
+// ── D 阶段 · reducer: hoverComponent + moveComponent snap ───────────────
+
+describe('D · reducer hoverComponent + snap', () => {
+  test('R-17 · hoverComponent {id:"x"} → state.hoveredId="x"', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'battery', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'hoverComponent', id: 'battery-1' });
+    expect(s.hoveredId).toBe('battery-1');
+  });
+
+  test('R-18 · hoverComponent {id:null} → state.hoveredId=null', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'hoverComponent', id: 'x' });
+    expect(s.hoveredId).toBe('x');
+    s = applyEditorAction(s, { type: 'hoverComponent', id: null });
+    expect(s.hoveredId).toBeNull();
+  });
+
+  test('R-19 · moveComponent with snapGrid=20 → anchor 对齐 20 倍数', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'battery', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'moveComponent', id: 'battery-1', delta: { x: 33, y: 27 }, snapGrid: 20 });
+    const p = s.placed.find((x) => x.id === 'battery-1');
+    // 0+33=33 → snap 20 → 40;  0+27=27 → snap 20 → 20
+    expect(p?.anchor.x).toBe(40);
+    expect(p?.anchor.y).toBe(20);
+  });
+
+  test('R-20 · moveComponent 无 snapGrid → anchor 任意浮点', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'battery', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'moveComponent', id: 'battery-1', delta: { x: 33.7, y: 27.3 } });
+    const p = s.placed.find((x) => x.id === 'battery-1');
+    expect(p?.anchor.x).toBeCloseTo(33.7);
+    expect(p?.anchor.y).toBeCloseTo(27.3);
+  });
+
+  test('R-21 · setComponentAnchor 不 snap (保留精确值)', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'battery', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'setComponentAnchor', id: 'battery-1', anchor: { x: 187.5, y: 142.3 } });
+    const p = s.placed.find((x) => x.id === 'battery-1');
+    expect(p?.anchor.x).toBe(187.5);
+    expect(p?.anchor.y).toBe(142.3);
+  });
+
+  test('R-22 · loadBundle 不 snap (保留精确 layout entries)', () => {
+    const bundle: AssemblyBundle = {
+      spec: {
+        domain: 'circuit',
+        components: [{ id: 'b1', kind: 'battery', props: {} }],
+        connections: [],
+      },
+      layout: {
+        domain: 'circuit',
+        entries: [{ componentId: 'b1', anchor: { x: 187.5, y: 142.3 } }],
+      },
+    };
+    const s = applyEditorAction(emptyEditorState('circuit'), { type: 'loadBundle', bundle });
+    const p = s.placed.find((x) => x.id === 'b1');
+    expect(p?.anchor.x).toBe(187.5);
+    expect(p?.anchor.y).toBe(142.3);
+  });
+
+  test('R-23 · moveComponent snapGrid=0 → 不 snap', () => {
+    let s: EditorState = emptyEditorState('circuit');
+    s = applyEditorAction(s, { type: 'placeComponent', kind: 'battery', position: { x: 0, y: 0 } });
+    s = applyEditorAction(s, { type: 'moveComponent', id: 'battery-1', delta: { x: 33.7, y: 0 }, snapGrid: 0 });
+    const p = s.placed.find((x) => x.id === 'battery-1');
+    expect(p?.anchor.x).toBeCloseTo(33.7);
   });
 });

@@ -54,12 +54,14 @@ export interface PropSchema {
  *   - values: optional per-component solved values from the engine (e.g.
  *     current, voltage). Undefined when not running.
  *   - selected: whether this component is currently selected
+ *   - hovered: whether the cursor is hovering this component (D 阶段新增，可选)
  */
 export type CanvasDrawer = (
   ctx: CanvasRenderingContext2D,
   component: { id: string; kind: string; props: Record<string, unknown>; anchor: { x: number; y: number; rotation?: number } },
   values: Record<string, unknown> | undefined,
   selected: boolean,
+  hovered?: boolean,
 ) => void;
 
 /** A connection kind definition (visual style + validation). */
@@ -92,6 +94,12 @@ export interface EditorDomainConfig<D extends ComponentDomain = ComponentDomain>
   displayName: string;
   /** Optional description shown in the domain switcher. */
   description?: string;
+  /**
+   * Grid snap size in canvas pixels (D 阶段). When user drags a component,
+   * its anchor is rounded to multiples of this value. Undefined or 0 = no snap.
+   * Default 20 applied by EditorCanvas when consumer passes undefined.
+   */
+  snapGrid?: number;
 }
 
 /** Port radius in canvas pixels (used by PortHotspots). */

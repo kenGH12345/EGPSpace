@@ -24,7 +24,7 @@ export type { EditorAction } from './editor-state-reducer';
 export { applyEditorAction } from './editor-state-reducer';
 
 // ── Port layout / coordinate utilities ───────────────────────────────────
-export type { Point, PortOffset, PortLayoutTable } from './port-layout';
+export type { Point, PortOffset, PortLayoutTable, ComponentBounds, PaletteHintEntry } from './port-layout';
 export {
   screenToCanvas,
   canvasToScreen,
@@ -33,6 +33,10 @@ export {
   findPortAtScreen,
   componentAnchorPoint,
   pointToAnchor,
+  componentBounds,
+  isPointInBounds,
+  snapToGrid,
+  snapPointToGrid,
 } from './port-layout';
 
 // ── Bundle export ────────────────────────────────────────────────────────
@@ -71,3 +75,25 @@ export {
 // ── Engine dispatch ──────────────────────────────────────────────────────
 export type { EngineComputeResult, RunBundleResult } from './engine-dispatch';
 export { runEditorBundle, extractPerComponent } from './engine-dispatch';
+
+// ── Layout (C 阶段) ──────────────────────────────────────────────────────
+export type { LayoutAlgorithm, LayoutInput, LayoutOutput, Position } from './layout';
+export {
+  autoLayout,
+  gridLayout,
+  forceLayout,
+  mulberry32,
+  seedFromIds,
+  boundingBox,
+  centerAt,
+} from './layout';
+
+// ── History (C 阶段) ─────────────────────────────────────────────────────
+export type {
+  HistoryState,
+  HistoryAction,
+  HistoryControlAction,
+  SquashOptions,
+  HistoryOptions,
+} from './history';
+export { emptyHistory, withHistory, canUndo, canRedo } from './history';

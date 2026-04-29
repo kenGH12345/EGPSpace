@@ -30,6 +30,7 @@ export const chemistryEditorConfig: EditorDomainConfig<'chemistry'> = {
   domain: 'chemistry',
   displayName: '化学 Chemistry',
   description: '拖放烧瓶、试剂、金属块等，连线表示"加入烧瓶"关系，运行观察反应。',
+  snapGrid: 20,
   palette: [
     {
       kind: 'flask',

@@ -42,6 +42,7 @@ export const circuitEditorConfig: EditorDomainConfig<'circuit'> = {
   domain: 'circuit',
   displayName: '电路 Circuit',
   description: '拖放电池、电阻、灯泡等元件，点击端口连线，运行后显示电流/电压。',
+  snapGrid: 20,
   palette: [
     {
       kind: 'battery',

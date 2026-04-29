@@ -12,10 +12,13 @@
  */
 
 import type { CanvasDrawer } from '../editor-config';
+import { drawHoverFrame } from './draw-helpers';
 
 const STROKE = '#0F172A';
 const LBL = '#334155';
 const SELECTED_STROKE = '#2563EB';
+const COMPONENT_W = 50;
+const COMPONENT_H = 40;
 
 function drawLabel(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, color?: string): void {
   ctx.save();
@@ -34,11 +37,28 @@ function drawSelectionFrame(ctx: CanvasRenderingContext2D, ax: number, ay: numbe
   ctx.restore();
 }
 
-export const batteryDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
+/** Hover frame helper (D 阶段 · 仅在非 selected 时调用) */
+function drawHoverAt(ctx: CanvasRenderingContext2D, ax: number, ay: number): void {
+  drawHoverFrame(ctx, { x: ax, y: ay, width: COMPONENT_W, height: COMPONENT_H });
+}
+
+/** Selected/hover 统一入口（D 阶段 · selected 优先级高于 hovered） */
+function drawInteractionFrame(
+  ctx: CanvasRenderingContext2D,
+  ax: number,
+  ay: number,
+  selected: boolean,
+  hovered?: boolean,
+): void {
+  if (selected) drawSelectionFrame(ctx, ax, ay);
+  else if (hovered) drawHoverAt(ctx, ax, ay);
+}
+
+export const batteryDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const voltage = (c.props.voltage as number) || 0;
-  if (selected) drawSelectionFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = '#DC2626';
   ctx.lineWidth = 3;
@@ -64,10 +84,10 @@ export const batteryDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
   ctx.restore();
 };
 
-export const wireDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
+export const wireDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
-  if (selected) drawSelectionFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;
@@ -79,11 +99,11 @@ export const wireDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
   ctx.restore();
 };
 
-export const switchDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
+export const switchDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const closed = !!c.props.closed;
-  if (selected) drawSelectionFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;
@@ -115,12 +135,12 @@ export const switchDrawer: CanvasDrawer = (ctx, c, _v, selected) => {
   ctx.restore();
 };
 
-export const resistorDrawer: CanvasDrawer = (ctx, c, v, selected) => {
+export const resistorDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const R = (c.props.resistance as number) || 0;
   const I = (v?.current as number) || 0;
-  if (selected) drawSelectionFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;
@@ -141,12 +161,12 @@ export const resistorDrawer: CanvasDrawer = (ctx, c, v, selected) => {
   ctx.restore();
 };
 
-export const bulbDrawer: CanvasDrawer = (ctx, c, v, selected) => {
+export const bulbDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const glow = Math.max(0, Math.min(1.5, (v?.glow as number) || 0));
   const state = (v?.state as string) || 'normal';
-  if (selected) drawSelectionFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;
@@ -179,11 +199,11 @@ export const bulbDrawer: CanvasDrawer = (ctx, c, v, selected) => {
   ctx.restore();
 };
 
-export const ammeterDrawer: CanvasDrawer = (ctx, c, v, selected) => {
+export const ammeterDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const I = (v?.current as number) || 0;
-  if (selected) drawSelectionFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;
@@ -205,11 +225,11 @@ export const ammeterDrawer: CanvasDrawer = (ctx, c, v, selected) => {
   ctx.restore();
 };
 
-export const voltmeterDrawer: CanvasDrawer = (ctx, c, v, selected) => {
+export const voltmeterDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   const ax = c.anchor.x;
   const ay = c.anchor.y;
   const U = (v?.voltage as number) || 0;
-  if (selected) drawSelectionFrame(ctx, ax, ay);
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
   ctx.save();
   ctx.strokeStyle = STROKE;
   ctx.lineWidth = 1.5;

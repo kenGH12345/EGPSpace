@@ -15,19 +15,36 @@ import {
   type EditorState,
 } from '@/lib/editor';
 import type { AssemblyBundle, ComponentDomain } from '@/lib/framework';
+import type { LayoutAlgorithm } from '@/lib/editor';
 
 export interface RunControlsProps {
   state: EditorState;
   config: EditorDomainConfig;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  onAutoLayout: (algorithm: LayoutAlgorithm) => void;
   onResult: (per: Record<string, Record<string, unknown>>, msg: string) => void;
   onStatus: (msg: string) => void;
   onLoadState: (bundle: AssemblyBundle<ComponentDomain>) => void;
 }
 
 /**
- * Header controls: Run / Save / Load / Export / Import.
+ * Header controls: Undo/Redo / AutoLayout / Run / Save / Load / Export / Import.
  */
-export function RunControls({ state, config, onResult, onStatus, onLoadState }: RunControlsProps) {
+export function RunControls({
+  state,
+  config,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  onAutoLayout,
+  onResult,
+  onStatus,
+  onLoadState,
+}: RunControlsProps) {
   const [running, setRunning] = useState(false);
   const [slots, setSlots] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,6 +153,45 @@ export function RunControls({ state, config, onResult, onStatus, onLoadState }: 
 
   return (
     <div className="flex items-center gap-1">
+      {/* Undo/Redo */}
+      <button
+        className="px-2 py-1 text-sm rounded border hover:bg-slate-50 disabled:opacity-40"
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="撤销 (Ctrl+Z)"
+      >
+        ↶
+      </button>
+      <button
+        className="px-2 py-1 text-sm rounded border hover:bg-slate-50 disabled:opacity-40"
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="重做 (Ctrl+Y / Ctrl+Shift+Z)"
+      >
+        ↷
+      </button>
+
+      {/* AutoLayout dropdown */}
+      <select
+        className="text-sm border rounded px-2 py-1 bg-white"
+        onChange={(e) => {
+          const v = e.target.value as LayoutAlgorithm | '';
+          if (v) onAutoLayout(v);
+          e.target.value = '';
+        }}
+        defaultValue=""
+        title="自动布局"
+        disabled={state.placed.length === 0}
+      >
+        <option value="" disabled>
+          ⊞ 自动布局
+        </option>
+        <option value="grid">网格布局</option>
+        <option value="force">力导向布局</option>
+      </select>
+
+      <span className="w-px h-5 bg-slate-300 mx-1" />
+
       <button
         className="px-3 py-1 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
         onClick={onRun}

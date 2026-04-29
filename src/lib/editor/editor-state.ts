@@ -46,6 +46,8 @@ export interface EditorState<D extends ComponentDomain = ComponentDomain> {
   selection: EditorSelection;
   draftWire: DraftWire | null;
   camera: EditorCamera;
+  /** Component id currently hovered (null when none). D 阶段新增。 */
+  hoveredId: string | null;
 }
 
 /** Create an empty editor state for a given domain. */
@@ -57,6 +59,7 @@ export function emptyEditorState<D extends ComponentDomain>(domain: D): EditorSt
     selection: { kind: 'none' },
     draftWire: null,
     camera: { offset: { x: 0, y: 0 }, zoom: 1 },
+    hoveredId: null,
   };
 }
 
@@ -78,5 +81,6 @@ export function cloneEditorState<D extends ComponentDomain>(s: EditorState<D>): 
         }
       : null,
     camera: { offset: { ...s.camera.offset }, zoom: s.camera.zoom },
+    hoveredId: s.hoveredId,
   };
 }

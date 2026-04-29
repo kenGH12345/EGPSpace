@@ -6,6 +6,8 @@ import {
   screenToCanvas,
   canvasToScreen,
   getPortScreenPos,
+  componentBounds,
+  isPointInBounds,
   type EditorAction,
   type EditorState,
   type EditorDomainConfig,
@@ -87,7 +89,8 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
       const drawer = config.drawers[p.kind];
       if (!drawer) continue;
       const selected = state.selection.kind === 'component' && state.selection.id === p.id;
-      drawer(ctx, p, runResult?.[p.id], selected);
+      const hovered = state.hoveredId === p.id;
+      drawer(ctx, p, runResult?.[p.id], selected, hovered);
     }
 
     // Connections: draw in canvas coords
@@ -164,11 +167,10 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
         return;
       }
 
-      // Component body hit-test (simple AABB on 50x40)
+      // Component body hit-test via componentBounds (D 阶段 · 替代硬编码 50×40)
       const hit = state.placed.find((p) => {
-        const x = p.anchor.x;
-        const y = p.anchor.y;
-        return canvasPt.x >= x && canvasPt.x <= x + 50 && canvasPt.y >= y && canvasPt.y <= y + 40;
+        const b = componentBounds(p, config.palette);
+        return isPointInBounds(canvasPt, b);
       });
       if (hit) {
         dispatch({ type: 'selectComponent', id: hit.id });
@@ -204,10 +206,28 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
       }
 
       const drag = dragRef.current;
-      if (!drag) return;
+      if (!drag) {
+        // 非拖拽非连线态 · hover 检测 (D 阶段)
+        if (!state.draftWire) {
+          const hovered = state.placed.find((p) => {
+            const b = componentBounds(p, config.palette);
+            return isPointInBounds(canvasPt, b);
+          });
+          const newHoveredId = hovered?.id ?? null;
+          if (newHoveredId !== state.hoveredId) {
+            dispatch({ type: 'hoverComponent', id: newHoveredId });
+          }
+        }
+        return;
+      }
       if (drag.kind === 'move') {
         const delta = { x: canvasPt.x - drag.lastCanvas.x, y: canvasPt.y - drag.lastCanvas.y };
-        dispatch({ type: 'moveComponent', id: drag.id, delta });
+        dispatch({
+          type: 'moveComponent',
+          id: drag.id,
+          delta,
+          snapGrid: config.snapGrid,
+        });
         drag.lastCanvas = canvasPt;
       } else if (drag.kind === 'pan') {
         const dx = e.clientX - drag.startClient.x;
@@ -218,12 +238,19 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
         });
       }
     },
-    [state, dispatch, clientPointToScreen],
+    [state, config, dispatch, clientPointToScreen],
   );
 
   const onMouseUp = useCallback(() => {
     dragRef.current = null;
   }, []);
+
+  const onMouseLeave = useCallback(() => {
+    dragRef.current = null;
+    if (state.hoveredId !== null) {
+      dispatch({ type: 'hoverComponent', id: null });
+    }
+  }, [state.hoveredId, dispatch]);
 
   // ── Keyboard ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -281,7 +308,7 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
+      onMouseLeave={onMouseLeave}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
