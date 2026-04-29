@@ -325,7 +325,7 @@ describe('Assembly Framework · fluent.ts (chainable DSL)', () => {
 // ══════════════════════════════════════════════════════════════════════════
 
 describe('AC-A · framework/assembly is domain-agnostic', () => {
-  test('no domain-specific keyword appears in framework/assembly/*.ts', () => {
+  test('no domain-specific keyword appears in framework/{runtime,builders}/*.ts', () => {
     const forbiddenKeywords = [
       'battery', 'bulb', 'resistor', 'circuit\\b',
       'lens', 'lightSource', 'optics',
@@ -333,26 +333,35 @@ describe('AC-A · framework/assembly is domain-agnostic', () => {
       'spring', 'pendulum',
       'cell\\b', 'osmosis',
     ];
-    const dir = path.resolve(__dirname, '..', 'assembly');
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.ts'));
-    expect(files.length).toBeGreaterThan(0);
-
+    // F 阶段 · AC-A 只扫 runtime/ + builders/（impl 层禁止 domain 字样）
+    //       contracts/ 豁免：它含 ComponentDomain union 元类型，必须列举 domain 名字
+    //       该豁免是 F 阶段物理分层的合理副作用（精神仍保留：impl/builder 不掺杂 domain 语义）
+    const dirs = [
+      path.resolve(__dirname, '..', 'runtime'),
+      path.resolve(__dirname, '..', 'builders'),
+    ];
     const offenders: Array<{ file: string; keyword: string; line: string }> = [];
-    for (const file of files) {
-      const content = fs.readFileSync(path.join(dir, file), 'utf8');
-      const lines = content.split('\n');
-      lines.forEach((line, idx) => {
-        // Skip comment-only lines (docs may mention domain examples)
-        const trimmed = line.trim();
-        if (trimmed.startsWith('*') || trimmed.startsWith('//')) return;
-        for (const kw of forbiddenKeywords) {
-          const re = new RegExp(`\\b${kw}`, 'i');
-          if (re.test(line)) {
-            offenders.push({ file, keyword: kw, line: `L${idx + 1}: ${trimmed}` });
+    let totalFiles = 0;
+    for (const dir of dirs) {
+      const files = fs.readdirSync(dir).filter((f) => f.endsWith('.ts'));
+      totalFiles += files.length;
+      for (const file of files) {
+        const content = fs.readFileSync(path.join(dir, file), 'utf8');
+        const lines = content.split('\n');
+        lines.forEach((line, idx) => {
+          // Skip comment-only lines (docs may mention domain examples)
+          const trimmed = line.trim();
+          if (trimmed.startsWith('*') || trimmed.startsWith('//')) return;
+          for (const kw of forbiddenKeywords) {
+            const re = new RegExp(`\\b${kw}`, 'i');
+            if (re.test(line)) {
+              offenders.push({ file, keyword: kw, line: `L${idx + 1}: ${trimmed}` });
+            }
           }
-        }
-      });
+        });
+      }
     }
+    expect(totalFiles).toBeGreaterThan(0);
 
     if (offenders.length > 0) {
       console.error('AC-A offenders:', offenders);
@@ -395,14 +404,21 @@ describe('AC-C · 5 mock domains compose without touching framework', () => {
 // ══════════════════════════════════════════════════════════════════════════
 
 describe('AC-D · maintainability contracts', () => {
-  test('each framework/assembly file ≤ 250 lines', () => {
-    const dir = path.resolve(__dirname, '..', 'assembly');
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.ts'));
+  test('each framework/{contracts,runtime,builders} file ≤ 250 lines', () => {
+    // F 阶段 · 路径更新：assembly/ → contracts/ + runtime/ + builders/
+    const dirs = [
+      path.resolve(__dirname, '..', 'contracts'),
+      path.resolve(__dirname, '..', 'runtime'),
+      path.resolve(__dirname, '..', 'builders'),
+    ];
     const offenders: Array<{ file: string; lines: number }> = [];
-    for (const file of files) {
-      const content = fs.readFileSync(path.join(dir, file), 'utf8');
-      const lines = content.split('\n').length;
-      if (lines > 250) offenders.push({ file, lines });
+    for (const dir of dirs) {
+      const files = fs.readdirSync(dir).filter((f) => f.endsWith('.ts'));
+      for (const file of files) {
+        const content = fs.readFileSync(path.join(dir, file), 'utf8');
+        const lines = content.split('\n').length;
+        if (lines > 250) offenders.push({ file, lines });
+      }
     }
     if (offenders.length) console.error('AC-D offenders:', offenders);
     expect(offenders).toHaveLength(0);

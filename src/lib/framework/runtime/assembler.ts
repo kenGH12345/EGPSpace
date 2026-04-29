@@ -13,12 +13,12 @@
  *   const graph = assembler.assemble(spec);
  */
 
-import type { IExperimentComponent, ComponentDomain } from '../components/base';
-import { DomainGraph } from '../components/graph';
-import type { AssemblySpec, ComponentDecl } from './spec';
-import type { AssemblyBundle } from './layout';
-import type { AssemblyError, AssemblyValidationResult } from './errors';
-import { AssemblyBuildError, makeError } from './errors';
+import type { IExperimentComponent, ComponentDomain } from '../contracts/component';
+import { DomainGraph } from '../contracts/graph';
+import type { AssemblySpec, ComponentDecl } from '../contracts/assembly';
+import type { AssemblyBundle } from '../contracts/layout';
+import type { AssemblyError, AssemblyValidationResult } from '../contracts/errors';
+import { AssemblyBuildError, makeError } from '../contracts/errors';
 import { validateSpec, type PortsLookup } from './validator';
 
 /**

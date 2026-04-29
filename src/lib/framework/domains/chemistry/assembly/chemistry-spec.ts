@@ -6,7 +6,7 @@
  * their port layouts so the generic Validator can catch port typos.
  */
 
-import type { AssemblySpec } from '../../../assembly/spec';
+import type { AssemblySpec } from '../../../contracts/assembly';
 
 export type ChemistryComponentKind =
   | 'flask'

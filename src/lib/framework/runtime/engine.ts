@@ -9,11 +9,11 @@
  * Domain-agnostic: works for any domain whose components implement IExperimentComponent.
  */
 
-import type { DomainGraph } from '../components/graph';
-import type { IDomainSolver, SolveResult } from '../solvers/base';
-import type { IExperimentComponent } from '../components/base';
-import type { ReactionRule } from './rule';
-import type { ReactionEvent } from './events';
+import type { DomainGraph } from '../contracts/graph';
+import type { IDomainSolver, SolveResult } from '../contracts/solver';
+import type { IExperimentComponent } from '../contracts/component';
+import type { ReactionRule } from '../contracts/rule';
+import type { ReactionEvent } from '../contracts/events';
 
 export interface InteractionTickReport<TResult extends SolveResult> {
   /** Events applied this tick, in order. */

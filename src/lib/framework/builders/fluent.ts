@@ -18,14 +18,14 @@
  * itself does NOT own a component factory (keeps it domain-agnostic).
  */
 
-import type { IExperimentComponent, ComponentDomain, ComponentAnchor } from '../components/base';
-import type { DomainGraph } from '../components/graph';
-import type { DomainGraphDTO } from '../components/graph';
-import type { Assembler } from './assembler';
-import type { AssemblySpec, AssemblyMetadata } from './spec';
-import { emptySpec } from './spec';
-import type { LayoutSpec, AssemblyBundle } from './layout';
-import { emptyLayout } from './layout';
+import type { IExperimentComponent, ComponentDomain, ComponentAnchor } from '../contracts/component';
+import type { DomainGraph } from '../contracts/graph';
+import type { DomainGraphDTO } from '../contracts/graph';
+import type { Assembler } from '../runtime/assembler';
+import type { AssemblySpec, AssemblyMetadata } from '../contracts/assembly';
+import { emptySpec } from '../contracts/assembly';
+import type { LayoutSpec, AssemblyBundle } from '../contracts/layout';
+import { emptyLayout } from '../contracts/layout';
 
 export interface FluentAddOptions {
   id?: string;

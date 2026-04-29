@@ -11,7 +11,7 @@
  * chemistry / mechanics / biology all share the same shape.
  */
 
-import type { ComponentDomain, ComponentAnchor } from '../components/base';
+import type { ComponentDomain, ComponentAnchor } from './component';
 
 /** A single component declaration in a spec. */
 export interface ComponentDecl {

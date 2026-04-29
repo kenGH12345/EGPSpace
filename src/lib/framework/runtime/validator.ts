@@ -14,10 +14,10 @@
  * to keep this file zero-dependency on any specific domain (AC-A).
  */
 
-import type { AssemblySpec } from './spec';
-import { isAssemblySpec } from './spec';
-import type { AssemblyError, AssemblyValidationResult } from './errors';
-import { makeError } from './errors';
+import type { AssemblySpec } from '../contracts/assembly';
+import { isAssemblySpec } from '../contracts/assembly';
+import type { AssemblyError, AssemblyValidationResult } from '../contracts/errors';
+import { makeError } from '../contracts/errors';
 
 /** Optional ports lookup: kind → list of valid port names. */
 export type PortsLookup = (kind: string) => readonly string[] | undefined;

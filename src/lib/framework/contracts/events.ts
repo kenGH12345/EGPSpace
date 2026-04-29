@@ -12,7 +12,7 @@
  *  - Biology:   cell + hypertonic_solution → spawn(plasmolysis_marker)
  */
 
-import type { IExperimentComponent } from '../components/base';
+import type { IExperimentComponent } from './component';
 
 /** All four kinds of topology-changing events a reaction can produce. */
 export type ReactionEventKind = 'spawn' | 'remove' | 'mutate' | 'annotate';

@@ -14,10 +14,10 @@
  * This file is the single import that every domain's graph class extends or uses.
  */
 
-import type { IExperimentComponent, ComponentDTO, ComponentDomain } from './base';
+import type { IExperimentComponent, ComponentDTO, ComponentDomain } from './component';
 import type { PortRef, Connection } from './port';
 import { portKey, portEquals } from './port';
-import { UnionFind } from './union-find';
+import { UnionFind } from '../runtime/union-find';
 
 export interface EquipotentialNodeMap {
   /** Port key ("componentId#portName") → canonical node id ("n0","n1",...) */

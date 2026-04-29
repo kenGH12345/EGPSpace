@@ -6,9 +6,9 @@
  * Each rule belongs to ONE domain, but is pluggable within the framework.
  */
 
-import type { DomainGraph } from '../components/graph';
-import type { SolveResult } from '../solvers/base';
-import type { ComponentDomain } from '../components/base';
+import type { DomainGraph } from './graph';
+import type { SolveResult } from './solver';
+import type { ComponentDomain } from './component';
 import type { ReactionEvent } from './events';
 
 export interface ReactionRule<

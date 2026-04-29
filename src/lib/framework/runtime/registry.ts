@@ -11,7 +11,7 @@
  * to "domain Y" — enabling the cross-domain reuse requirement (AC-4).
  */
 
-import type { IExperimentComponent, ComponentDTO, ComponentDomain, ComponentKind } from './base';
+import type { IExperimentComponent, ComponentDTO, ComponentDomain, ComponentKind } from '../contracts/component';
 
 export type ComponentFactory = (dto: ComponentDTO) => IExperimentComponent;
 

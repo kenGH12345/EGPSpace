@@ -15,23 +15,23 @@ export type {
   ComponentDTO,
   ComponentSolvedValues,
   IExperimentComponent,
-} from './components/base';
-export { AbstractComponent } from './components/base';
+} from './contracts/component';
+export { AbstractComponent } from './contracts/component';
 
-export type { PortRef, Connection } from './components/port';
-export { portRef, portKey, portEquals } from './components/port';
+export type { PortRef, Connection } from './contracts/port';
+export { portRef, portKey, portEquals } from './contracts/port';
 
-export { UnionFind } from './components/union-find';
+export { UnionFind } from './runtime/union-find';
 
 export type {
   EquipotentialNodeMap,
   GraphValidation,
   DomainGraphDTO,
-} from './components/graph';
-export { DomainGraph } from './components/graph';
+} from './contracts/graph';
+export { DomainGraph } from './contracts/graph';
 
-export { componentRegistry } from './components/registry';
-export type { ComponentFactory } from './components/registry';
+export { componentRegistry } from './runtime/registry';
+export type { ComponentFactory } from './runtime/registry';
 
 // ── Solvers ──────────────────────────────────────────────────────────────
 export type {
@@ -39,17 +39,17 @@ export type {
   PreCheckResult,
   SolveResult,
   SolveState,
-} from './solvers/base';
-export { SolverError } from './solvers/base';
+} from './contracts/solver';
+export { SolverError } from './contracts/solver';
 
 // ── Interactions (reactions between components) ──────────────────────────
-export type { ReactionEvent, ReactionEventKind } from './interactions/events';
-export { ReactionEvents } from './interactions/events';
+export type { ReactionEvent, ReactionEventKind } from './contracts/events';
+export { ReactionEvents } from './contracts/events';
 
-export type { ReactionRule } from './interactions/rule';
+export type { ReactionRule } from './contracts/rule';
 
-export type { InteractionTickReport } from './interactions/engine';
-export { InteractionEngine } from './interactions/engine';
+export type { InteractionTickReport } from './runtime/engine';
+export { InteractionEngine } from './runtime/engine';
 
 // ── Assembly (Spec → DomainGraph, cross-domain DSL) ──────────────────────
 export type {
@@ -58,25 +58,25 @@ export type {
   SpecPortRef,
   ConnectionDecl,
   AssemblyMetadata,
-} from './assembly/spec';
-export { isAssemblySpec, emptySpec } from './assembly/spec';
+} from './contracts/assembly';
+export { isAssemblySpec, emptySpec } from './contracts/assembly';
 
 export type {
   AssemblyError,
   AssemblyErrorCode,
   AssemblyErrorSeverity,
   AssemblyValidationResult,
-} from './assembly/errors';
-export { AssemblyBuildError, makeError } from './assembly/errors';
+} from './contracts/errors';
+export { AssemblyBuildError, makeError } from './contracts/errors';
 
-export type { PortsLookup } from './assembly/validator';
-export { validateSpec } from './assembly/validator';
+export type { PortsLookup } from './runtime/validator';
+export { validateSpec } from './runtime/validator';
 
-export type { ComponentBuilder, AssembleOptions } from './assembly/assembler';
-export { Assembler } from './assembly/assembler';
+export type { ComponentBuilder, AssembleOptions } from './runtime/assembler';
+export { Assembler } from './runtime/assembler';
 
-export type { FluentAddOptions } from './assembly/fluent';
-export { FluentAssembly } from './assembly/fluent';
+export type { FluentAddOptions } from './builders/fluent';
+export { FluentAssembly } from './builders/fluent';
 
 // ── Layout (visual placement, sibling to AssemblySpec) ────────────────────
 export type {
@@ -84,10 +84,10 @@ export type {
   LayoutSpec,
   LayoutMetadata,
   AssemblyBundle,
-} from './assembly/layout';
+} from './contracts/layout';
 export {
   isLayoutSpec,
   emptyLayout,
   layoutLookup,
   isAssemblyBundle,
-} from './assembly/layout';
+} from './contracts/layout';

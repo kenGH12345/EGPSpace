@@ -14,7 +14,7 @@ import {
 import { Flask, Reagent, Bubble, Solid, Thermometer } from '../components';
 
 describe('E · chemistry type-guards', () => {
-  const flask = new Flask('f1', { volumeML: 100, shape: 'round' });
+  const flask = new Flask('f1', { volumeML: 100, shape: 'beaker' });
   const reagent = new Reagent('r1', { formula: 'HCl', moles: 1, concentration: 1, phase: 'aq' });
   const bubble = new Bubble('b1', { gas: 'H2', rateMolPerTick: 0.01 });
   const solid = new Solid('s1', { formula: 'Zn', massG: 10, state: 'intact' });

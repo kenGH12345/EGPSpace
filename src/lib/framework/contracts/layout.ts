@@ -23,8 +23,8 @@
  * violate AC-D1 which only constrains LayoutSpec itself.
  */
 
-import type { ComponentDomain, ComponentAnchor } from '../components/base';
-import type { AssemblySpec } from './spec';
+import type { ComponentDomain, ComponentAnchor } from './component';
+import type { AssemblySpec } from './assembly';
 
 // ── LayoutEntry ───────────────────────────────────────────────────────────
 

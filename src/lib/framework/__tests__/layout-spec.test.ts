@@ -45,8 +45,9 @@ describe('T-11 · LayoutSpec separation', () => {
   // 验证方式更新：检查 LayoutSpec 和 LayoutEntry 定义块内不含 AssemblySpec 引用，
   // 而非字面 import 检查。
   test('AC-D1 · LayoutSpec/LayoutEntry definitions do NOT reference AssemblySpec', () => {
+    // F 阶段 · 路径更新：assembly/layout.ts → contracts/layout.ts
     const file = readFileSync(
-      join(__dirname, '..', 'assembly', 'layout.ts'),
+      join(__dirname, '..', 'contracts', 'layout.ts'),
       'utf8',
     );
 
@@ -57,11 +58,12 @@ describe('T-11 · LayoutSpec separation', () => {
         .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
         .replace(/\/\/.*$/gm, '');        // line comments
 
-    const layoutSpecMatch = file.match(/export interface LayoutSpec[^}]+\}/s);
+    // Note: use [\s\S] instead of /s flag (avoids TS1501 on older target)
+    const layoutSpecMatch = file.match(/export interface LayoutSpec[\s\S]+?\}/);
     expect(layoutSpecMatch).not.toBeNull();
     expect(stripComments(layoutSpecMatch![0])).not.toMatch(/\bAssemblySpec\b/);
 
-    const layoutEntryMatch = file.match(/export interface LayoutEntry[^}]+\}/s);
+    const layoutEntryMatch = file.match(/export interface LayoutEntry[\s\S]+?\}/);
     expect(layoutEntryMatch).not.toBeNull();
     expect(stripComments(layoutEntryMatch![0])).not.toMatch(/\bAssemblySpec\b/);
   });

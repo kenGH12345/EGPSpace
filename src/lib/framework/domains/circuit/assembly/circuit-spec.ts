@@ -6,7 +6,7 @@
  * the accepted kinds for the circuit domain.
  */
 
-import type { AssemblySpec } from '../../../assembly/spec';
+import type { AssemblySpec } from '../../../contracts/assembly';
 
 /**
  * Accepted component kinds in the circuit domain. Kept as a string union for

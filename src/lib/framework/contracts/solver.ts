@@ -6,8 +6,8 @@
  * (optics might be ray-tracing, mechanics might be ODE integration).
  */
 
-import type { DomainGraph } from '../components/graph';
-import type { ComponentDomain } from '../components/base';
+import type { DomainGraph } from './graph';
+import type { ComponentDomain } from './component';
 
 /** Summary of solver state for UI badges / logging. */
 export type SolveState = 'normal' | 'short' | 'open' | 'overload' | 'invalid';
