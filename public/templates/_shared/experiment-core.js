@@ -32,6 +32,42 @@
   let _nextRequestId = 1;
   let _latestResolvedId = 0; // for race-condition guard
 
+  // ---------- Compute RPC listener (auto-attached on load) ----------
+  // BUG-FIX 2026-04-30: previously this listener was only attached when a
+  // template called EurekaHost.onHostCommand(). Templates that use requestCompute
+  // but don't bind params (e.g. physics/circuit.html) never attached a listener,
+  // so compute_result messages were silently dropped → requestCompute always
+  // timed out after 3s. The fix: always attach a compute-only listener at load
+  // time, independent of user-level onHostCommand callbacks.
+  window.addEventListener('message', (event) => {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+    if (data.source !== MESSAGE_SOURCE) return;
+    if (data.type !== 'compute_result' && data.type !== 'compute_error') return;
+
+    const entry = _pendingRequests.get(data.requestId);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    _pendingRequests.delete(data.requestId);
+
+    // Race-condition guard (ADR R1): drop stale responses
+    const rid = Number(data.requestId);
+    if (Number.isFinite(rid) && rid < _latestResolvedId) {
+      return; // newer response already applied, ignore
+    }
+    if (data.type === 'compute_result') {
+      _latestResolvedId = Math.max(_latestResolvedId, rid);
+      entry.resolve({
+        values: data.values || {},
+        state: data.state,
+        explanation: data.explanation,
+      });
+    } else {
+      entry.reject(new Error(data.message || 'compute_error'));
+    }
+  });
+
   // ---------- Host Communication (backward compatible) ----------
 
   const EurekaHost = {
@@ -98,36 +134,12 @@
         if (data.source !== MESSAGE_SOURCE) return;
         if (typeof data.type !== 'string') return;
 
+        // Note: compute_result / compute_error are handled by the auto-attached
+        // listener above (not routed through user callbacks).
         const validCommands = [
           'set_param', 'set_params', 'reset', 'pause', 'resume', 'highlight',
-          'compute_result', 'compute_error',
         ];
         if (validCommands.indexOf(data.type) === -1) return;
-
-        // ── compute RPC — intercept before user callback ──
-        if (data.type === 'compute_result' || data.type === 'compute_error') {
-          const entry = _pendingRequests.get(data.requestId);
-          if (entry) {
-            clearTimeout(entry.timer);
-            _pendingRequests.delete(data.requestId);
-            // Race-condition guard (ADR R1): drop stale responses
-            const rid = Number(data.requestId);
-            if (Number.isFinite(rid) && rid < _latestResolvedId) {
-              return; // newer response already applied, ignore
-            }
-            if (data.type === 'compute_result') {
-              _latestResolvedId = Math.max(_latestResolvedId, rid);
-              entry.resolve({
-                values: data.values || {},
-                state: data.state,
-                explanation: data.explanation,
-              });
-            } else {
-              entry.reject(new Error(data.message || 'compute_error'));
-            }
-          }
-          return; // compute RPC is fully handled internally
-        }
 
         try {
           if (data.type === 'pause') _globalPaused = true;
