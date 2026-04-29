@@ -52,6 +52,7 @@
       const id = opts.id || (kind + ++this._idCounter);
       this._spec.components.push({
         id: id,
+        domain: 'circuit',
         kind: kind,
         props: props || {},
         // anchor intentionally NOT written here (D-3 split)
