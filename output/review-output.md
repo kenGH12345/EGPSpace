@@ -1,102 +1,91 @@
-# E 阶段 · Review 复盘
+# F 阶段 · Review
 
-> Session: `wf-20260429054300.`
-> 需求原文：P1 清理 TSC 技术债（3h 推荐）· 53 个 pre-existing errors（主要在 chemistry/reaction.ts 和 framework/）
+> Session: wf-20260429132738. · 基线 e12560f · TEST 全过
 
-## 需求兑现 · 100%
+## 需求兑现
 
-| 用户原意 | 兑现 |
-|---------|------|
-| 清理 53 个 pre-existing TSC errors | ✅ **53 → 0** |
-| 3h 预算 | ✅ 约 2h 实际（节省 33%）|
-| 主要 chemistry/framework | ✅ 根因精确定位 · 96% 错误源自 chemistry Props 契约断裂 |
+| 需求 | 预期 | 实际 | 偏差 |
+|------|------|------|------|
+| framework 物理分层 | contracts/runtime/builders/domains 4 目录 | ✅ 完全落地（旧 4 目录已删）| 0 |
+| E 阶段软条款物理化 | ESLint + arch-audit 替代自然语言规则 | ✅ 四件套齐全 | 0 |
+| TSC 0 保持 | 不回归 E 阶段基线 | ✅ 0 errors（并额外清 E 遗留 3 个）| -3（好于预期）|
+| Jest 563+ 保持 | 不回归 | ✅ 563/563 等价 | 0 |
+| 零新依赖 | package.json 不改 | ✅ | 0 |
+| 预估 5h | 完整 F 阶段 | ~90min（regex 批处理提速）| **-210min（超期完成）**|
 
-## 决策对比 · 0 偏差
+## 5 决策对比
 
-| # | 决策 | 预期结果 | 实测结果 | 偏差 |
-|---|------|---------|---------|-----|
-| D-1 | Wave 递进修复 · 根因→末梢 | TSC 下降曲线平滑 | 53→49→46→22→11→1→0 | **0** |
-| D-2 | Props 加 index signature（非改 framework 核心）| 消 35+ errors | 实际消 24+11=35（含 ChemistryPerComponent）| **0** |
-| D-3 | type-guards.ts + discriminated narrow | 10 处 TS2339 消解 | T-8 一把消 10 errors | **0** |
-| D-4 | scripts/check.sh + tsc-workflow-gate skill | 单一入口防复发 | ✅ 新建 · dogfood 成功 | **0** |
-| D-5 | architecture-constraints.md + 使用记录表 | 松动留痕 | ✅ 6 条记录入表 | **0** |
-
-## Failure Model 审计 · 6/6 覆盖
-
-| FM | 预测 | 实测 | 状态 |
-|----|------|------|------|
-| F-1 index sig 掩盖打字错 | 访问未知字段返回 unknown | 验证 · 具名字段仍强类型 | ✅ |
-| F-2 type predicate 漏 kind | jest 3 正负样本 | TG-1~TG-5 覆盖 | ✅ |
-| F-3 AssemblyBundle 别名改破坏 isAssemblyBundle | jest AC-D10 系列全绿 | ✅ | ✅ |
-| F-4 engines/index 加 import 导致 registry 多 register | 新增测试验证 | E-R1/E-R2 passed | ✅ |
-| F-5 chemistry Props 无 index sig 的测试依赖 | 全量 jest 绿 | 563/563 | ✅ |
-| F-6 check.sh Windows 兼容 | 模仿 dev.sh 模式 | ✅ 与现有 .sh 一致 | ✅ |
-
-## 零回归验证
-
-- **Jest**：555 基线保持（+8 新测试）· 原 chemistry-reactions / layout-spec / editor-data-layer 全绿
-- **TSC**：0 errors（新引入代码无新 error）
-- **运行时**：chemistry reactions 逻辑零变化（只加 narrow + type sig，不改执行路径）
-- **AC-E10** 运行时行为不变 · 通过 jest chemistry suite 全绿佐证
-
-## 代码质量
-
-| 指标 | 本轮 | 延续 |
+| 决策 | 预期 | 实际 |
 |------|------|------|
-| TSC errors | 53 → 0 | **首次清零** |
-| Jest tests | 555 → 563（+8）| ✅ 延续 |
-| Lint warnings | 0 | ✅ 延续 |
-| 新增代码行 | ~130（代码 + 测试 + docs）| — |
-| 删除代码行 | ~22 | — |
-| 新增依赖 | 0 | ✅ 延续四轮 |
-| framework 变更 | 7 文件 +51/-22 | ⚠️ 首次受控松动（有记录表）|
-| templates 变更 | 0 byte | ✅ 延续 |
-| editor React imports | 0 | ✅ 延续 |
+| D-1 Proposal B' 目录级分层 | 15 文件分 9/5/1 | ✅ 严格按归属表 |
+| D-2 type/impl dominance 判定 | 客观可操作 | ✅ 所有文件 co-located 保留 |
+| D-3 不引 @framework paths alias | 单 barrel 稳定 | ✅ 下游 19 文件零改 |
+| D-4 ESLint error + 零依赖 audit | 硬守护 | ✅ eslint 0 error · arch-audit 0 依赖 |
+| D-5 AssemblyBundle 归 contracts/layout | AC-D1 兼容 | ✅ AC-D1 测试通过（精神保留） |
+
+**0 决策偏差**
+
+## 6 Failure Modes 审计
+
+| FM | 预期风险 | 实际发生 | 处理 |
+|----|---------|---------|------|
+| FM-1 W3 GATE 失败 | 中概率 | ✅ W3 GATE 首次即过 tsc=0 | 无需回滚 |
+| FM-2 测试 import 漏更 | 高概率 | ⚠️ 小规模 3 处（AC-D1/AC-A/AC-D）| 就地修 |
+| FM-3 ESLint 误伤 framework | 中概率 | ✅ files glob 精确排除 | 无误伤 |
+| FM-4 Windows bash 失败 | 中概率 | ⚠️ PowerShell 无 bash → 用 Git bash 路径 | 跑通 |
+| FM-5 domains 相对路径漏网 | 高概率 | ✅ regex 批处理 + tsc canary 全覆盖 | 无泄漏 |
+| FM-6 Scope creep | 中概率 | ✅ 全程位移 | 守住 |
+
+**6/6 FM 覆盖 · 2 小波动（FM-2/FM-4）就地消化**
+
+## 硬约束兑现四件套
+
+| # | 件套 | 状态 |
+|---|------|------|
+| 1 | 物理目录分层（contracts/runtime/builders/domains）| ✅ |
+| 2 | ESLint no-restricted-imports（error 级）| ✅ |
+| 3 | scripts/arch-audit.sh（零依赖 · 4 check）| ✅ |
+| 4 | architecture-constraints.md 更新 + framework-boundary.md skill | ✅ |
+
+**R-F7 假兑现风险消除 · 未来 /wf Agent 有机器守护**
+
+## 零回归审计
+
+```bash
+$ git diff --stat HEAD -- src/lib/framework/domains/chemistry public/templates package.json src/lib/editor | grep -v "\.workflow\|output"
+```
+
+- **templates/** 零改 ✅（C-2）
+- **package.json** 零改 ✅（C-3）
+- **editor/ React** 0 处 ✅（C-4 延续）
+- **chemistry/circuit domain 业务代码** 零改（只改 import 路径）✅
+- **测试总数** 563 = 563（无新增无删除）✅
 
 ## 意外红利 · 4 条
 
-1. **耗时 ~2h vs 预估 3h**（节省 33%）· Wave 递进修复让链式消解效率超预期（T-8 一把消 10 errors）
-2. **8 新测试 vs 预估 3**（+167%）· type-guards 的正负样本 + registry 2 测试 + narrow 验证自然涌现
-3. **顺手修 1 个 runtime bug**（chemistry/reaction engine 从未被 register，4 轮没被发现）
-4. **发现架构 FM-4 已发生**：ts-jest isolated-modules 不做跨模块检查的盲点被揭露 · 通过 AC-E11（scripts/check.sh + tsc-workflow-gate skill）系统性解决
+1. **~90min vs 预估 5h**（-82% 耗时 · regex 批处理是王道）
+2. **顺手修 E 阶段遗留 3 tsc errors**（E 阶段 commit 前 tsc 未跑 · AC-E11 防护必要性进一步印证）
+3. **下游 19 文件 0 改动**（barrel 设计的复利）
+4. **arch-audit 明示例外机制**（graph.ts → union-find）成为未来边界例外的范本模式 · 不是隐藏违规而是透明留痕
 
-## 遗留债务清单（未做 · 显式登记）
+## 遗留债务（明示）
 
-| # | 债务 | 预估 | 建议轮次 |
-|---|------|------|---------|
-| 1 | framework 物理分层重构（core/ vs domains/）| ~6h | F 阶段 |
-| 2 | framework 非 chemistry 部分的 latent TSC 隐患（若有）| 待评估 | 下轮定期审计 |
-| 3 | 其他 engines (biology/math/geography) 类型审计 | ~4h | G 阶段候选 |
-| 4 | AGENTS.md 的 TEST 阶段指引本轮未更新（改用项目 skill 替代）| ~30min | 可在下一轮 /wf init 时机器化 |
-| 5 | circuit domain 同类 Props 类型审计（可能有类似问题未爆）| ~1h | 下轮 |
-| 6 | 把 architecture-constraints.md 写入 ANALYSE session-start checklist | ~15min | 下一轮 workflow-bridge 更新时 |
-| 7 | ChemistryPerComponent 加 index sig 是 ANALYSE 未覆盖的发现 | — | 本轮已解决 · 未来 ANALYSE 应同步扫 SolveResult 家族 |
+| # | 债务 | Sev | 建议轮次 |
+|---|------|----:|---------|
+| 1 | `contracts/graph.ts` → `runtime/union-find` 明示例外 | Low | 未来如有 G 阶段重构 · 可拆 DomainGraph class 到 runtime |
+| 2 | `arch-audit.sh` 未完整循环检测（当前仅方向性检查）| Low | 需要时加 madge 或手写 DFS |
+| 3 | `AC-A contracts/ 豁免`（ComponentDomain union 的合法列举）| Low | 持续观察，未来 domain 增加时审视 |
 
 ## 决策复盘
 
-### 对 B-plus 方案的再评估
+| 层次 | 问题 | 答案 |
+|------|------|------|
+| **Prevention** | 如何避免下次犯同样错？| E 阶段遗留 3 errors 是"commit 前未跑 full tsc"的重演 · **AC-E11 / scripts/check.sh 必须作为 commit 前强制动作**（未来应加 git pre-commit hook）|
+| **Capability** | 可复用模式 | **Wave 递进 + regex 批处理 + tsc canary 三件套**是大规模物理重构的通用模式 · 未来遇到类似迁移（如 G/H 阶段）可直接套用 |
+| **Efficiency** | 最省时选择 | **"目录级分层 + 文件级 co-location"** 战略决策（ANALYSE 修正）避免了文件级拆分的 3x 工作量 · 真实代码审计比想象更可靠 |
 
-**当时的担忧（FM-1~FM-6）是否兑现？**
+## 结论
 
-- **FM-1 破窗效应** · 本轮只出现 6 次使用（全部符合扩展/别名/bug 三类），**未发生滥用**。记录表是关键缓解手段。
-- **FM-2 index sig 弱化类型**· 实测影响 `p.unknown_field` 返回 `unknown` 而非报错——可接受（IDE 不提示 + runtime undefined 会炸）。
-- **FM-3 narrow 增加认知负担** · type-guards helper 让 10 处 narrow 变成同一模式调用，反而**提升了可读性**。
-- **FM-4 基线回归信号失灵** · 本轮通过 AC-E11 从**根本**解决，**未来不会再悄悄攒 TSC 债**。
-- **FM-5 补偿规则不可机器检查** · 仍存在，但记录表至少提供人工审计轨迹。未来 F 阶段做 framework 物理分层后可机器强制。
-- **FM-6 用户信任代价** · 用户主动选择 B-plus，本轮严格遵守 3 允许边界，承诺**保持连续性**——信任面受损可控。
+**F 阶段需求 100% 兑现 · 0 决策偏差 · 6 FM 全覆盖 · 零回归 · 3 小债务明示 · 4 红利超预期**
 
-### Why B-plus 是正确选择
-
-- **A-strict** 只能消 1 error，52 个 @ts-ignore 是假绿
-- **B-naked** 修完但不加 AC-E11 防护，等于邀请 FM-4 重演
-- **B-plus** 修完 + 加防护 + 架构层留痕 = 真正的**根治**
-
-### 最大教训
-
-> **跨模块类型契约只能在定义处修改，不能在消费处修补。**
->
-> 这是 E 阶段对"坚持不改 framework"话题的终极澄清。硬约束的**精神**是防**语义变化**，不是防**所有修改**。本轮证明了"扩展 + 别名 + bug 修复"三类并**不违背精神**。
-
-### 最大红利
-
-> **Wave 递进 + 实时 tsc 验证**把"改 50+ errors"的恐惧变成了**可视化信号游戏**。每 Wave 后看 tsc 数字掉，心理压力极低。未来大型重构都应用此模式。
+REVIEW PASS · 进入 DEPLOY。

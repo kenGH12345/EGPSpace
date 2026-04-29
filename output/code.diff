@@ -1,81 +1,95 @@
-# E 阶段 · 代码变更摘要
+# F 阶段 · Code Diff 摘要
 
-> Session: `wf-20260429054300.`
-> **TSC 53 → 0** · **Jest 555 → 563**（+8）· **零新依赖** · **老模板零改**
+> Session: wf-20260429132738. · 基线 e12560f
 
-## 变更统计
+## 核心变更（物理分层）
 
-```
-framework: 7 files changed, 51 insertions(+), 22 deletions(-)   ← 受控松动
-engines:   1 file  changed, 1 insertion(+), 0 deletions(-)       ← bug fix
-tests:     3 files changed, 120+ insertions(+), 20 deletions(-)  ← AC-E9 + AC-E4 + AC-D1 测试更新
-docs:      1 file  changed, 1 insertion(+)                       ← 链接引用
-new files: scripts/check.sh (AC-E11)
-           docs/architecture-constraints.md (C-1 受控松动条款 + 使用记录表)
-           .workflow/skills/tsc-workflow-gate.md (TEST 阶段强制)
-           src/lib/framework/domains/chemistry/type-guards.ts (discriminated union helpers)
-           src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts
-```
+### 新建目录
+- `src/lib/framework/contracts/`（9 文件 + index.ts）
+- `src/lib/framework/runtime/`（5 文件 + index.ts）
+- `src/lib/framework/builders/`（1 文件 + index.ts）
 
-## 变更文件清单（全部 ≤ 13 文件 · 符合预估）
+### 删除目录
+- `src/lib/framework/components/`（5 文件迁走，目录删除）
+- `src/lib/framework/solvers/`（1 文件迁走，目录删除）
+- `src/lib/framework/interactions/`（3 文件迁走，目录删除）
+- `src/lib/framework/assembly/`（7 文件迁走，目录删除）
 
-### W1 · 孤立 bug（3 文件）
-| # | File | Action | Why |
-|---|------|--------|-----|
-| 1 | `src/lib/engines/index.ts` | + 1 import | T-1 真 bug · `chemistryReactionEngine` 未被 register（AC-E4）|
-| 2 | `src/lib/framework/domains/circuit/index.ts` | + 2 re-export | T-2 `AssemblyBuildError` + `validateSpec` 导出缺失 |
-| 3 | `src/lib/framework/__tests__/layout-spec.test.ts` | − 1 line（@ts-expect-error）| T-3 已不需要该指令 |
+### 15 核心文件迁移表（git mv）
 
-### W2 · AssemblyBundle 别名消融（1 文件）
-| # | File | Action | Why |
-|---|------|--------|-----|
-| 4 | `src/lib/framework/assembly/layout.ts` | + import AssemblySpec · 替换内联字面量 | T-4 · 消除 duplication · AssemblyBundle 使用别名（松动规则 2 · 别名复用）|
+| 原位置 | 新位置 | 性质 |
+|--------|--------|------|
+| `components/base.ts` | `contracts/component.ts` | co-located type+class |
+| `components/graph.ts` | `contracts/graph.ts` | co-located type+class |
+| `components/port.ts` | `contracts/port.ts` | type+helper fn |
+| `components/union-find.ts` | `runtime/union-find.ts` | pure impl |
+| `components/registry.ts` | `runtime/registry.ts` | stateful const |
+| `solvers/base.ts` | `contracts/solver.ts` | type-dominant |
+| `interactions/rule.ts` | `contracts/rule.ts` | pure type |
+| `interactions/events.ts` | `contracts/events.ts` | type+const |
+| `interactions/engine.ts` | `runtime/engine.ts` | impl-dominant |
+| `assembly/spec.ts` | `contracts/assembly.ts` | type-dominant |
+| `assembly/layout.ts` | `contracts/layout.ts` | type-dominant |
+| `assembly/errors.ts` | `contracts/errors.ts` | type-dominant |
+| `assembly/validator.ts` | `runtime/validator.ts` | impl-dominant |
+| `assembly/assembler.ts` | `runtime/assembler.ts` | impl-dominant |
+| `assembly/fluent.ts` | `builders/fluent.ts` | user-facing DSL |
 
-### W3 · Props index signature（1 文件 + 1 文件）
-| # | File | Action | Why |
-|---|------|--------|-----|
-| 5 | `src/lib/framework/domains/chemistry/components.ts` | + 5 index signatures | T-5 · 5 Props 兼容 `Record<string, unknown>` 契约（松动规则 1 · 扩展）|
-| 6 | `src/lib/framework/domains/chemistry/solver.ts` | + 1 index signature | 发现的附加根因 · `ChemistryPerComponent` 同类问题 |
+### barrel 更新
+- `src/lib/framework/index.ts` · 全部 re-export 路径更新（保持对外 API 100% 兼容）
+- `src/lib/framework/contracts/index.ts` 新建聚合
+- `src/lib/framework/runtime/index.ts` 新建聚合
+- `src/lib/framework/builders/index.ts` 新建聚合
 
-### W4 · Reactions narrow + utils（3 文件 · 2 新 · 2 改）
-| # | File | Action | Why |
-|---|------|--------|-----|
-| 7 | `src/lib/framework/domains/chemistry/type-guards.ts` | **新建** | T-7 · 5 个 discriminated union helper（松动规则 1 · 扩展）|
-| 8 | `src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts` | import + narrow 收紧 | T-8 · 10 处 `c.props.formula` 通过 `asReagent` narrow |
-| 9 | `src/lib/framework/domains/chemistry/reaction-utils.ts` | 加 type predicate 标记 | T-11 · `contents.find((c): c is B => ...)` 显式 predicate |
+### import 路径级联更新（regex 批处理）
+- `domains/chemistry/*.ts` + `reactions/*.ts` + `assembly/*.ts`（~10 文件）
+- `domains/circuit/*.ts` + `assembly/*.ts`（~5 文件）
+- 内部 framework 文件相对路径（~6 文件）
+- 测试文件（2 处 fs path 修正）
 
-### W5 · 测试（3 文件）
-| # | File | Action | Why |
-|---|------|--------|-----|
-| 10 | `src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts` | **新建 6 测试** | T-13 · AC-E9 · 正负样本 + 类型 narrow 验证 |
-| 11 | `src/lib/engines/__tests__/engines.test.ts` | + 2 测试 | T-14 · AC-E4 · chemistry engine 注册验证 |
-| 12 | `src/lib/framework/__tests__/layout-spec.test.ts` | 改 AC-D1 测试 | T-12 · 字面字符串检查 → 定义块精神检查（strip comments）|
+## 硬约束兑现四件套
 
-### W6 · AC-E11 工作流（2 文件）
-| # | File | Action | Why |
-|---|------|--------|-----|
-| 13 | `scripts/check.sh` | **新建** | T-16 · tsc+jest+eslint 统一入口（AC-E11）|
-| 14 | `.workflow/skills/tsc-workflow-gate.md` | **新建** | T-17 · TEST 阶段强制规则（项目级 skill）|
+| # | 文件 | 作用 |
+|---|------|------|
+| 1 | `scripts/arch-audit.sh`（新建）| 4 依赖方向检查（零新依赖，纯 node）|
+| 2 | `eslint.config.mjs`（追加 F 阶段 rule block）| no-restricted-imports · 外部 barrel-only |
+| 3 | `docs/architecture-constraints.md`（更新）| E 条款归档 + F 物理边界写入 + 使用记录 #7 |
+| 4 | `.workflow/skills/framework-boundary.md`（新建）| 100+ 行 · 未来 /wf Agent 必读 |
 
-### W7 · docs（2 文件）
-| # | File | Action | Why |
-|---|------|--------|-----|
-| 15 | `docs/architecture-constraints.md` | **新建** | T-18 · 硬约束 + 受控松动条款 + 使用记录表（AC-E8）|
-| 16 | `docs/editor-framework.md` | + 1 link | T-19 · 引用 architecture-constraints |
+## 测试更新
 
-## 四路硬约束审计
+- `framework/__tests__/layout-spec.test.ts` · AC-D1 fs path `assembly/layout.ts` → `contracts/layout.ts`
+- `framework/__tests__/assembly.test.ts` · AC-A/AC-D 扫描目录 `assembly/` → `{contracts, runtime, builders}`（AC-A 排除 contracts 合理豁免 ComponentDomain union）
 
-| 路径 | 预期 | 实测 | 状态 |
-|------|------|------|------|
-| framework diff | 受控非空 | 7 files / +51 / -22 | ✅（符合松动条款 1+2+3）|
-| public/templates diff | 空 | 空 | ✅ AC-E5 |
-| package.json diff | 空 | 空 | ✅ AC-E6 |
-| editor `from 'react'` | 0 | 0 | ✅ AC-E7 |
+## E 阶段遗留修复（附带清理）
 
-## 最终状态
+- `layout-spec.test.ts` · 删除 `/s` regex flag（TS1501 in target < es2018）
+- `type-guards.test.ts` · `shape: 'round'` → `'beaker'`（FlaskShape enum）
 
-- **TSC**: 0 errors（53 → 0）✅ AC-E1
-- **Jest**: 563/563 passed（555 → 563，+8 新测试）✅ AC-E2 + AC-E9 + AC-E10
-- **Chemistry engine registry**: `chemistry/reaction` 可注册 ✅ AC-E4
-- **scripts/check.sh**: 新增单一质量入口 ✅ AC-E11
-- **architecture-constraints.md**: 明文记录 6 条松动使用 ✅ AC-E8
+## 验证结果
+
+- **TSC**: 0 errors ✅
+- **Jest**: 563/563 pass ✅（与 E 阶段基线等价）
+- **arch-audit.sh**: 4 checks pass ✅（含 1 明示例外 graph.ts → union-find）
+- **ESLint**: 0 errors, 0 warnings ✅
+- **物理目录**: builders/ contracts/ domains/ runtime/ ✅
+- **无新 npm 依赖** ✅
+
+## 统计
+
+- **迁移文件**: 15 核心 + 4 new barrels = 19
+- **import 批处理**: ~25 文件（regex 批量 + 手工补漏）
+- **新建文件**: 7（3 barrels + arch-audit.sh + constraints 更新 + framework-boundary.md + eslint 规则段）
+- **删除文件**: 1（assembly/index.ts 孤儿 barrel）
+- **删除目录**: 4（components/ solvers/ interactions/ assembly/）
+- **工时**: ~90min（vs 预估 5h · 批处理 regex 大幅提速）
+
+## PLAN_DEVIATION 记录
+
+- **[T-0]** E 阶段遗留 3 tsc errors（regex `/s` flag + FlaskShape 字面量）就地修，不增任务
+- **[T-6 amendment]** 同目录兄弟文件的相对 import 也要改（不仅 barrel + domains），W2/W3/W4 均遇到
+- **[T-21 early cleanup]** W5 末尾一次性删 4 旧目录，未单开任务
+- **[T-25 降级]** engines/ 确认无 bypass 需改（ANALYSE 假设修正）
+- **[T-27 allowlist]** arch-audit 增加 `contracts/graph.ts → runtime/union-find` 明示例外
+
+5 处 deviation，全部文档化 · 未触发 amendment cap。

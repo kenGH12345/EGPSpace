@@ -1,122 +1,121 @@
-# E 阶段 · 测试报告
+# F 阶段 · Test Report
 
-> Session: `wf-20260429054300.`
-> Stage: TEST (5/7)
-> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过
+> Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿
 
-## 执行命令
+## 执行摘要
+
+| 检查 | 命令 | 结果 |
+|------|------|------|
+| **TSC** 类型检查 | `npx tsc --noEmit` | ✅ **0 errors** |
+| **Jest** 全量测试 | `npx jest` | ✅ **563/563 pass**（28/28 suites）|
+| **ESLint** 边界守护 | `npx eslint src/lib/editor src/lib/engines src/components` | ✅ **0 errors, 0 warnings** |
+| **arch-audit** 依赖方向 | `bash scripts/arch-audit.sh` | ✅ **4 checks pass**（10+6+2+122 files clean）|
+| **物理目录** | `ls src/lib/framework/` | ✅ **contracts/ runtime/ builders/ domains/**（旧 4 目录已删）|
+| **工作区** | `git status` | ⚠️ 53 changes（待 commit）|
+
+## 13 AC 验证结果
+
+| # | AC | 证据 | 结果 |
+|---|----|------|------|
+| **AC-F1** | 4 目录落地 | `ls src/lib/framework/` = contracts/ runtime/ builders/ domains/ | ✅ |
+| **AC-F2** | barrel 100% 兼容 | `npx tsc --noEmit = 0`（下游无 import 失效）| ✅ |
+| **AC-F3** | TSC 0 保持 | 0 errors（与 E 阶段基线等价）| ✅ |
+| **AC-F4** | Jest 563+ 保持 | 563/563 pass（等同 E 阶段基线）| ✅ |
+| **AC-F5** | 依赖方向健康 | arch-audit.sh 4 check pass（含 1 明示例外）| ✅ |
+| **AC-F6** | 0 循环依赖 | runtime→contracts / builders→contracts,runtime 均单向 | ✅ |
+| **AC-F7** | ESLint 守护 | 0 error · no-restricted-imports 规则落地 | ✅ |
+| **AC-F8** | bypass 清理 | engines 实际无 bypass（domain-level import 合法）· 无需强改 | ✅（降级）|
+| **AC-F9** | 测试路径统一 | 9 framework 测试文件 import 修复（AC-D1 / AC-A / AC-D）| ✅ |
+| **AC-F10** | constraints.md 归档 | E 条款归档 + F 物理边界写入 + 使用记录表第 7 条 | ✅ |
+| **AC-F11** | arch-audit 退出 0 | `bash scripts/arch-audit.sh; echo $?` = 0 | ✅ |
+| **AC-F12** | framework-boundary.md | `.workflow/skills/framework-boundary.md` 100+ 行新建 | ✅ |
+| **AC-F13** | 单文件 ≤ 5 行变更 | 位移为主 · 测试文件 fs path 和 assembler import 路径更新均 ≤ 5 行 | ✅ |
+
+**13/13 通过 · 无 fail**
+
+## 测试覆盖分析
+
+### framework/__tests__/ 架构自测
+
+| 测试文件 | tests | 针对 F 阶段的调整 |
+|---------|------:|-------------------|
+| `layout-spec.test.ts` | 19/19 pass | AC-D1 的 fs path `assembly/layout.ts` → `contracts/layout.ts` |
+| `assembly.test.ts` | 34/34 pass | AC-A 扫描目录 `assembly/` → `runtime/ + builders/`（contracts 豁免 ComponentDomain）· AC-D 扫描 `assembly/` → 3 目录 |
+| `framework.test.ts` | 通过 | 零改 |
+
+### chemistry/circuit domain 测试
+
+| 测试文件 | tests | 备注 |
+|---------|------:|------|
+| `chemistry-assembly.test.ts` | 通过 | 零改（靠 domain-level barrel）|
+| `chemistry-components.test.ts` | 通过 | 零改 |
+| `chemistry-reactions.test.ts` | 通过 | 零改 |
+| `chemistry-solver.test.ts` | 通过 | 零改 |
+| `type-guards.test.ts` | 通过（修 FlaskShape enum after E 遗留）|
+| `circuit-assembly.test.ts` | 通过 | 零改 |
+
+### engines / editor / components 测试
+
+所有测试 pass · 0 regression · 下游 barrel 消费者零改。
+
+## 风险验证（5 风险对照）
+
+| R | Sev | 验证 | 结果 |
+|---|-----|------|------|
+| **R-F1** 文件级拆分不现实 | **P0** | 保持 co-location · 9 contracts 文件平均 ~150 行（未拆成 60+ 小文件）| ✅ 策略正确 |
+| **R-F2** 下游 import 改动 | P1 | 实际只改 0 个下游（barrel-only 消费者全稳定）| ✅ 远低于预估 |
+| **R-F3** AssemblyBundle 归属 | P2 | 归 `contracts/layout.ts` · AC-D1 测试通过 | ✅ |
+| **R-F4** 循环依赖 | P1 | arch-audit 0 违规（含 1 明示例外）| ✅ |
+| **R-F5** 测试路径失效 | **P0** | 3 测试文件主动修复（layout-spec / assembly 两处）| ✅ 已兑现 |
+| **R-F6** Scope creep | P1 | 只做位移 · AC-F13 ≤ 5 行 | ✅ 守住 |
+| **R-F7** 假兑现 | P2 | 硬约束四件套齐全（目录+ESLint+audit+文档）| ✅ 真兑现 |
+
+## 意外发现
+
+1. **E 阶段遗留 3 个 tsc errors** · W0 基线检测时发现（regex `/s` flag + FlaskShape 字面量）· 本轮就地修复。**启示**：E 阶段 commit 前未跑 full tsc；AC-E11 防护的 tsc 作为 CI gate 的必要性进一步验证。
+2. **下游 import 路径零改**：19 个下游文件全用 barrel · F 阶段真正做到**对外 API 稳定**。
+3. **regex 批处理大幅提速**：PowerShell 循环 + node regex 批处理让 15 文件迁移 + ~25 文件 import 更新在 ~10min 内完成（vs 逐文件手工估 60min）。
+4. **AC-A 测试需要合理豁免 contracts/**：`ComponentDomain` union 本身要列 domain 字面量（这是 framework 的元类型），不能当 domain-specific keyword 违规——这是 F 阶段物理分层的合理副作用。
+
+## 执行命令日志
 
 ```bash
-npx tsc --noEmit      # TSC 强类型检查
-npx jest              # 单元 + 集成测试
-git diff --shortstat  # 四路硬约束审计
+# W0 基线 + E 阶段遗留修复
+$ npx tsc --noEmit           # 3 errors (E 阶段遗留) → 2 处修复 → 0 errors
+$ npx jest --listTests | wc  # 31 test files
+
+# W1-W5 · git mv + regex 批处理
+$ git mv ...                 # 15 次 git mv
+$ node _w3-global-fix.js     # 6 文件 import 更新
+$ node _w4-fix.js            # 3 文件更新
+$ node _w5-fix.js            # 0 文件（已提前处理）
+
+# W5 末尾 · 清空 4 旧目录
+$ rm -rf components/ solvers/ interactions/ assembly/
+
+# W7 最终验证
+$ npx tsc --noEmit                                      # 0 errors
+$ npx jest --no-colors                                  # 563/563 pass
+$ bash scripts/arch-audit.sh                            # 4 pass
+$ npx eslint src/lib/{editor,engines} src/components    # 0 errors
 ```
 
-（未来统一入口 `bash ./scripts/check.sh` · 详见 AC-E11）
+## Out-of-Scope 验证（10 项）
 
-## 测试计划（AC 映射）
-
-| # | Test Case | 类型 | 预期 | 实测 | 状态 |
-|---|-----------|------|------|------|------|
-| 1 | TSC 零错 | 类型检查 | 0 errors | 0 errors | ✅ AC-E1 |
-| 2 | Jest 基线保持 | 回归 | ≥555 passed | 563 passed（+8）| ✅ AC-E2 |
-| 3 | framework 变更仅限三类 | 人工 review + 记录表 | 6 条记录 | 6 条记录（见 architecture-constraints.md） | ✅ AC-E3 |
-| 4 | chemistry engine 真 bug 修复 | 运行时 | register 成功 | 2 registry 测试 passed | ✅ AC-E4 |
-| 5 | 老模板零改 | git diff | 空 | 空 | ✅ AC-E5 |
-| 6 | 零新依赖 | git diff package.json | 空 | 空 | ✅ AC-E6 |
-| 7 | editor 零 React | grep 结果 | 0 | 0 | ✅ AC-E7 |
-| 8 | architecture-constraints.md 写入 | 文件存在 + 含松动条款 | 新文件 | 新文件 113 行 | ✅ AC-E8 |
-| 9 | 3+ type predicate 测试 | jest 输出 | ≥3 | 6 (TG-1~TG-6) | ✅ AC-E9 |
-| 10 | chemistry reactions 行为不变 | jest 原 suite | 全绿 | chemistry-reactions 全绿 | ✅ AC-E10 |
-| 11 | TSC 进工作流 | scripts/check.sh + skill 存在 | 两者都存在 | 两者都存在 | ✅ AC-E11 |
-
-## TSC 基线下降曲线
-
-| 阶段 | Errors | Delta | 验证点 |
-|------|-------:|------:|-------|
-| 基线（W0）| 53 | — | T-0 |
-| W1 后 | 49 | −4 | T-1/T-2/T-3 |
-| W2 后 | 46 | −3 | T-4 |
-| W3 GATE（T-5）| 22 | −24 | **🚦 GATE PASSED**（阈值 <25）|
-| 加 ChemistryPerComponent | 11 | −11 | 附加根因发现 |
-| T-8 acid-base narrow | 1 | −10 | type-guards 复用 |
-| T-11 reaction-utils | **0** | −1 | AC-E1 兑现 |
-
-**下降曲线平滑** · 每个 Wave 都有 signal · GATE 验证成功。
-
-## Jest 结果
-
-```
-Test Suites: 28 passed, 28 total
-Tests:       563 passed, 563 total
-Snapshots:   0 total
-Time:        ~30s
-```
-
-### 新增测试（8 条）
-
-| 测试 | 文件 | AC |
-|------|------|-----|
-| TG-1~TG-5 asFlask/asReagent/asBubble/asSolid/asThermometer 正负样本 | `framework/domains/chemistry/__tests__/type-guards.test.ts` | AC-E9 |
-| TG-6 narrow 后字段访问（类型级别）| 同上 | AC-E9 |
-| E-R1 ChemistryReactionEngine metadata | `engines/__tests__/engines.test.ts` | AC-E4 |
-| E-R2 registry 注册验证 | 同上 | AC-E4 |
-
-### 修改测试（1 条）
-
-| 测试 | 文件 | 为什么 |
-|------|------|-------|
-| AC-D1 精神更新 · strip comments | `framework/__tests__/layout-spec.test.ts` | 字面检查 → 定义块精神检查（允许 AssemblyBundle 用 AssemblySpec 别名）|
-
-## 四路硬约束审计
-
-| 路径 | 预期 | 实测 | 状态 |
-|------|------|------|------|
-| `src/lib/framework/` diff | **受控非空** | 7 files / +51 / −22 | ✅ 符合松动条款 |
-| `public/templates/` diff | 空 | 空 | ✅ AC-E5 |
-| `package.json` diff | 空 | 空 | ✅ AC-E6 |
-| `src/lib/editor/` react imports | 0 | 0 | ✅ AC-E7 |
-
-### framework 变更清单（7 文件 · 全部在松动条款范围）
-
-| 文件 | 类型 | 理由 |
-|------|------|-----|
-| `framework/domains/chemistry/components.ts` | 扩展（1）| 5 Props 加 index signature |
-| `framework/domains/chemistry/solver.ts` | 扩展（1）| ChemistryPerComponent 加 index signature |
-| `framework/assembly/layout.ts` | 别名复用（2）| AssemblyBundle.spec → AssemblySpec<D> |
-| `framework/domains/circuit/index.ts` | bug 修复（3）| 补 2 re-export |
-| `framework/domains/chemistry/type-guards.ts` | 扩展（1）| 新建 type predicate helper |
-| `framework/domains/chemistry/reactions/acid-base-neutralization.ts` | 扩展（1）| narrow 显式化 · 逻辑不变 |
-| `framework/domains/chemistry/reaction-utils.ts` | bug 修复（3）| 补缺失的 type predicate 标记 |
-
-## 风险验证
-
-| # | 风险 | 预期 | 实测 |
-|---|------|------|------|
-| R-A | W3 Props 没降 35+ | **降 ≥ 20 即 PASS** | 降 24（46→22）✅ |
-| R-B | W4 narrow 改变运行时 | chemistry jest 全绿 | chemistry suite 全绿（AC-E10 兑现）✅ |
-| R-C | reaction-utils 需改逻辑 | 保守用 as 断言 | 一行加 `c is B` predicate 标记，零逻辑变更 ✅ |
-| R-D | check.sh Windows 问题 | 模仿 scripts/dev.sh | 脚本头 `#!/usr/bin/env bash` · 与 dev/build 一致 ✅ |
-| R-E | 测试侧残留 | 类型断言 workaround | 仅 1 处（AC-D1 精神更新）· 有明确注释说明 ✅ |
-
-## 意外发现（DEVELOP 记录）
-
-1. **ChemistryPerComponent 也需 index sig**（原 ANALYSE 未覆盖）—— 发现后立即 patch
-2. **AC-D1 测试需更新**（layout.ts import AssemblySpec）—— 按 L108 注释精神改测试
-3. **W3 GATE 超预期** · 消 24（原估 ~35 但实际 chemistry 链式传染面小一些）—— PASS 阈值宽松设置正确
-4. **T-9/T-10 无需执行** · acid-base 修完后，iron-rusting/metal-acid 的 TS2344 已被 ChemistryPerComponent 修连带消解
-
-## 人工验证 Runbook（本轮跳过，纯类型清理无 UI 变化）
-
-本轮是纯 TypeScript 类型清理，**运行时零变化**。推荐但非必需：
-
-1. `bash ./scripts/dev.sh` 启服
-2. 访问 `http://localhost:5000/editor`
-3. 随意打开几个实验（titration / buoyancy / circuit / chemistry）
-4. 验证各实验可正常运行
+全部保持（未被本轮触碰）：
+- ❌ 文件级 type/impl 拆分 · 未做（保持 co-location）
+- ❌ 重命名 class/interface · 未做
+- ❌ 改字段类型 · 未做
+- ❌ 改 AC-D1 语义 · 未做（测试仍验证 LayoutSpec/LayoutEntry 不含 AssemblySpec）
+- ❌ 业务重构 · 未做
+- ❌ 新抽象 · 未做
+- ❌ 动 templates · 未做
+- ❌ 改 package.json · 未做（零新依赖）
+- ❌ editor React 零改 · 保持
+- ❌ 改工作流本身 · 未做
 
 ## 结论
 
-**11 AC 全部通过** · **零回归** · **零新依赖** · **首次受控松动 framework 有迹可循**。
+**F 阶段 13 AC 全部通过 · 0 fail · 0 regression · 硬约束真兑现**。
 
-下一阶段：REVIEW（对齐初始需求、决策复盘、意外红利总结）。
+TEST 阶段 PASS · 可进入 REVIEW。

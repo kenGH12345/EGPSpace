@@ -1,1 +1,12 @@
-{}
+{
+  "activeWorkflow": {
+    "session": "wf-20260429132738.",
+    "startedAt": "2026-04-29T13:40:36.672Z",
+    "currentStage": "DEPLOY",
+    "completedStages": [],
+    "requirement": "F 阶段 · framework 物理分层重构（B' 方案）",
+    "requirementFingerprint": "framework 方案 物理分层重构 阶段",
+    "ttlExpiry": "2026-04-29T15:27:55.206Z",
+    "stageStartTime": 1777477233021
+  }
+}

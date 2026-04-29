@@ -3,16 +3,16 @@
   "stage": "PLAN",
   "source": {
     "path": "output/execution-plan.md",
-    "sourceHash": "5aa7e2dae9e33472d23c80e1ffdf6a4c5430e65462c7e0aed3f9f58b9ccecd13",
-    "artifactSize": 9974,
-    "updatedAt": "2026-04-29T09:42:09.172Z"
+    "sourceHash": "30d29465d26cb8f13ab6f0322faf6ab4d4050f038c54f02b6516a8fb9ec3acc4",
+    "artifactSize": 19006,
+    "updatedAt": "2026-04-29T13:42:13.377Z"
   },
   "scope": {
-    "session": "wf-20260429054300.",
-    "requirementFingerprint": "plus tsc 技术债清理 方案 阶段"
+    "session": "wf-20260429132738.",
+    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
   },
   "content": {
-    "summary": "# E 阶段 · 执行计划（B-plus）\r\n\r\n> Session: `wf-20260429054300.`\r\n> Scope: 53 TSC errors → 0；17 任务；8 Wave；~2.5-3h\r\n\r\n## 依赖图\r\n\r\n```mermaid\r\ngraph TD\r\n  W0[W0 基线冻结 10min]\r\n  W1[W1 孤立 bug 30min 53→49]\r\n  W2[W2 AssemblyBundle 别名 20min 49→45]\r\n  W3[W3 Props index sig **GATE** 40min 45→~10]\r\n  W4[W4 Reactions narrow 50min ~10→0]\r\n  W5[W5 测试补齐 30min]\r\n  W6[W6 AC-E11 20min]\r\n  W7[W7 docs+审计 10min]\r\n\r\n  W0 --> W1 --> W2 --> W3\r\n  W3 -.验证 tsc 降 35+.-> W4\r\n  W4 --> W5 --> W6 --> W7\r\n\r\n  style W3 fill:#fef3c7,strok",
+    "summary": "# F 阶段 · 执行计划 · framework 物理分层重构\r\n\r\n> Session: wf-20260429132738. · 基线: e12560f · 依据 architecture.md 5 决策 + 7 Wave\r\n\r\n---\r\n\r\n## 一 · Mermaid 依赖图\r\n\r\n```mermaid\r\ngraph TD\r\n    T0[T-0 基线冻结<br/>tsc 0 + jest 563]\r\n    T1[T-1 arch-audit.sh 骨架]\r\n    T2[T-2 contracts/runtime/builders<br/>空目录 + index.ts]\r\n    T3[T-3 迁 rule.ts 到 contracts/]\r\n    T4[T-4 迁 events.ts 到 contracts/]\r\n    T5[T-5 迁 errors.ts 到 contracts/]\r\n    T6[T-6 更新 barrel · W2 验证]\r\n\r\n    T7[T-7 迁 component.ts 到 contracts/]\r\n    T8[T-8 迁 port",
     "outline": [
       "执行计划 · D 阶段 · UX 细节优化包",
       "任务总览",
@@ -37,9 +37,22 @@
       "W5 · 测试补齐（30min）",
       "W6 · AC-E11 工作流防护（20min）",
       "W7 · docs + 四路审计（10min）",
-      "AC 与任务映射（11 AC · 全覆盖）"
+      "AC 与任务映射（11 AC · 全覆盖）",
+      "F 阶段 · 执行计划 · framework 物理分层重构",
+      "一 · Mermaid 依赖图",
+      "二 · 33 任务详解",
+      "Wave 0 · 基线冻结（15min · 2 任务）",
+      "Wave 1 · 建立空目录 + barrel 骨架（40min · 1 任务）",
+      "Wave 2 · 迁 3 pure type 文件（45min · 4 任务）",
+      "Wave 3 · 迁 6 核心 co-located 文件 · 🚦 GATE（60min · 7 任务）",
+      "Wave 4 · 迁 5 runtime 文件（40min · 6 任务）",
+      "Wave 5 · 迁 1 builders 文件（20min · 2 任务）",
+      "Wave 6 · 测试路径统一 + bypass 清理（40min · 5 任务）",
+      "Wave 7 · 硬约束兑现四件套 + 最终验证（40min · 6 任务）",
+      "三 · AC ↔ 任务映射表（13 AC）"
     ],
     "keyPoints": [],
+    "rootCause": [],
     "decisions": [],
     "risks": [
       "| # | 风险 | Sev | 缓解任务 |",
@@ -53,7 +66,14 @@
       "| **R-B** | W4 narrow 写反导致 reaction 运行时行为变化 | **P0** | 每个 reaction 文件单独 commit · T-15 chemistry jest suite 全绿保障 AC-E10 |",
       "| R-C | T-11 reaction-utils TS2352 需改逻辑（超出扩展规则）| P1 | 首选 `as unknown as T` 两阶段断言保逻辑；若真需改逻辑则升级为额外决策点 |",
       "| R-D | T-16 check.sh 在 Windows 有路径/换行问题 | P1 | 模仿 scripts/dev.sh 既有 shebang + LF；本轮 TEST 阶段 dogfooding 验证 |",
-      "| R-E | T-12 测试侧残留错误修不净 | P2 | 用类型断言 workaround；测试侧断言不影响运行时；AC-E10 jest 全绿是唯一硬门槛 |"
+      "| R-E | T-12 测试侧残留错误修不净 | P2 | 用类型断言 workaround；测试侧断言不影响运行时；AC-E10 jest 全绿是唯一硬门槛 |",
+      "| R | Sev | 描述 | 缓解 |",
+      "| **R-A** | **P0** | W3 GATE 失败（T-13 后 tsc 非 0）| W3 独立 commit · `git revert HEAD` 回 T-12 之前 · 重 ANALYSE |",
+      "| **R-B** | **P0** | domains/ 相对路径漏更（每 Wave 末尾 tsc TS2307）| tsc 实时 canary · TS2307 立即定位 · 修单文件 import |",
+      "| R-C | P1 | T-25 engines bypass 其实不是 bypass | ANALYSE 已修正理解 · T-25 降级为 grep 确认 |",
+      "| R-D | P1 | T-28 ESLint 规则误伤 framework 内部 | `files` glob 只含 editor/engines/components 目录 · 验证 `eslint framework/` 不报错 |",
+      "| R-E | P2 | Windows PowerShell 执行 bash arch-audit.sh | 同 scripts/check.sh 既有模式 · git bash 兜底 |",
+      "---"
     ],
     "downstreamConsumers": [],
     "tasks": [
@@ -75,7 +95,41 @@
       "| **T-3** | layout-spec.test.ts L145 删除无用 `// @ts-expect-error` | `src/lib/framework/__tests__/layout-spec.test.ts` | AC-E1 | tsc 50→49 |",
       "### W2 · AssemblyBundle 别名消融（20min，49→45）",
       "| **T-4** | `AssemblyBundle.spec` 内联字面量 → `AssemblySpec<D>` 别名引用；添加 `import type { AssemblySpec }` | `src/lib/framework/assembly/layout.ts` L114-123 | AC-E1 | tsc 49→45（消 fluent.ts + layout-spec.test.ts × 3） |",
-      "### W3 · Props index signature 🚦 GATE（40min，45→~10）"
+      "### W3 · Props index signature 🚦 GATE（40min，45→~10）",
+      "### Wave 0 · 基线冻结（15min · 2 任务）",
+      "**T-0 · 基线验证**",
+      "- 动作：`npx tsc --noEmit` = 0 errors · `npx jest` = 563 pass · `git status` clean · 记录 `git HEAD = e12560f`",
+      "- AC 映射：AC-F3 / AC-F4（基线等价性）",
+      "- 失败处理：若 tsc/jest 非基线 → STOP（F 阶段不能在非绿基线上开始）",
+      "- 输出：W0 baseline 快照记录",
+      "**T-1 · arch-audit.sh 骨架**",
+      "- 动作：创建 `scripts/arch-audit.sh` 空骨架（echo \"W0 stub\" · exit 0）",
+      "- 文件：`scripts/check.sh` 同模式（LF endings · `#!/usr/bin/env bash`）",
+      "- AC 映射：AC-F11（脚手架）",
+      "- 失败处理：Windows PowerShell LF/CRLF 问题 → 同 E 阶段 check.sh 处理",
+      "---"
+    ],
+    "acceptanceCriteria": [
+      "- [ ] **T-32 全部 8 项验证通过**",
+      "- [ ] **13 AC 全部 ✓**",
+      "- [ ] **四件套齐全**：物理目录 + ESLint + arch-audit.sh + constraints.md",
+      "- [ ] **≤ 8 个 commit**（Wave 粒度 W0-W7）",
+      "- [ ] **TSC 0 errors · Jest ≥563 pass · 零新依赖**",
+      "- [ ] **下游 17 barrel-only 消费者零改**（editor 9 + engines 2 barrel + engines 2 domain-level + components 2 + 其他 2）",
+      "---"
+    ],
+    "testEvidence": [
+      "每 Wave 末尾都是一个 **tsc + jest** 验证点：",
+      "| # | 位置 | 预期 |",
+      "| 1 | T-0 | tsc 0 + jest 563（基线）|",
+      "| 2 | T-6（W2 末）| tsc 0 + jest pass（迁 3 pure type 后）|",
+      "| 3 | **T-13（W3 GATE）** | tsc 0 + jest pass（迁 6 核心文件后）· **🚦 唯一 gate** |",
+      "| 4 | T-19（W4 末）| tsc 0 + jest pass（迁 5 runtime 后）|",
+      "| 5 | T-21（W5 末）| tsc 0 + jest pass（迁 1 builders 后 · 空目录可清理）|",
+      "| 6 | T-26（W6 末）| tsc 0 + jest pass（测试 barrel 化后）|",
+      "| 7 | T-27 后 | `bash scripts/arch-audit.sh` exit 0 |",
+      "| 8 | T-32（W7 末）| 四件套全过 + 13 AC 全过 |",
+      "---"
     ],
     "affectedFiles": [
       "src/lib/editor/port-layout.ts",
@@ -106,170 +160,347 @@
       "src/lib/framework/domains/chemistry/reaction-utils.ts",
       "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
       "src/lib/engines/__tests__/registry.test.ts",
-      "docs/architecture-constraints.md"
+      "docs/architecture-constraints.md",
+      "chemistry/reaction.ts",
+      "physics/circuit.ts",
+      "workflow/skills/framework-boundary.md",
+      "src/lib/framework/contracts/index.ts",
+      "src/lib/framework/runtime/index.ts",
+      "src/lib/framework/builders/index.ts",
+      "framework/index.ts",
+      "src/lib/framework/interactions/rule.ts",
+      "src/lib/framework/contracts/rule.ts",
+      "contracts/rule.ts",
+      "interactions/events.ts",
+      "contracts/events.ts",
+      "assembly/errors.ts",
+      "contracts/errors.ts",
+      "contracts/index.ts",
+      "components/base.ts",
+      "contracts/component.ts",
+      "components/port.ts",
+      "contracts/port.ts",
+      "components/graph.ts",
+      "contracts/graph.ts",
+      "runtime/union-find.ts",
+      "solvers/base.ts",
+      "contracts/solver.ts",
+      "assembly/spec.ts",
+      "contracts/assembly.ts",
+      "assembly/layout.ts",
+      "contracts/layout.ts",
+      "components/union-find.ts",
+      "components/registry.ts",
+      "runtime/registry.ts",
+      "interactions/engine.ts",
+      "runtime/engine.ts",
+      "assembly/validator.ts",
+      "runtime/validator.ts",
+      "assembly/assembler.ts",
+      "runtime/assembler.ts",
+      "runtime/index.ts",
+      "assembly/fluent.ts"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "execution-plan.md",
       "outline": [
-        "E 阶段 · 执行计划（B-plus）",
-        "依赖图",
-        "17 任务详解",
-        "W0 · 基线冻结（10min）",
-        "W1 · 孤立 bug 修复（30min，53→49）",
-        "W2 · AssemblyBundle 别名消融（20min，49→45）",
-        "W3 · Props index signature 🚦 GATE（40min，45→~10）",
-        "W4 · Reactions discriminated narrow（50min，~10→0）"
+        "F 阶段 · 执行计划 · framework 物理分层重构",
+        "一 · Mermaid 依赖图",
+        "二 · 33 任务详解",
+        "Wave 0 · 基线冻结（15min · 2 任务）",
+        "Wave 1 · 建立空目录 + barrel 骨架（40min · 1 任务）",
+        "Wave 2 · 迁 3 pure type 文件（45min · 4 任务）",
+        "Wave 3 · 迁 6 核心 co-located 文件 · 🚦 GATE（60min · 7 任务）",
+        "Wave 4 · 迁 5 runtime 文件（40min · 6 任务）"
       ],
       "keyPoints": []
     }
   },
+  "coverage": {
+    "hasSummary": true,
+    "hasOutline": true,
+    "hasKeyPoints": false,
+    "hasRootCause": false,
+    "hasDecisions": false,
+    "hasRisks": true,
+    "hasDownstreamConsumers": false,
+    "hasTasks": true,
+    "hasAcceptanceCriteria": true,
+    "hasAffectedFiles": true,
+    "hasFilesChanged": false,
+    "hasTestEvidence": true
+  },
   "evidenceRefs": [
     {
-      "file": "engines/index.ts",
+      "file": "chemistry/reaction.ts",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "src/lib/engines/index.ts",
+      "file": "physics/circuit.ts",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "circuit/index.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/circuit/index.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/__tests__/layout-spec.test.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/assembly/layout.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/chemistry/components.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/chemistry/type-guards.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/chemistry/reactions/metal-acid.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/chemistry/reactions/iron-rusting.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/chemistry/reaction-utils.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/engines/__tests__/registry.test.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "docs/architecture-constraints.md",
+      "file": "workflow/skills/framework-boundary.md",
       "artifact": "output/execution-plan.md"
     },
     {
       "file": "docs/editor-framework.md",
       "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "src/lib/framework/contracts/index.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "src/lib/framework/runtime/index.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "src/lib/framework/builders/index.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "framework/index.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "src/lib/framework/interactions/rule.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "src/lib/framework/contracts/rule.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/rule.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "interactions/events.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/events.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "assembly/errors.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/errors.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/index.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "components/base.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/component.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "components/port.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/port.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "components/graph.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/graph.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "runtime/union-find.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "solvers/base.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/solver.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "assembly/spec.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/assembly.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "assembly/layout.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "contracts/layout.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "components/union-find.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "components/registry.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "runtime/registry.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "interactions/engine.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "runtime/engine.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "assembly/validator.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "runtime/validator.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "assembly/assembler.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "runtime/assembler.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "runtime/index.ts",
+      "artifact": "output/execution-plan.md"
+    },
+    {
+      "file": "assembly/fluent.ts",
+      "artifact": "output/execution-plan.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "tsc",
+      "contracts",
       "framework",
-      "chemistry",
-      "min",
-      "src",
-      "lib",
+      "components",
+      "动作",
+      "tsc",
+      "runtime",
+      "barrel",
+      "assembly",
+      "更新",
+      "git",
+      "graph",
       "jest",
-      "验证",
-      "domains",
-      "editor",
+      "import",
       "文件",
-      "test",
-      "diff",
-      "reactions",
-      "docs",
-      "描述",
-      "e10",
-      "check",
-      "props",
+      "映射",
+      "lib",
+      "验证",
+      "src",
+      "wave",
       "index",
-      "npx",
-      "reaction",
-      "type",
-      "scripts",
-      "阶段",
+      "domains",
+      "min",
+      "base",
+      "arch",
+      "audit",
+      "component",
+      "port",
+      "eslint",
+      "rule",
       "gate",
-      "narrow",
-      "registry",
-      "architecture",
-      "e11",
-      "noemit",
-      "__tests__",
-      "predicate",
-      "测试",
-      "constraints",
-      "templates",
-      "react",
+      "union",
+      "find",
+      "engines",
+      "builders",
       "errors",
-      "bug",
-      "assemblybundle"
+      "type",
+      "pass",
+      "npx",
+      "export",
+      "events"
     ],
     "files": [
-      "engines/index.ts",
-      "src/lib/engines/index.ts",
-      "circuit/index.ts",
-      "src/lib/framework/domains/circuit/index.ts",
-      "src/lib/framework/__tests__/layout-spec.test.ts",
-      "src/lib/framework/assembly/layout.ts",
-      "src/lib/framework/domains/chemistry/components.ts",
-      "src/lib/framework/domains/chemistry/type-guards.ts",
-      "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
-      "src/lib/framework/domains/chemistry/reactions/metal-acid.ts",
-      "src/lib/framework/domains/chemistry/reactions/iron-rusting.ts",
-      "src/lib/framework/domains/chemistry/reaction-utils.ts",
-      "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
-      "src/lib/engines/__tests__/registry.test.ts",
-      "docs/architecture-constraints.md",
-      "docs/editor-framework.md"
+      "chemistry/reaction.ts",
+      "physics/circuit.ts",
+      "workflow/skills/framework-boundary.md",
+      "docs/editor-framework.md",
+      "src/lib/framework/contracts/index.ts",
+      "src/lib/framework/runtime/index.ts",
+      "src/lib/framework/builders/index.ts",
+      "framework/index.ts",
+      "src/lib/framework/interactions/rule.ts",
+      "src/lib/framework/contracts/rule.ts",
+      "contracts/rule.ts",
+      "interactions/events.ts",
+      "contracts/events.ts",
+      "assembly/errors.ts",
+      "contracts/errors.ts",
+      "contracts/index.ts",
+      "components/base.ts",
+      "contracts/component.ts",
+      "components/port.ts",
+      "contracts/port.ts",
+      "components/graph.ts",
+      "contracts/graph.ts",
+      "runtime/union-find.ts",
+      "solvers/base.ts",
+      "contracts/solver.ts",
+      "assembly/spec.ts",
+      "contracts/assembly.ts",
+      "assembly/layout.ts",
+      "contracts/layout.ts",
+      "components/union-find.ts",
+      "components/registry.ts",
+      "runtime/registry.ts",
+      "interactions/engine.ts",
+      "runtime/engine.ts",
+      "assembly/validator.ts",
+      "runtime/validator.ts",
+      "assembly/assembler.ts",
+      "runtime/assembler.ts",
+      "runtime/index.ts",
+      "assembly/fluent.ts"
     ],
     "modules": [
-      "engines",
-      "src",
-      "circuit",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
+      "chemistry",
+      "physics",
+      "workflow",
       "docs",
-      "docs"
+      "src",
+      "src",
+      "src",
+      "framework",
+      "src",
+      "src",
+      "contracts",
+      "interactions",
+      "contracts",
+      "assembly",
+      "contracts",
+      "contracts",
+      "components",
+      "contracts",
+      "components",
+      "contracts"
     ]
   },
-  "generatedAt": "2026-04-29T09:42:23.282Z"
+  "generatedAt": "2026-04-29T13:42:23.803Z"
 }

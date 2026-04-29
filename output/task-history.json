@@ -1,22 +1,5 @@
 [
   {
-    "id": "TH-1776917912368-S7J4W",
-    "timestamp": "2026-04-23T04:18:32.368Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "Phase 2/3: 迁移现有实验到统一Schema格式 + 清理旧类型 + 配置Jest测试框架，127测试通过，TypeScript 0 errors",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "Phase 2/3: 迁移现有实验到统一Schema格式 + 清理旧类型 + 配置Jest测试框架，127测试通过，TypeScript 0 errors — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
     "id": "TH-1776921826714-77DT0",
     "timestamp": "2026-04-23T05:23:46.714Z",
     "mode": "sequential",
@@ -332,6 +315,23 @@
     "taskTitles": [],
     "outcome": "success",
     "summary": "E 阶段 · TSC 技术债清理（53→0）+ 首次受控松动 framework + AC-E11 工作流防复发 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777477298423-XXQVS",
+    "timestamp": "2026-04-29T15:41:38.423Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "F 阶段 · framework 物理分层重构（Proposal B' 目录分层 + 文件 co-location · 15 文件 mv · 硬约束四件套兑现 · 防 R-F7 假兑现）",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "F 阶段 · framework 物理分层重构（Proposal B' 目录分层 + 文件 co-location · 15 文件 mv · 硬约束四件套兑现 · 防 R-F7 假兑现） — completed",
     "metrics": {
       "durationMs": null,
       "errorCount": 0,

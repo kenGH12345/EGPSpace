@@ -3,16 +3,16 @@
   "stage": "DEPLOY",
   "source": {
     "path": "output/deploy-output.md",
-    "sourceHash": "2e43064bfd2677cdf03d3d9ee9172638e5e9811e46f74f47baa1e5e2b3880831",
-    "artifactSize": 7995,
-    "updatedAt": "2026-04-29T11:28:41.147Z"
+    "sourceHash": "8f7393d12d5754fe4ab7816d6a794ade8d09ab495094fe123ae195ec4bdb105a",
+    "artifactSize": 6681,
+    "updatedAt": "2026-04-29T15:41:14.138Z"
   },
   "scope": {
-    "session": "wf-20260429054300.",
-    "requirementFingerprint": "plus tsc 技术债清理 阶段"
+    "session": "wf-20260429132738.",
+    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
   },
   "content": {
-    "summary": "# E 阶段 · Deploy 清单\r\n\r\n> Session: `wf-20260429054300.`\r\n> Stage: DEPLOY (7/7)\r\n> **最终状态**：本地落盘完成 · 待 commit + push\r\n\r\n## 文件清单 · 16 变更\r\n\r\n### 新文件（6）\r\n\r\n| # | File | Purpose |\r\n|---|------|---------|\r\n| 1 | `src/lib/framework/domains/chemistry/type-guards.ts` | discriminated union helper（asReagent/asFlask/...）|\r\n| 2 | `src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts` | 6 测试（AC-E9）|\r\n| 3 | `scripts/check.sh` | 统一质量闸门（tsc+jest+eslint · AC-E11）|\r\n| 4 | `docs/architecture-constraints.",
+    "summary": "# F 阶段 · Deploy Output\r\n\r\n> Session: wf-20260429132738. · 基线 e12560f → F 阶段末\r\n\r\n## 变更清单（53 git 变更）\r\n\r\n### 新建目录 + 文件（9）\r\n\r\n| # | 路径 | 作用 |\r\n|---|------|------|\r\n| 1 | `src/lib/framework/contracts/` | 🔒 硬边界 type-dominant 层（9 文件 + index.ts）|\r\n| 2 | `src/lib/framework/runtime/` | 🟡 impl-dominant 层（5 文件 + index.ts）|\r\n| 3 | `src/lib/framework/builders/` | 🟢 user-facing DSL 层（1 文件 + index.ts）|\r\n| 4 | `scripts/arch-audit.sh` | 硬约束守护脚本（零依赖 · 60 行）|\r\n| 5 | `.workflow/skills/framework-boundary.md` | 项目级",
     "outline": [
       "Deploy Output · D 阶段 · UX 细节优化包",
       "部署概述",
@@ -37,7 +37,19 @@
       "W3 · Props index signature",
       "W4 · Reactions narrow",
       "W5 · 测试",
-      "W6+W7 · 工作流 + 文档"
+      "W6+W7 · 工作流 + 文档",
+      "F 阶段 · Deploy Output",
+      "变更清单（53 git 变更）",
+      "新建目录 + 文件（9）",
+      "git mv 迁移（15 核心文件）",
+      "删除目录（4 空目录）",
+      "内容修改（16 文件）",
+      "验证结果",
+      "commit 建议（推荐 Wave 粒度，3-4 commits）",
+      "回滚方案（如需）",
+      "Runbook（部署流程）",
+      "硬约束兑现四件套状态",
+      "F+1 路线图建议（非本轮）"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -55,13 +67,26 @@
       "| M-4 | W4 | tsc +10 errors（acid-base narrow 丢）|",
       "| M-5 | W5 | 8 新测试消失，tsc 不影响 |",
       "| M-6 | W6+W7 | scripts/check.sh + constraints docs 丢，未来再攒 TSC 债的风险回归 |",
-      "**推荐方式**：若全轮失败，单次 `git revert` 到 E 阶段开始的 commit；若只某 Wave 问题，单独 revert 对应 commit。"
+      "**推荐方式**：若全轮失败，单次 `git revert` 到 E 阶段开始的 commit；若只某 Wave 问题，单独 revert 对应 commit。",
+      "**整体回滚**：",
+      "```bash",
+      "git reset --hard e12560f  # 回到 E 阶段末尾",
+      "```",
+      "零副作用：framework 对外 API 100% 兼容 · 下游（editor/engines/components）零依赖 F 阶段新增物。",
+      "**部分回滚**（Wave 粒度）：本轮未分 Wave commit · 若需要粒度回滚，先 commit 后按 git log 选取，但由于已全绿，无回滚必要。"
     ],
     "risks": [],
     "downstreamConsumers": [],
     "tasks": [],
     "acceptanceCriteria": [],
-    "testEvidence": [],
+    "testEvidence": [
+      "```bash",
+      "$ npx tsc --noEmit           # ✅ 0 errors",
+      "$ npx jest --no-colors       # ✅ Test Suites: 28/28 · Tests: 563/563",
+      "$ bash scripts/arch-audit.sh # ✅ contracts/ 10 files / runtime/ 6 files / builders/ 2 files / external 122 files - all clean",
+      "$ npx eslint src/lib/{editor,engines} src/components  # ✅ 0 errors, 0 warnings",
+      "```"
+    ],
     "affectedFiles": [
       "src/lib/editor/drawers/draw-helpers.ts",
       "src/lib/editor/__tests__/editor-data-layer.test.ts",
@@ -95,21 +120,60 @@
       "engines/index.ts",
       "framework/domains/circuit/index.ts",
       "framework/__tests__/layout-spec.test.ts",
-      "reactions/acid-base-neutralization.ts"
+      "reactions/acid-base-neutralization.ts",
+      "workflow/skills/framework-boundary.md",
+      "components/base.ts",
+      "contracts/component.ts",
+      "components/graph.ts",
+      "contracts/graph.ts",
+      "components/port.ts",
+      "contracts/port.ts",
+      "components/union-find.ts",
+      "runtime/union-find.ts",
+      "components/registry.ts",
+      "runtime/registry.ts",
+      "solvers/base.ts",
+      "contracts/solver.ts",
+      "interactions/rule.ts",
+      "contracts/rule.ts",
+      "interactions/events.ts",
+      "contracts/events.ts",
+      "interactions/engine.ts",
+      "runtime/engine.ts",
+      "assembly/spec.ts",
+      "contracts/assembly.ts",
+      "assembly/layout.ts",
+      "contracts/layout.ts",
+      "assembly/errors.ts",
+      "contracts/errors.ts",
+      "assembly/validator.ts",
+      "runtime/validator.ts",
+      "assembly/assembler.ts",
+      "runtime/assembler.ts",
+      "assembly/fluent.ts",
+      "builders/fluent.ts",
+      "assembly/index.ts",
+      "framework/index.ts",
+      "contracts/index.ts",
+      "runtime/index.ts",
+      "builders/index.ts",
+      "domains/chemistry/assembly/chemistry-spec.ts",
+      "domains/circuit/assembly/circuit-spec.ts",
+      "framework/__tests__/assembly.test.ts"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "deploy-output.md",
       "outline": [
-        "E 阶段 · Deploy 清单",
-        "文件清单 · 16 变更",
-        "新文件（6）",
-        "修改文件（10）",
-        "Commit 建议",
-        "方案 A · 按 Wave 分 commit（推荐）",
-        "W1 · 孤立 bug",
-        "W2 · 别名消融"
+        "F 阶段 · Deploy Output",
+        "变更清单（53 git 变更）",
+        "新建目录 + 文件（9）",
+        "git mv 迁移（15 核心文件）",
+        "删除目录（4 空目录）",
+        "内容修改（16 文件）",
+        "验证结果",
+        "commit 建议（推荐 Wave 粒度，3-4 commits）"
       ],
       "keyPoints": []
     }
@@ -126,165 +190,277 @@
     "hasAcceptanceCriteria": false,
     "hasAffectedFiles": true,
     "hasFilesChanged": false,
-    "hasTestEvidence": false
+    "hasTestEvidence": true
   },
   "evidenceRefs": [
     {
-      "file": "src/lib/framework/domains/chemistry/type-guards.ts",
+      "file": "workflow/skills/framework-boundary.md",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "file": "components/base.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "docs/architecture-constraints.md",
+      "file": "contracts/component.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "workflow/skills/tsc-workflow-gate.md",
+      "file": "components/graph.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/engines/index.ts",
+      "file": "contracts/graph.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/domains/circuit/index.ts",
+      "file": "components/port.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/__tests__/layout-spec.test.ts",
+      "file": "contracts/port.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/assembly/layout.ts",
+      "file": "components/union-find.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/domains/chemistry/components.ts",
+      "file": "runtime/union-find.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/domains/chemistry/solver.ts",
+      "file": "components/registry.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "file": "runtime/registry.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/framework/domains/chemistry/reaction-utils.ts",
+      "file": "solvers/base.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "src/lib/engines/__tests__/engines.test.ts",
+      "file": "contracts/solver.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "docs/editor-framework.md",
+      "file": "interactions/rule.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "engines/index.ts",
+      "file": "contracts/rule.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "framework/domains/circuit/index.ts",
+      "file": "interactions/events.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "contracts/events.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "interactions/engine.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "runtime/engine.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "assembly/spec.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "contracts/assembly.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "assembly/layout.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "contracts/layout.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "assembly/errors.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "contracts/errors.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "assembly/validator.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "runtime/validator.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "assembly/assembler.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "runtime/assembler.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "assembly/fluent.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "builders/fluent.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "assembly/index.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "framework/index.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "contracts/index.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "runtime/index.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "builders/index.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "domains/chemistry/assembly/chemistry-spec.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "domains/circuit/assembly/circuit-spec.ts",
+      "artifact": "output/deploy-output.md"
+    },
+    {
+      "file": "framework/__tests__/assembly.test.ts",
       "artifact": "output/deploy-output.md"
     },
     {
       "file": "framework/__tests__/layout-spec.test.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "reactions/acid-base-neutralization.ts",
       "artifact": "output/deploy-output.md"
     }
   ],
   "relevance": {
     "keywords": [
       "framework",
+      "contracts",
+      "assembly",
+      "runtime",
+      "arch",
+      "audit",
       "src",
-      "lib",
-      "chemistry",
-      "tsc",
-      "domains",
-      "git",
-      "commit",
-      "type",
-      "test",
-      "add",
-      "constraints",
-      "index",
-      "scripts",
-      "check",
-      "guards",
-      "docs",
-      "architecture",
-      "workflow",
-      "engines",
-      "__tests__",
-      "wave",
-      "errors",
-      "gate",
-      "layout",
-      "editor",
-      "bash",
       "阶段",
-      "jest",
-      "e11",
-      "spec",
-      "reactions",
-      "new",
-      "engine",
-      "asreagent",
+      "文件",
+      "lib",
+      "scripts",
+      "components",
+      "commit",
+      "git",
+      "index",
+      "builders",
+      "eslint",
+      "boundary",
+      "domains",
+      "barrel",
+      "bash",
+      "interactions",
+      "errors",
       "import",
-      "bug",
-      "circuit",
-      "assemblybundle",
-      "props"
+      "chemistry",
+      "相对路径跟随",
+      "test",
+      "docs",
+      "constraints",
+      "files",
+      "graph",
+      "spec",
+      "architecture",
+      "live",
+      "workflow",
+      "skills",
+      "未来",
+      "solvers",
+      "rule",
+      "layout"
     ],
     "files": [
-      "src/lib/framework/domains/chemistry/type-guards.ts",
-      "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
-      "docs/architecture-constraints.md",
-      "workflow/skills/tsc-workflow-gate.md",
-      "src/lib/engines/index.ts",
-      "src/lib/framework/domains/circuit/index.ts",
-      "src/lib/framework/__tests__/layout-spec.test.ts",
-      "src/lib/framework/assembly/layout.ts",
-      "src/lib/framework/domains/chemistry/components.ts",
-      "src/lib/framework/domains/chemistry/solver.ts",
-      "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
-      "src/lib/framework/domains/chemistry/reaction-utils.ts",
-      "src/lib/engines/__tests__/engines.test.ts",
-      "docs/editor-framework.md",
-      "engines/index.ts",
-      "framework/domains/circuit/index.ts",
-      "framework/__tests__/layout-spec.test.ts",
-      "reactions/acid-base-neutralization.ts"
+      "workflow/skills/framework-boundary.md",
+      "components/base.ts",
+      "contracts/component.ts",
+      "components/graph.ts",
+      "contracts/graph.ts",
+      "components/port.ts",
+      "contracts/port.ts",
+      "components/union-find.ts",
+      "runtime/union-find.ts",
+      "components/registry.ts",
+      "runtime/registry.ts",
+      "solvers/base.ts",
+      "contracts/solver.ts",
+      "interactions/rule.ts",
+      "contracts/rule.ts",
+      "interactions/events.ts",
+      "contracts/events.ts",
+      "interactions/engine.ts",
+      "runtime/engine.ts",
+      "assembly/spec.ts",
+      "contracts/assembly.ts",
+      "assembly/layout.ts",
+      "contracts/layout.ts",
+      "assembly/errors.ts",
+      "contracts/errors.ts",
+      "assembly/validator.ts",
+      "runtime/validator.ts",
+      "assembly/assembler.ts",
+      "runtime/assembler.ts",
+      "assembly/fluent.ts",
+      "builders/fluent.ts",
+      "assembly/index.ts",
+      "framework/index.ts",
+      "contracts/index.ts",
+      "runtime/index.ts",
+      "builders/index.ts",
+      "domains/chemistry/assembly/chemistry-spec.ts",
+      "domains/circuit/assembly/circuit-spec.ts",
+      "framework/__tests__/assembly.test.ts",
+      "framework/__tests__/layout-spec.test.ts"
     ],
     "modules": [
-      "src",
-      "src",
-      "docs",
       "workflow",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "src",
-      "docs",
-      "engines",
-      "framework",
-      "framework",
-      "reactions"
+      "components",
+      "contracts",
+      "components",
+      "contracts",
+      "components",
+      "contracts",
+      "components",
+      "runtime",
+      "components",
+      "runtime",
+      "solvers",
+      "contracts",
+      "interactions",
+      "contracts",
+      "interactions",
+      "contracts",
+      "interactions",
+      "runtime",
+      "assembly"
     ]
   },
-  "generatedAt": "2026-04-29T11:28:57.670Z"
+  "generatedAt": "2026-04-29T15:41:30.069Z"
 }

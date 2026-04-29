@@ -3,16 +3,16 @@
   "stage": "TEST",
   "source": {
     "path": "output/test-report.md",
-    "sourceHash": "d35ce9ce87f700dc9777588cde8cb0fbd46b837977aa347a0108648d32446a23",
-    "artifactSize": 5874,
-    "updatedAt": "2026-04-29T11:26:09.201Z"
+    "sourceHash": "c90b526ce45904514a87af39ea46339bac013f913d4a222883fb7a6cbcbe3e31",
+    "artifactSize": 6463,
+    "updatedAt": "2026-04-29T15:39:21.983Z"
   },
   "scope": {
-    "session": "wf-20260429054300.",
-    "requirementFingerprint": "plus tsc 技术债清理 阶段"
+    "session": "wf-20260429132738.",
+    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
   },
   "content": {
-    "summary": "# E 阶段 · 测试报告\r\n\r\n> Session: `wf-20260429054300.`\r\n> Stage: TEST (5/7)\r\n> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过\r\n\r\n## 执行命令\r\n\r\n```bash\r\nnpx tsc --noEmit      # TSC 强类型检查\r\nnpx jest              # 单元 + 集成测试\r\ngit diff --shortstat  # 四路硬约束审计\r\n```\r\n\r\n（未来统一入口 `bash ./scripts/check.sh` · 详见 AC-E11）\r\n\r\n## 测试计划（AC 映射）\r\n\r\n| # | Test Case | 类型 | 预期 | 实测 | 状态 |\r\n|---|-----------|------|------|------|------|\r\n| 1 | TSC 零错 | 类型检查 | 0 errors | 0 errors | ✅ AC-E1 |\r\n| 2 | Jest 基线保持 | 回归 | ≥555 passed",
+    "summary": "# F 阶段 · Test Report\r\n\r\n> Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿\r\n\r\n## 执行摘要\r\n\r\n| 检查 | 命令 | 结果 |\r\n|------|------|------|\r\n| **TSC** 类型检查 | `npx tsc --noEmit` | ✅ **0 errors** |\r\n| **Jest** 全量测试 | `npx jest` | ✅ **563/563 pass**（28/28 suites）|\r\n| **ESLint** 边界守护 | `npx eslint src/lib/editor src/lib/engines src/components` | ✅ **0 errors, 0 warnings** |\r\n| **arch-audit** 依赖方向 | `bash scripts/arch-audit.sh` | ✅ **4 checks pass**（10+6+2+122 files clean）",
     "outline": [
       "测试报告 · D 阶段 · UX 细节优化包",
       "总体摘要",
@@ -37,7 +37,19 @@
       "framework 变更清单（7 文件 · 全部在松动条款范围）",
       "风险验证",
       "意外发现（DEVELOP 记录）",
-      "人工验证 Runbook（本轮跳过，纯类型清理无 UI 变化）"
+      "人工验证 Runbook（本轮跳过，纯类型清理无 UI 变化）",
+      "F 阶段 · Test Report",
+      "执行摘要",
+      "13 AC 验证结果",
+      "测试覆盖分析",
+      "framework/__tests__/ 架构自测",
+      "chemistry/circuit domain 测试",
+      "engines / editor / components 测试",
+      "风险验证（5 风险对照）",
+      "意外发现",
+      "执行命令日志",
+      "W0 基线 + E 阶段遗留修复",
+      "W1-W5 · git mv + regex 批处理"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -55,7 +67,15 @@
       "| R-B | W4 narrow 改变运行时 | chemistry jest 全绿 | chemistry suite 全绿（AC-E10 兑现）✅ |",
       "| R-C | reaction-utils 需改逻辑 | 保守用 as 断言 | 一行加 `c is B` predicate 标记，零逻辑变更 ✅ |",
       "| R-D | check.sh Windows 问题 | 模仿 scripts/dev.sh | 脚本头 `#!/usr/bin/env bash` · 与 dev/build 一致 ✅ |",
-      "| R-E | 测试侧残留 | 类型断言 workaround | 仅 1 处（AC-D1 精神更新）· 有明确注释说明 ✅ |"
+      "| R-E | 测试侧残留 | 类型断言 workaround | 仅 1 处（AC-D1 精神更新）· 有明确注释说明 ✅ |",
+      "| R | Sev | 验证 | 结果 |",
+      "| **R-F1** 文件级拆分不现实 | **P0** | 保持 co-location · 9 contracts 文件平均 ~150 行（未拆成 60+ 小文件）| ✅ 策略正确 |",
+      "| **R-F2** 下游 import 改动 | P1 | 实际只改 0 个下游（barrel-only 消费者全稳定）| ✅ 远低于预估 |",
+      "| **R-F3** AssemblyBundle 归属 | P2 | 归 `contracts/layout.ts` · AC-D1 测试通过 | ✅ |",
+      "| **R-F4** 循环依赖 | P1 | arch-audit 0 违规（含 1 明示例外）| ✅ |",
+      "| **R-F5** 测试路径失效 | **P0** | 3 测试文件主动修复（layout-spec / assembly 两处）| ✅ 已兑现 |",
+      "| **R-F6** Scope creep | P1 | 只做位移 · AC-F13 ≤ 5 行 | ✅ 守住 |",
+      "| **R-F7** 假兑现 | P2 | 硬约束四件套齐全（目录+ESLint+audit+文档）| ✅ 真兑现 |"
     ],
     "downstreamConsumers": [],
     "tasks": [],
@@ -63,7 +83,8 @@
     "testEvidence": [
       "> Session: `wf-20260429054300.`",
       "> Stage: TEST (5/7)",
-      "> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过"
+      "> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过",
+      "> Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿"
     ],
     "affectedFiles": [
       "circuit.ts/chemistry.ts",
@@ -78,21 +99,24 @@
       "framework/domains/circuit/index.ts",
       "framework/domains/chemistry/type-guards.ts",
       "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
-      "framework/domains/chemistry/reaction-utils.ts"
+      "framework/domains/chemistry/reaction-utils.ts",
+      "workflow/skills/framework-boundary.md",
+      "assembly/layout.ts",
+      "contracts/layout.ts"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "test-report.md",
       "outline": [
-        "E 阶段 · 测试报告",
-        "执行命令",
-        "测试计划（AC 映射）",
-        "TSC 基线下降曲线",
-        "Jest 结果",
-        "新增测试（8 条）",
-        "修改测试（1 条）",
-        "四路硬约束审计"
+        "F 阶段 · Test Report",
+        "执行摘要",
+        "13 AC 验证结果",
+        "测试覆盖分析",
+        "framework/__tests__/ 架构自测",
+        "chemistry/circuit domain 测试",
+        "engines / editor / components 测试",
+        "风险验证（5 风险对照）"
       ],
       "keyPoints": []
     }
@@ -113,113 +137,71 @@
   },
   "evidenceRefs": [
     {
-      "file": "framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "file": "workflow/skills/framework-boundary.md",
       "artifact": "output/test-report.md"
     },
     {
-      "file": "engines/__tests__/engines.test.ts",
+      "file": "assembly/layout.ts",
       "artifact": "output/test-report.md"
     },
     {
-      "file": "framework/__tests__/layout-spec.test.ts",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "framework/domains/chemistry/components.ts",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "framework/domains/chemistry/solver.ts",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "framework/assembly/layout.ts",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "framework/domains/circuit/index.ts",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "framework/domains/chemistry/type-guards.ts",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "framework/domains/chemistry/reaction-utils.ts",
+      "file": "contracts/layout.ts",
       "artifact": "output/test-report.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "framework",
-      "chemistry",
-      "jest",
-      "domains",
       "test",
       "tsc",
-      "diff",
-      "passed",
-      "type",
-      "bash",
-      "scripts",
-      "测试",
-      "predicate",
-      "全绿",
-      "gate",
-      "chemistrypercomponent",
-      "acid",
-      "narrow",
-      "文件",
-      "扩展",
-      "index",
-      "git",
-      "check",
-      "预期",
-      "实测",
+      "pass",
+      "audit",
+      "npx",
+      "contracts",
+      "未做",
+      "arch",
       "errors",
-      "bug",
-      "修复",
-      "editor",
-      "reactions",
-      "base",
-      "guards",
-      "reaction",
-      "utils",
-      "total",
-      "__tests__",
+      "framework",
+      "import",
+      "通过",
+      "assembly",
+      "src",
+      "零改",
+      "jest",
+      "eslint",
+      "lib",
+      "components",
+      "runtime",
+      "barrel",
+      "保持",
+      "domain",
       "layout",
-      "assemblyspec",
-      "dev",
-      "阶段"
+      "chemistry",
+      "阶段",
+      "noemit",
+      "editor",
+      "engines",
+      "bash",
+      "builders",
+      "git",
+      "测试文件",
+      "regex",
+      "node",
+      "结果",
+      "scripts",
+      "下游",
+      "文件",
+      "fix"
     ],
     "files": [
-      "framework/domains/chemistry/__tests__/type-guards.test.ts",
-      "engines/__tests__/engines.test.ts",
-      "framework/__tests__/layout-spec.test.ts",
-      "framework/domains/chemistry/components.ts",
-      "framework/domains/chemistry/solver.ts",
-      "framework/assembly/layout.ts",
-      "framework/domains/circuit/index.ts",
-      "framework/domains/chemistry/type-guards.ts",
-      "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
-      "framework/domains/chemistry/reaction-utils.ts"
+      "workflow/skills/framework-boundary.md",
+      "assembly/layout.ts",
+      "contracts/layout.ts"
     ],
     "modules": [
-      "framework",
-      "engines",
-      "framework",
-      "framework",
-      "framework",
-      "framework",
-      "framework",
-      "framework",
-      "framework",
-      "framework"
+      "workflow",
+      "assembly",
+      "contracts"
     ]
   },
-  "generatedAt": "2026-04-29T11:26:17.258Z"
+  "generatedAt": "2026-04-29T15:39:31.752Z"
 }

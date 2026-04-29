@@ -1,7 +1,7 @@
 # 🏥 System Health Monitoring Report
 
-> Generated: 2026-04-29T11:28:57.580Z
-> Session ID: `wf-20260429054300.`
+> Generated: 2026-04-29T15:41:29.973Z
+> Session ID: `wf-20260429132738.`
 > Run Category: `prod`
 
 ---
@@ -99,10 +99,10 @@
 |--------|-------|
 | Trend Enabled | ✅ Yes |
 | Window Size | 5 |
-| History Sessions | 79 |
+| History Sessions | 80 |
 | Recent Avg Score | 80.0 |
-| Previous Avg Score | 75.8 |
-| Delta (Recent-Previous) | +4.2 |
+| Previous Avg Score | 80.0 |
+| Delta (Recent-Previous) | 0 |
 | Low Score Threshold | 75 |
 | Alert Status | ✅ Normal |
 
@@ -119,30 +119,32 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** E 技术债分析：53 errors 分组完成；6 根因（Chemistry Props 缺 index sig 40+/union narrow 漏 10/AssemblyBundle.spec 内联 4/engines 真 bug 1/circuit re-export 缺 2/@ts-expect-error 1）；10 必改文件；10 AC；7 风险（3 P0）；⚠️ CRITICAL 硬约束冲突披露：必须受控松动 framework 零改
+**📋 Summary:** F 阶段 ANALYSE 完成：真实代码审计揭示文件级 type/impl 拆分不现实 → 目录级分层+文件级 co-location；13 AC；7 风险量化（3 P0+2 P1+2 P2）；下游消费者契约清单；ARCHITECT 留 5 决策点
 
-**📥 Input:** 基线 npx tsc --noEmit = 53 errors; D 阶段 review 已标注为主要在 chemistry/reaction.ts + framework/
+**📥 Input:** E 阶段已 TSC 0 · 基线 e12560f clean · 5 风险预警（R-F1 迁移级联/R-F2 import 路径/R-F3 AssemblyBundle 归属/R-F4 循环引用/R-F5 测试路径）· 参考 F 阶段讨论的 Wave 0-9 分解
 
-**📤 Output:** analysis.md 含根因+受影响位置+修改范围+10 AC+7 风险+硬约束冲突披露+补偿规则提议
+**📤 Output:** analysis.md 含根因+受影响位置+修改范围+13 AC+7 风险+下游消费者契约+OOS+决策清单
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\requirement.md`
 - Lines: 134, Hash: `3997-#EurekaSpace—化学实验迁移到统一声明式框架(`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 242, Hash: `11762-#E阶段·TSC技术债清理—分析>Ses`
+- Lines: 364, Hash: `15635-#F阶段·framework物理分层重构·ANAL`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# E 阶段 · TSC 技术债清理 — 分析
+# F 阶段 · framework 物理分层重构 · ANALYSE
 
-> Session: `wf-20260429054300.`
-> Requirement: P1 清理 53 个 pre-existing TSC errors（D 阶段 review 标注"主要在 chemistry/reaction.ts 和 framework/"）
+> Session: wf-20260429132738. · 基线: e12560f (TSC 0 + Jest 563) · 工作区 clean
 
-## 思考摘要
+---
 
-用户给的 D 阶段 review 印象"主要在 chemistry/reaction.ts 和 framework/"是**粗略归纳**。实际 `npx tsc --noEmit` 基线结果揭示更精细的真相：
-- 错误总数 53 个（其中
+## 根因 / Root Cause
+
+### 1. E 阶段留下的软债（Why F 必须做）
+
+E 阶段受控松动 `framework 零改` 硬约束——允许「Props 加 index signature / 类型别名复用 / 纯 bug 修复」三类变更。代价是**硬约束从字面规则降级为自然语言例外条款**（`docs/architect
 ```
 </details>
 
@@ -163,34 +165,33 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** E 架构定型（B-plus）：5 决策含 Why+Trade-off；D-1 Wave 递进修复/D-2 Props index sig/D-3 type-guards 收窄/D-4 scripts/check.sh + AGENTS.md/D-5 architecture-constraints.md 受控松动条款；14 Scorecard + 14 Scenario + 3 API 消费者接入 + 6 FM + 7 Migration 独立回滚 + 4 对抗自审；Wave 8 阶段 17 任务 ~2.5-3h；AC 升至 11 新增 AC-E11 tsc 进工作流
+**📋 Summary:** F 阶段架构定型（B' 目录分层+文件 co-location）：5 决策；14 Scorecard + 14 Scenario + 6 FM + Migration Safety + Consumer Adoption；7 Wave ~5h；硬约束兑现四件套防假兑现
 
-**📥 Input:** 用户批准松动 framework 零改 + 加 AC-E11 tsc 进工作流；10 文件修改；~25 行净增
+**📥 Input:** analysis.md 13 AC + 7 风险 + 5 决策点 + 35 文件估量 + 下游消费者契约
 
-**📤 Output:** architecture.md 含数据流 + 时序图 + 5 决策 + Scorecard + Scenario + Consumer Adoption + FM + Migration + 对抗自审
+**📤 Output:** architecture.md 完整含 5 slot 标记小节
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 242, Hash: `11762-#E阶段·TSC技术债清理—分析>Ses`
+- Lines: 364, Hash: `15635-#F阶段·framework物理分层重构·ANAL`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 412, Hash: `14465-#E阶段·TSC技术债清理—架构设计（B-plus`
+- Lines: 667, Hash: `24883-#F阶段·framework物理分层重构·ARCH`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）
+# F 阶段 · framework 物理分层重构 · ARCHITECT
 
-> Session: `wf-20260429054300.`
-> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流
+> Session: wf-20260429132738. · 基线: e12560f · 依据 analysis.md 13 AC + 7 风险
+
+---
 
 ## 🧠 Architecture Reasoning
 
-**核心洞察**：53 errors 的修复有**内在顺序依赖**（不是并行任务）。根因链是：
+### 核心架构决策 5 条
 
-```
-Root: Chemistry Props 缺 index signature
-   ↓ 传染
-IExperi
+1. **Proposal B' = 目录级分层 + 文件级 co-location**（拒绝 Proposal A/B，拒绝文件级拆分）：
+   - 目录分：`contracts/` `runtime/` `builders/` `domains
 ```
 </details>
 
@@ -211,35 +212,35 @@ IExperi
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 17 任务（编号 T-1~T-19 跨 8 Wave）~2.5-3h：W0 基线/W1 孤立 bug 53→49/W2 别名 49→45/W3 Props GATE 45→~10/W4 narrow ~10→0/W5 新测试/W6 check.sh+AGENTS.md/W7 docs+审计；11 AC 全映射；5 风险含 2 P0 均有缓解；Mermaid 依赖图含 W3 GATE 标注
+**📋 Summary:** 33 任务 7 Wave ~5h：W0 基线 T-0/T-1 · W1 目录 T-2 · W2 迁 3 pure type T-3~T-6 · W3 GATE 迁 6 核心 T-7~T-13 · W4 迁 5 runtime T-14~T-19 · W5 迁 1 builder T-20/T-21 · W6 测试+bypass T-22~T-26 · W7 守卫+文档 T-27~T-32；唯一 GATE=T-13；13 AC 全映射；5 风险含 2 P0 均有缓解；8 验证点线性检查
 
-**📥 Input:** architecture.md 5 决策 + 8 Wave 17 任务 ~2.5-3h + 11 AC
+**📥 Input:** architecture.md 5 决策 + 7 Wave + 15 文件归属表 + 6 FM + 硬约束兑现四件套 + 13 AC
 
-**📤 Output:** execution-plan.md 含依赖图+19 T 任务详解+AC 映射+5 风险+Out-of-Scope 9 项+成功标准 6 项+关键路径 12 验证点
+**📤 Output:** execution-plan.md 含 Mermaid 依赖图+33 任务详解+AC 映射+5 风险+OOS+成功标准+8 验证点
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 412, Hash: `14465-#E阶段·TSC技术债清理—架构设计（B-plus`
+- Lines: 667, Hash: `24883-#F阶段·framework物理分层重构·ARCH`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 154, Hash: `7800-#E阶段·执行计划（B-plus）>Sessi`
+- Lines: 427, Hash: `15010-#F阶段·执行计划·framework物理分层重构`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# E 阶段 · 执行计划（B-plus）
+# F 阶段 · 执行计划 · framework 物理分层重构
 
-> Session: `wf-20260429054300.`
-> Scope: 53 TSC errors → 0；17 任务；8 Wave；~2.5-3h
+> Session: wf-20260429132738. · 基线: e12560f · 依据 architecture.md 5 决策 + 7 Wave
 
-## 依赖图
+---
+
+## 一 · Mermaid 依赖图
 
 ```mermaid
 graph TD
-  W0[W0 基线冻结 10min]
-  W1[W1 孤立 bug 30min 53→49]
-  W2[W2 AssemblyBundle 别名 20min 49→45]
-  W3[W3 Props index sig **GATE** 40min 45→~10]
-  W4[W4 Reactions nar
+    T0[T-0 基线冻结<br/>tsc 0 + jest 563]
+    T1[T-1 arch-audit.sh 骨架]
+    T2[T-2 contracts/runtime/builders<br/>空目录 + index.ts]
+   
 ```
 </details>
 
@@ -260,32 +261,34 @@ graph TD
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 19 任务全完成：W0 基线 53/555 · W1 孤立 bug 53→49 · W2 别名 49→46 · W3 Props GATE 46→22（超目标 24 消）· 加 ChemistryPerComponent index sig · 22→11 · W4 type-guards + acid-base narrow 11→1 · T-11 reaction-utils 1→0 · W5 6+2 新测试 jest 563/563 · W6 check.sh + tsc-workflow-gate skill · W7 architecture-constraints.md + editor-framework 链接；TSC 零错 · Jest 563/563 · 四路审计全通过
+**📋 Summary:** F 阶段 33 任务全完成：W0 基线（含修 E 遗留 3 errors）W1 3 空目录 W2 迁 3 pure type W3 GATE 迁 6 co-located 核心 + batch regex 更新 W4 迁 5 runtime W5 迁 1 builder + 删 4 旧目录 W6 路径审计（自然已清）W7 arch-audit.sh + ESLint + constraints 归档 + framework-boundary.md · TSC 0 + Jest 563/563 + arch-audit pass + ESLint 0 · 5 PLAN_DEVIATION 文档化
 
-**📥 Input:** 19 T 任务 8 Wave; W0 基线先行; W3 Props GATE 关键点
+**📥 Input:** 33 任务 7 Wave ~5h · 唯一 GATE=T-13 · 硬约束兑现四件套
 
-**📤 Output:** 16 代码/docs 变更（9 framework 受控 + 1 engines bug 修 + 3 新测试 + 2 工作流防护 + 1 constraints 文档）· TSC 53→0 · Jest +8
+**📤 Output:** code.diff 含 15 文件迁移表 + 4 目录删除 + barrel 重写 + 硬约束四件套落地 + 验证结果
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 154, Hash: `7800-#E阶段·执行计划（B-plus）>Sessi`
+- Lines: 427, Hash: `15010-#F阶段·执行计划·framework物理分层重构`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 82, Hash: `3866-#E阶段·代码变更摘要>Session:`w`
+- Lines: 96, Hash: `3793-#F阶段·CodeDiff摘要>Sessi`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# E 阶段 · 代码变更摘要
+# F 阶段 · Code Diff 摘要
 
-> Session: `wf-20260429054300.`
-> **TSC 53 → 0** · **Jest 555 → 563**（+8）· **零新依赖** · **老模板零改**
+> Session: wf-20260429132738. · 基线 e12560f
 
-## 变更统计
+## 核心变更（物理分层）
 
-```
-framework: 7 files changed, 51 insertions(+), 22 deletions(-)   ← 受控松动
-engines:   1 file  changed, 1 insertion(+), 0 deletions(-)       ← bug fix
-tests:     3 file
+### 新建目录
+- `src/lib/framework/contracts/`（9 文件 + index.ts）
+- `src/lib/framework/runtime/`（5 文件 + index.ts）
+- `src/lib/framework/builders/`（1 文件 + index.ts）
+
+### 删除目录
+- `src/lib/framework/components/`（5 文件迁走
 ```
 </details>
 
@@ -306,36 +309,32 @@ tests:     3 file
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** TSC 53→0 · Jest 563/563 · 11/11 AC 通过 · 四路审计 framework 受控 +51/-22 其他三路空 · 8 新测试（6 type-guards + 2 registry）+ 1 AC-D1 测试更新
+**📋 Summary:** F 阶段 TEST 全通过：TSC 0 · Jest 563/563 · arch-audit 4 check pass · ESLint 0 · 13 AC 全过 · 7 风险全验证 · 4 意外发现文档化
 
-**📥 Input:** TSC 0 · Jest 563/563 · 四路审计通过 · dogfood check.sh
+**📥 Input:** TSC 0 · Jest 563/563 · arch-audit + ESLint pass · 四件套齐全
 
-**📤 Output:** test-report.md 含 TSC 下降曲线 + 11 AC 证据 + framework 7 文件松动清单 + 5 风险验证 + 4 意外发现
+**📤 Output:** test-report.md 含 13 AC 验证 + 风险对照 + 测试覆盖分析 + 命令日志
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 82, Hash: `3866-#E阶段·代码变更摘要>Session:`w`
+- Lines: 96, Hash: `3793-#F阶段·CodeDiff摘要>Sessi`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\test-report.md`
-- Lines: 123, Hash: `4418-#E阶段·测试报告>Session:`wf-`
+- Lines: 122, Hash: `4838-#F阶段·TestReport>Sessio`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# E 阶段 · 测试报告
+# F 阶段 · Test Report
 
-> Session: `wf-20260429054300.`
-> Stage: TEST (5/7)
-> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过
+> Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿
 
-## 执行命令
+## 执行摘要
 
-```bash
-npx tsc --noEmit      # TSC 强类型检查
-npx jest              # 单元 + 集成测试
-git diff --shortstat  # 四路硬约束审计
-```
-
-（未来统一入口 `bash ./scripts/check.sh` · 详见 AC-E
+| 检查 | 命令 | 结果 |
+|------|------|------|
+| **TSC** 类型检查 | `npx tsc --noEmit` | ✅ **0 errors** |
+| **Jest** 全量测试 | `npx jest` | ✅ **563/563 pass**（28/28 suites）|
+| **ESLin
 ```
 </details>
 
@@ -356,32 +355,31 @@ git diff --shortstat  # 四路硬约束审计
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** REVIEW 通过：需求 100% 兑现（53→0 TSC）· 5 决策 0 偏差 · 6/6 FM 覆盖 · 零回归 · 7 遗留债务明示 · 意外红利 4 条（耗时节省 33%/测试超 167%/顺修 1 runtime bug/发现 FM-4 并根治）· B-plus 三类允许严格守住 6 条记录无滥用
+**📋 Summary:** F 阶段 REVIEW 通过：13 AC 100% 兑现 · 5 决策 0 偏差 · 6/6 FM 覆盖 · 零回归 · 3 小债务明示 · 4 意外红利（耗时超预期 -82%）· 硬约束四件套齐全防 R-F7 假兑现
 
-**📥 Input:** TSC 0 · Jest 563 · 11 AC 全过 · 首次松动有记录表
+**📥 Input:** 13 AC pass · 5 风险全验证
 
-**📤 Output:** review-output.md 含需求对比+决策对比+FM 审计+零回归+代码质量+意外红利+遗留债务+决策复盘
+**📤 Output:** review-output.md 含需求对比+决策+FM 审计+零回归+红利+遗留+复盘
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\review-output.md`
-- Lines: 103, Hash: `3977-#E阶段·Review复盘>Session:`
+- Lines: 92, Hash: `3185-#F阶段·Review>Session:wf`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# E 阶段 · Review 复盘
+# F 阶段 · Review
 
-> Session: `wf-20260429054300.`
-> 需求原文：P1 清理 TSC 技术债（3h 推荐）· 53 个 pre-existing errors（主要在 chemistry/reaction.ts 和 framework/）
+> Session: wf-20260429132738. · 基线 e12560f · TEST 全过
 
-## 需求兑现 · 100%
+## 需求兑现
 
-| 用户原意 | 兑现 |
-|---------|------|
-| 清理 53 个 pre-existing TSC errors | ✅ **53 → 0** |
-| 3h 预算 | ✅ 约 2h 实际（节省 33%）|
-| 主要 chemistr
+| 需求 | 预期 | 实际 | 偏差 |
+|------|------|------|------|
+| framework 物理分层 | contracts/runtime/builders/domains 4 目录 | ✅ 完全落地（旧 4 目录已删）| 0 |
+| E 阶段软条款物理化 | ESLint + arch-audit 替代自然语言规则 | ✅ 四件套齐全 | 0 |
+| TSC 0 保持 | 不回
 ```
 </details>
 
@@ -402,33 +400,32 @@ git diff --shortstat  # 四路硬约束审计
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** E TSC 清理完成：16 文件变更（9 framework 受控 + 1 engines bug 修 + 3 测试 + 2 工作流防护 + 1 constraints 新文档 + 1 编辑器文档链接 + 7 output）· TSC 53→0 · Jest 555→563 · 零新依赖 · templates/editor React 零改 · 耗时 2h vs 预估 3h 节省 33% · AC-E11 防 FM-4 复发 · architecture-constraints.md 新建含 6 条松动记录
+**📋 Summary:** F 阶段 DEPLOY 完成：15 文件 mv + 4 旧目录删 + 4 新建（arch-audit + boundary skill + contracts/runtime/builders barrels）+ 16 文件内容修改（import 路径/ESLint/测试路径/文档）· TSC 0 · Jest 563/563 · arch-audit pass · ESLint 0 · ~90min vs 预估 5h
 
-**📥 Input:** all gates passed; TSC 0; Jest 563
+**📥 Input:** all gates passed
 
-**📤 Output:** deploy-output.md 含 16 文件清单 + 2 commit 方案 + Runbook + 7 阶段回滚方案 + F 阶段路线图建议
+**📤 Output:** deploy-output.md 含 53 变更清单 + commit 建议 + Runbook + 回滚方案 + F+1 路线图
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\deploy-output.md`
-- Lines: 174, Hash: `6764-#E阶段·Deploy清单>Session:`
+- Lines: 138, Hash: `5365-#F阶段·DeployOutput>Sess`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# E 阶段 · Deploy 清单
+# F 阶段 · Deploy Output
 
-> Session: `wf-20260429054300.`
-> Stage: DEPLOY (7/7)
-> **最终状态**：本地落盘完成 · 待 commit + push
+> Session: wf-20260429132738. · 基线 e12560f → F 阶段末
 
-## 文件清单 · 16 变更
+## 变更清单（53 git 变更）
 
-### 新文件（6）
+### 新建目录 + 文件（9）
 
-| # | File | Purpose |
-|---|------|---------|
-| 1 | `src/lib/framework/domains/chemistry/type-guards.ts` | discriminated union helper（asReagent/asFl
+| # | 路径 | 作用 |
+|---|------|------|
+| 1 | `src/lib/framework/contracts/` | 🔒 硬边界 type-dominant 层（9 文件 + index.ts）|
+| 2 | `src/lib/framework/runtime/` | 🟡 impl-dominant 层（5 文
 ```
 </details>
 
@@ -449,7 +446,7 @@ git diff --shortstat  # 四路硬约束审计
 | Field | Value |
 |-------|-------|
 | Protocol Version | `evidence-v1` |
-| Session | `wf-20260429054300.` |
+| Session | `wf-20260429132738.` |
 | Run Category | `prod` |
 | Missing Stage Artifacts | 0 |
 
@@ -457,13 +454,13 @@ git diff --shortstat  # 四路硬约束审计
 
 | Stage | Exists | Size(bytes) | SHA256 (prefix) |
 |-------|--------|-------------|------------------|
-| ANALYSE | ✅ | 16515 | `8f398ea4479b0b68...` |
-| ARCHITECT | ✅ | 20009 | `1bb71b2a159e3e8a...` |
-| PLAN | ✅ | 9974 | `5aa7e2dae9e33472...` |
-| CODE | ✅ | 4611 | `4fcd0dbabae9cace...` |
-| TEST | ✅ | 5874 | `d35ce9ce87f700dc...` |
+| ANALYSE | ✅ | 22217 | `1a8831cc7cb4ac87...` |
+| ARCHITECT | ✅ | 32346 | `8976b0b0b13536de...` |
+| PLAN | ✅ | 19006 | `30d29465d26cb8f1...` |
+| CODE | ✅ | 4698 | `554b20225b48a764...` |
+| TEST | ✅ | 6463 | `c90b526ce4590451...` |
 
-- **Trace Hash**: `42068e6d94befa85f1407f32bd9d44f6bb7795cc0c992107c5c792bc7e4fe2c2`
+- **Trace Hash**: `bc888e166324752ca65530819eaf8956a4b08cb1c9e87142f1245fdbc70bbbc5`
 - **Quality Report Hash**: N/A
 - **Evolution Log Hash**: N/A
 

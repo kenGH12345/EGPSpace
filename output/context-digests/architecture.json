@@ -3,16 +3,16 @@
   "stage": "ARCHITECT",
   "source": {
     "path": "output/architecture.md",
-    "sourceHash": "1bb71b2a159e3e8a650335ad4ad05b17a8057c27e11d1ed94ac40fc1cf273616",
-    "artifactSize": 20009,
-    "updatedAt": "2026-04-29T07:49:56.474Z"
+    "sourceHash": "8976b0b0b13536dee5d3cf91d18fbfc2f408c7e53e6e28e19765d11a7b4e0627",
+    "artifactSize": 32346,
+    "updatedAt": "2026-04-29T13:35:58.509Z"
   },
   "scope": {
-    "session": "wf-20260429054300.",
-    "requirementFingerprint": "plus tsc 技术债清理 方案 阶段"
+    "session": "wf-20260429132738.",
+    "requirementFingerprint": "co framework location proposal 文件级 物理分层重构 目录级分层 阶段"
   },
   "content": {
-    "summary": "# E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）\r\n\r\n> Session: `wf-20260429054300.`\r\n> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流\r\n\r\n## 🧠 Architecture Reasoning\r\n\r\n**核心洞察**：53 errors 的修复有**内在顺序依赖**（不是并行任务）。根因链是：\r\n\r\n```\r\nRoot: Chemistry Props 缺 index signature\r\n   ↓ 传染\r\nIExperimentComponent<Record<string, unknown>, ...> 约束不满足\r\n   ↓ 传染\r\nChemistryGraph 不满足 DomainGraph<> 约束\r\n   ↓ 传染\r\nreaction.ts / solver.ts / assembler.ts / builder.ts 全链 TS2344/2345/2322\r\n   ↓ 测试文件派生\r\nchemistr",
+    "summary": "# F 阶段 · framework 物理分层重构 · ARCHITECT\r\n\r\n> Session: wf-20260429132738. · 基线: e12560f · 依据 analysis.md 13 AC + 7 风险\r\n\r\n---\r\n\r\n## 🧠 Architecture Reasoning\r\n\r\n### 核心架构决策 5 条\r\n\r\n1. **Proposal B' = 目录级分层 + 文件级 co-location**（拒绝 Proposal A/B，拒绝文件级拆分）：\r\n   - 目录分：`contracts/` `runtime/` `builders/` `domains/`\r\n   - 文件保留 co-location（type + guard 同文件，改名时同步）\r\n   - 分类规则：**文件 type 定义行数 > impl 行数**归 contracts，否则归 runtime\r\n\r\n2. **单别名 `@framework` + barrel 兜底** vs 多别名：**选单别名 + barrel**\r\n   - 下游 import 稳定：`impor",
     "outline": [
       "架构设计 · D 阶段 · UX 细节优化包",
       "思考摘要",
@@ -34,9 +34,21 @@
       "D-2 · Props 加 index signature（选方案 A）",
       "D-3 · Reactions 用 type predicate helper 收窄",
       "D-4 · AC-E11 = `scripts/check.sh` + AGENTS.md 更新",
-      "D-5 · architecture-constraints.md 新建 + 原硬约束条款不删"
+      "D-5 · architecture-constraints.md 新建 + 原硬约束条款不删",
+      "F 阶段 · framework 物理分层重构 · ARCHITECT",
+      "核心架构决策 5 条",
+      "1 · 目标架构全貌",
+      "1.1 目录结构（最终形态）",
+      "1.2 文件归属判定规则（R-F1 的系统化应对）",
+      "1.3 15 个核心文件具体分配",
+      "2 · 依赖方向图",
+      "依赖规则（红线）",
+      "3 · Scorecard（14 quality attributes）",
+      "4 · Scenario Harness（14 场景验证）",
+      "5 · tsconfig paths 设计"
     ],
     "keyPoints": [],
+    "rootCause": [],
     "decisions": [
       "### D-1 · `componentBounds(c, config): {x, y, w, h}` 放 `port-layout.ts`",
       "**选择理由**：",
@@ -77,7 +89,19 @@
       "```",
       "**未来扩展成本**：新 Props 接口声明时**按新规范**加 `[key: string]: unknown`（已写入 architecture-constraints.md）。",
       "### API-2 · `type-guards.ts` — asReagent / asFlask / asSolid / asBubble / asThermometer",
-      "**首次消费**：`acid-base-neutralization.ts` / `metal-acid.ts` / `iron-rusting.ts`"
+      "**首次消费**：`acid-base-neutralization.ts` / `metal-acid.ts` / `iron-rusting.ts`",
+      "（对应 analysis.md \"下游消费者契约\"）— slot 锚点。",
+      "### 消费者适应路径",
+      "| 消费者类别 | 适应动作 | 工作量 |",
+      "| **editor/** 9 文件 · barrel-only 消费 | 零 | 0min |",
+      "| **engines/** 2 文件 · bypass 消费 | 改为 barrel import | 5min · W6 完成 |",
+      "| **engines/** 2 文件 · barrel 消费 | 零 | 0min |",
+      "| **components/** 2 文件 · barrel | 零 | 0min |",
+      "| **framework/__tests__/** 9 测试 · 相对路径 | 改 barrel 或同级相对 | 30min · W6 完成 |",
+      "| **framework/domains/** ~25 文件 · 相对路径 | 路径跟随物理分层调整 | 60min · 分布在 W3/W4/W5 |",
+      "| **templates/** | 零（不 import framework）| 0min |",
+      "| **未来 /wf Agent** | 读 `framework-boundary.md` | — |",
+      "| **未来新 domain** | 按 `domains/` 模板创建 · 只 import contracts/runtime/builders | — |"
     ],
     "tasks": [
       "```",
@@ -91,6 +115,21 @@
       "W7 (10min) · docs + 审计 · T-17 architecture-constraints.md + editor-framework.md 链接 + 四路审计",
       "**总计 17 任务 · 平均 ~11min/任务**。"
     ],
+    "acceptanceCriteria": [],
+    "testEvidence": [
+      "| # | 场景 | 期望行为 |",
+      "| 1 | 外部 editor 用 barrel 导入 IExperimentComponent | ✅ 通过 |",
+      "| 2 | 外部 editor 企图直接 import `@/lib/framework/contracts/component` | ❌ ESLint error |",
+      "| 3 | 外部 engines 用 barrel 导入 AssemblySpec | ✅ 通过 |",
+      "| 4 | framework/runtime 的 engine.ts import contracts/solver | ✅ 通过 |",
+      "| 5 | framework/contracts 的 component.ts 企图 import runtime/registry | ❌ arch-audit fail |",
+      "| 6 | framework/builders 的 fluent.ts import contracts + runtime | ✅ 通过 |",
+      "| 7 | framework/domains/chemistry 的 reactions import contracts + runtime + builders | ✅ 通过 |",
+      "| 8 | framework/domains/chemistry 企图 import editor | ❌ arch-audit fail |",
+      "| 9 | Jest 运行 framework/__tests__/framework.test.ts（barrel 路径）| ✅ pass |",
+      "| 10 | Jest 运行 chemistry/__tests__/type-guards.test.ts（同级相对）| ✅ pass |",
+      "| 11 | 新增 physics domain 按模板创建 | ✅ 可以 import contracts/runtime/builders |"
+    ],
     "affectedFiles": [
       "src/lib/editor/drawers/draw-helpers.ts",
       "engines/index.ts",
@@ -99,116 +138,348 @@
       "docs/editor-framework.md",
       "framework/domains/chemistry/type-guards.ts",
       "github/workflows/ci.yml",
-      "framework/assembly/layout.ts"
+      "framework/assembly/layout.ts",
+      "contracts/assembly.ts",
+      "components/base.ts",
+      "components/graph.ts",
+      "contracts/component.ts",
+      "contracts/graph.ts",
+      "components/port.ts",
+      "contracts/port.ts",
+      "components/registry.ts",
+      "runtime/registry.ts",
+      "components/union-find.ts",
+      "runtime/union-find.ts",
+      "solvers/base.ts",
+      "contracts/solver.ts",
+      "interactions/engine.ts",
+      "runtime/engine.ts",
+      "interactions/rule.ts",
+      "contracts/rule.ts",
+      "interactions/events.ts",
+      "contracts/events.ts",
+      "assembly/spec.ts",
+      "assembly/layout.ts",
+      "contracts/layout.ts",
+      "assembly/errors.ts",
+      "contracts/errors.ts",
+      "assembly/validator.ts",
+      "runtime/validator.ts",
+      "assembly/assembler.ts",
+      "runtime/assembler.ts",
+      "assembly/fluent.ts",
+      "builders/fluent.ts",
+      "framework/index.ts",
+      "framework/__tests__/framework.test.ts",
+      "chemistry/__tests__/type-guards.test.ts",
+      "framework/contracts/component.ts",
+      "src/lib/framework/index.ts",
+      "contracts/index.ts",
+      "runtime/index.ts",
+      "builders/index.ts",
+      "src/lib/engines/chemistry/reaction.ts",
+      "src/lib/engines/physics/circuit.ts"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "architecture.md",
       "outline": [
-        "E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）",
+        "F 阶段 · framework 物理分层重构 · ARCHITECT",
         "🧠 Architecture Reasoning",
-        "架构数据流",
-        "时序图 · Wave 修复流程",
-        "5 核心决策",
-        "D-1 · 修复顺序 = 根因→末梢（Wave 递进）",
-        "D-2 · Props 加 index signature（选方案 A）",
-        "D-3 · Reactions 用 type predicate helper 收窄"
+        "核心架构决策 5 条",
+        "1 · 目标架构全貌",
+        "1.1 目录结构（最终形态）",
+        "1.2 文件归属判定规则（R-F1 的系统化应对）",
+        "1.3 15 个核心文件具体分配",
+        "2 · 依赖方向图"
       ],
       "keyPoints": []
     }
   },
+  "coverage": {
+    "hasSummary": true,
+    "hasOutline": true,
+    "hasKeyPoints": false,
+    "hasRootCause": false,
+    "hasDecisions": true,
+    "hasRisks": false,
+    "hasDownstreamConsumers": true,
+    "hasTasks": true,
+    "hasAcceptanceCriteria": false,
+    "hasAffectedFiles": true,
+    "hasFilesChanged": false,
+    "hasTestEvidence": true
+  },
   "evidenceRefs": [
     {
-      "file": "engines/index.ts",
+      "file": "contracts/assembly.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "circuit/index.ts",
+      "file": "components/base.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "docs/architecture-constraints.md",
+      "file": "components/graph.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "docs/editor-framework.md",
+      "file": "contracts/component.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "framework/domains/chemistry/type-guards.ts",
+      "file": "contracts/graph.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "github/workflows/ci.yml",
+      "file": "components/port.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "framework/assembly/layout.ts",
+      "file": "contracts/port.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "components/registry.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "runtime/registry.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "components/union-find.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "runtime/union-find.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "solvers/base.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "contracts/solver.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "interactions/engine.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "runtime/engine.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "interactions/rule.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "contracts/rule.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "interactions/events.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "contracts/events.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "assembly/spec.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "assembly/layout.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "contracts/layout.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "assembly/errors.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "contracts/errors.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "assembly/validator.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "runtime/validator.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "assembly/assembler.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "runtime/assembler.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "assembly/fluent.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "builders/fluent.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "framework/index.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "framework/__tests__/framework.test.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "chemistry/__tests__/type-guards.test.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "framework/contracts/component.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "src/lib/framework/index.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "contracts/index.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "runtime/index.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "builders/index.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "src/lib/engines/chemistry/reaction.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "src/lib/engines/physics/circuit.ts",
       "artifact": "output/architecture.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "props",
-      "tsc",
-      "index",
-      "jest",
-      "test",
-      "check",
-      "type",
+      "contracts",
       "framework",
-      "unknown",
+      "runtime",
+      "type",
+      "barrel",
+      "import",
+      "builders",
+      "domains",
+      "lib",
+      "arch",
+      "audit",
       "wave",
-      "scripts",
-      "errors",
-      "chemistry",
-      "string",
-      "architecture",
-      "reaction",
-      "constraints",
-      "narrow",
-      "agents",
-      "reactions",
-      "commit",
-      "sig",
-      "predicate",
-      "bug",
-      "spec",
-      "新建",
-      "editor",
-      "guards",
-      "asreagent",
-      "kind",
-      "bash",
+      "eslint",
+      "src",
+      "components",
+      "tsc",
+      "文件",
+      "jest",
+      "assembly",
       "git",
       "min",
-      "阶段",
-      "e11",
+      "class",
+      "const",
+      "editor",
+      "engines",
+      "component",
+      "移动",
+      "index",
       "revert",
-      "key",
-      "participant",
-      "测试",
-      "docs"
+      "commit",
+      "error",
+      "bypass",
+      "export",
+      "chemistry",
+      "更新",
+      "bash",
+      "scripts",
+      "architecture",
+      "base",
+      "graph"
     ],
     "files": [
-      "engines/index.ts",
-      "circuit/index.ts",
-      "docs/architecture-constraints.md",
-      "docs/editor-framework.md",
-      "framework/domains/chemistry/type-guards.ts",
-      "github/workflows/ci.yml",
-      "framework/assembly/layout.ts"
+      "contracts/assembly.ts",
+      "components/base.ts",
+      "components/graph.ts",
+      "contracts/component.ts",
+      "contracts/graph.ts",
+      "components/port.ts",
+      "contracts/port.ts",
+      "components/registry.ts",
+      "runtime/registry.ts",
+      "components/union-find.ts",
+      "runtime/union-find.ts",
+      "solvers/base.ts",
+      "contracts/solver.ts",
+      "interactions/engine.ts",
+      "runtime/engine.ts",
+      "interactions/rule.ts",
+      "contracts/rule.ts",
+      "interactions/events.ts",
+      "contracts/events.ts",
+      "assembly/spec.ts",
+      "assembly/layout.ts",
+      "contracts/layout.ts",
+      "assembly/errors.ts",
+      "contracts/errors.ts",
+      "assembly/validator.ts",
+      "runtime/validator.ts",
+      "assembly/assembler.ts",
+      "runtime/assembler.ts",
+      "assembly/fluent.ts",
+      "builders/fluent.ts",
+      "framework/index.ts",
+      "framework/__tests__/framework.test.ts",
+      "chemistry/__tests__/type-guards.test.ts",
+      "framework/contracts/component.ts",
+      "src/lib/framework/index.ts",
+      "contracts/index.ts",
+      "runtime/index.ts",
+      "builders/index.ts",
+      "src/lib/engines/chemistry/reaction.ts",
+      "src/lib/engines/physics/circuit.ts"
     ],
     "modules": [
-      "engines",
-      "circuit",
-      "docs",
-      "docs",
-      "framework",
-      "github",
-      "framework"
+      "contracts",
+      "components",
+      "components",
+      "contracts",
+      "contracts",
+      "components",
+      "contracts",
+      "components",
+      "runtime",
+      "components",
+      "runtime",
+      "solvers",
+      "contracts",
+      "interactions",
+      "runtime",
+      "interactions",
+      "contracts",
+      "interactions",
+      "contracts",
+      "assembly"
     ]
   },
-  "generatedAt": "2026-04-29T09:40:17.615Z"
+  "generatedAt": "2026-04-29T13:36:07.983Z"
 }

@@ -1,53 +1,65 @@
 {
-  "DEVELOP": {
+  "PLAN": {
     "decisions": [
-      "[E 阶段 · 代码变更摘要] > Session: `wf-20260429054300.`",
-      "[变更统计] framework: 7 files changed, 51 insertions(+), 22 deletions(-)   ← 受控松动",
-      "[变更文件清单（全部 ≤ 13 文件 · 符合预估）] | # | File | Action | Why |",
-      "[W1 · 孤立 bug（3 文件）] | # | File | Action | Why |",
-      "[W2 · AssemblyBundle 别名消融（1 文件）] | # | File | Action | Why |"
+      "[F 阶段 · 执行计划 · framework 物理分层重构] > Session: wf-20260429132738. · 基线: e12560f · 依据 architecture.md 5 决策 + 7 Wave",
+      "[一 · Mermaid 依赖图] T0[T-0 基线冻结<br/>tsc 0 + jest 563]",
+      "[Wave 0 · 基线冻结（15min · 2 任务）] 动作：`npx tsc --noEmit` = 0 errors · `npx jest` = 563 pass · `git status` clean · 记录 `git HEAD = e12560f`",
+      "[Wave 1 · 建立空目录 + barrel 骨架（40min · 1 任务）] T-2 · 创建 3 新目录 + index.ts 骨架",
+      "[Wave 2 · 迁 3 pure type 文件（45min · 4 任务）] 动作：`git mv src/lib/framework/interactions/rule.ts src/lib/framework/contracts/rule.ts`"
     ],
-    "timestamp": "2026-04-29T11:25:11.972Z",
-    "session": "wf-20260429054300.",
-    "artifactHash": null
+    "timestamp": "2026-04-29T13:42:23.791Z",
+    "session": "wf-20260429132738.",
+    "artifactHash": "15010-#F阶段·执行计划·framework物理分层重构"
   },
   "_meta": {
-    "requirementFingerprint": "plus tsc 技术债清理 阶段"
+    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
+  },
+  "DEVELOP": {
+    "decisions": [
+      "[F 阶段 · Code Diff 摘要] > Session: wf-20260429132738. · 基线 e12560f",
+      "[核心变更（物理分层）] `src/lib/framework/contracts/`（9 文件 + index.ts）",
+      "[新建目录] `src/lib/framework/contracts/`（9 文件 + index.ts）",
+      "[删除目录] `src/lib/framework/components/`（5 文件迁走，目录删除）",
+      "[15 核心文件迁移表（git mv）] |--------|--------|------|"
+    ],
+    "timestamp": "2026-04-29T15:38:26.983Z",
+    "session": "wf-20260429132738.",
+    "artifactHash": null
   },
   "TEST": {
     "decisions": [
-      "[E 阶段 · 测试报告] > Session: `wf-20260429054300.`",
-      "[执行命令] npx tsc --noEmit      # TSC 强类型检查",
-      "[测试计划（AC 映射）] | # | Test Case | 类型 | 预期 | 实测 | 状态 |",
-      "[TSC 基线下降曲线] | 阶段 | Errors | Delta | 验证点 |",
-      "[Jest 结果] Test Suites: 28 passed, 28 total"
+      "[F 阶段 · Test Report] > Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿",
+      "[执行摘要] |------|------|------|",
+      "[13 AC 验证结果] |---|----|------|------|",
+      "[测试覆盖分析] | 测试文件 | tests | 针对 F 阶段的调整 |",
+      "[framework/__tests__/ 架构自测] | 测试文件 | tests | 针对 F 阶段的调整 |"
     ],
-    "timestamp": "2026-04-29T11:26:17.243Z",
-    "session": "wf-20260429054300.",
-    "artifactHash": "4418-#E阶段·测试报告>Session:`wf-"
+    "timestamp": "2026-04-29T15:39:31.740Z",
+    "session": "wf-20260429132738.",
+    "artifactHash": "4838-#F阶段·TestReport>Sessio"
   },
   "REVIEW": {
     "decisions": [
-      "[E 阶段 · Review 复盘] > Session: `wf-20260429054300.`",
-      "[需求兑现 · 100%] | 清理 53 个 pre-existing TSC errors | ✅ 53 → 0 |",
-      "[决策对比 · 0 偏差] | # | 决策 | 预期结果 | 实测结果 | 偏差 |",
-      "[Failure Model 审计 · 6/6 覆盖] | FM | 预测 | 实测 | 状态 |",
-      "[零回归验证] Jest：555 基线保持（+8 新测试）· 原 chemistry-reactions / layout-spec / editor-data-layer 全绿"
+      "[F 阶段 · Review] > Session: wf-20260429132738. · 基线 e12560f · TEST 全过",
+      "[需求兑现] | 需求 | 预期 | 实际 | 偏差 |",
+      "[5 决策对比] |------|------|------|",
+      "[6 Failure Modes 审计] | FM | 预期风险 | 实际发生 | 处理 |",
+      "[硬约束兑现四件套] | 1 | 物理目录分层（contracts/runtime/builders/domains）| ✅ |"
     ],
-    "timestamp": "2026-04-29T11:27:40.855Z",
-    "session": "wf-20260429054300.",
+    "timestamp": "2026-04-29T15:40:32.912Z",
+    "session": "wf-20260429132738.",
     "artifactHash": null
   },
   "DEPLOY": {
     "decisions": [
-      "[E 阶段 · Deploy 清单] > Session: `wf-20260429054300.`",
-      "[文件清单 · 16 变更] | # | File | Purpose |",
-      "[新文件（6）] | # | File | Purpose |",
-      "[修改文件（10）] | # | File | Action |",
-      "[Commit 建议] 按 Wave 粒度推荐 ≤ 6 个 commit，也可一次性："
+      "[F 阶段 · Deploy Output] > Session: wf-20260429132738. · 基线 e12560f → F 阶段末",
+      "[新建目录 + 文件（9）] | 1 | `src/lib/framework/contracts/` | 🔒 硬边界 type-dominant 层（9 文件 + index.ts）|",
+      "[git mv 迁移（15 核心文件）] | `components/base.ts` | `contracts/component.ts` |",
+      "[删除目录（4 空目录）] `src/lib/framework/components/` （含 `assembly/index.ts` 孤儿 barrel）",
+      "[内容修改（16 文件）] |------|------|------|"
     ],
-    "timestamp": "2026-04-29T11:28:57.658Z",
-    "session": "wf-20260429054300.",
+    "timestamp": "2026-04-29T15:41:30.057Z",
+    "session": "wf-20260429132738.",
     "artifactHash": null
   }
 }
