@@ -1,7 +1,7 @@
 # 🏥 System Health Monitoring Report
 
-> Generated: 2026-04-29T00:24:51.690Z
-> Session ID: `wf-20260428234611.`
+> Generated: 2026-04-29T11:28:57.580Z
+> Session ID: `wf-20260429054300.`
 > Run Category: `prod`
 
 ---
@@ -99,10 +99,10 @@
 |--------|-------|
 | Trend Enabled | ✅ Yes |
 | Window Size | 5 |
-| History Sessions | 76 |
+| History Sessions | 79 |
 | Recent Avg Score | 80.0 |
-| Previous Avg Score | 61.8 |
-| Delta (Recent-Previous) | +18.2 |
+| Previous Avg Score | 75.8 |
+| Delta (Recent-Previous) | +4.2 |
 | Low Score Threshold | 75 |
 | Alert Status | ✅ Normal |
 
@@ -119,34 +119,30 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** B 编辑器 framework 范围确定：20 新 + 2 改 + 7 工作流共 29 文件；13 In-Scope（画布/palette/拖放/连线/删除/属性/运行/持久化/domain 切换/导入导出）；11 Out-of-Scope（自动布局/撤销/多选/美化/协作/服务端）；14 AC（核心 AC-B5/B6 零改硬约束 + AC-B4 JSON fingerprint）；10 风险含 4 P0；分层约束：src/lib/editor 纯 TS 零 React
+**📋 Summary:** E 技术债分析：53 errors 分组完成；6 根因（Chemistry Props 缺 index sig 40+/union narrow 漏 10/AssemblyBundle.spec 内联 4/engines 真 bug 1/circuit re-export 缺 2/@ts-expect-error 1）；10 必改文件；10 AC；7 风险（3 P0）；⚠️ CRITICAL 硬约束冲突披露：必须受控松动 framework 零改
 
-**📥 Input:** D 阶段已完成 LayoutSpec 解耦；当前 circuit.html/metal-acid-reaction.html 仍硬编码 anchor；目标：让工程师可在浏览器拖拽元件+连线，产出可运行的 AssemblyBundle
+**📥 Input:** 基线 npx tsc --noEmit = 53 errors; D 阶段 review 已标注为主要在 chemistry/reaction.ts + framework/
 
-**📤 Output:** analysis.md 含根因 3 层次+受影响 20 新+In/Out-Scope+14 AC+10 风险+Domain 分层约束
+**📤 Output:** analysis.md 含根因+受影响位置+修改范围+10 AC+7 风险+硬约束冲突披露+补偿规则提议
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\requirement.md`
 - Lines: 134, Hash: `3997-#EurekaSpace—化学实验迁移到统一声明式框架(`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 197, Hash: `9177-#ANALYSE·B阶段·编辑器framework`
+- Lines: 242, Hash: `11762-#E阶段·TSC技术债清理—分析>Ses`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# ANALYSE · B 阶段 · 编辑器 framework
+# E 阶段 · TSC 技术债清理 — 分析
 
-> Session: `wf-20260428234611.` · 承接 D 阶段（LayoutSpec 解耦已完成）
+> Session: `wf-20260429054300.`
+> Requirement: P1 清理 53 个 pre-existing TSC errors（D 阶段 review 标注"主要在 chemistry/reaction.ts 和 framework/"）
 
----
+## 思考摘要
 
-## 根因 / Root Cause
-
-### 用户终极目标（跨越 B/C 多阶段）
-让**用户在浏览器里拖拽元件 + 点击连线**完成一个实验搭建——不写 TS/JS 代码，鼠标即可。等价于工业界的 **CircuitJS / EveryCircuit / PhET** 级别体验。
-
-### 当前阻塞（即 B 必须解决的）
-三层原子化重构完成 A→D 四轮之后，**全链条
+用户给的 D 阶段 review 印象"主要在 chemistry/reaction.ts 和 framework/"是**粗略归纳**。实际 `npx tsc --noEmit` 基线结果揭示更精细的真相：
+- 错误总数 53 个（其中
 ```
 </details>
 
@@ -167,31 +163,34 @@
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** B 架构定型：EditorState 含 UI 交互态（selection/draftWire/camera）+ Bundle 是派生；纯 TS reducer 零 React；混合渲染 Canvas drawer(TS 镜像) + DOM 端口 overlay；EditorDomainConfig 可扩展；动态 import engine 分派；5 决策含 Why+Trade-off；6 Failure Model；4 Migration 阶段独立回滚；4 对抗自审；14 Scorecard PASS
+**📋 Summary:** E 架构定型（B-plus）：5 决策含 Why+Trade-off；D-1 Wave 递进修复/D-2 Props index sig/D-3 type-guards 收窄/D-4 scripts/check.sh + AGENTS.md/D-5 architecture-constraints.md 受控松动条款；14 Scorecard + 14 Scenario + 3 API 消费者接入 + 6 FM + 7 Migration 独立回滚 + 4 对抗自审；Wave 8 阶段 17 任务 ~2.5-3h；AC 升至 11 新增 AC-E11 tsc 进工作流
 
-**📥 Input:** analysis.md: 20 新 + 2 改；14 AC；10 风险；分层约束 src/lib/editor 纯 TS 零 React
+**📥 Input:** 用户批准松动 framework 零改 + 加 AC-E11 tsc 进工作流；10 文件修改；~25 行净增
 
-**📤 Output:** architecture.md 含数据流图 + 时序图 + 5 决策 + 6 FM + 4 Migration + 5 Scenario + 14 Scorecard + 4 Q&A + Wave 分解
+**📤 Output:** architecture.md 含数据流 + 时序图 + 5 决策 + Scorecard + Scenario + Consumer Adoption + FM + Migration + 对抗自审
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\analysis.md`
-- Lines: 197, Hash: `9177-#ANALYSE·B阶段·编辑器framework`
+- Lines: 242, Hash: `11762-#E阶段·TSC技术债清理—分析>Ses`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 382, Hash: `13526-#ARCHITECTURE·B阶段·编辑器fram`
+- Lines: 412, Hash: `14465-#E阶段·TSC技术债清理—架构设计（B-plus`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# ARCHITECTURE · B 阶段 · 编辑器 framework
+# E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）
 
-> Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险
+> Session: `wf-20260429054300.`
+> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流
 
----
+## 🧠 Architecture Reasoning
 
-## 🧠 思考摘要
+**核心洞察**：53 errors 的修复有**内在顺序依赖**（不是并行任务）。根因链是：
 
-B 是一层**鼠标事件 → Builder DSL 调用**的输入适配器。architecture 核心解决 5 个问题：
-(1) EditorState 形状如何与 AssemblyBundle 解耦；(2) reducer 如何保持可测；(3) Canvas 2D drawer 如何与 React DOM 端口 overlay 
+```
+Root: Chemistry Props 缺 index signature
+   ↓ 传染
+IExperi
 ```
 </details>
 
@@ -212,34 +211,35 @@ B 是一层**鼠标事件 → Builder DSL 调用**的输入适配器。architect
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 22 任务分 5 Wave：W0 纯数据层含 Gate(T-6 ≥15 tests)/W1 UI 壳+TS drawer 镜像/W2 端口 hotspot+连线+选择+属性面板/W3 RunControls+engine-dispatch+Import/Export/W4 chemistry config+/editor 路由+文档+全量验证；总预估 3.5h；14 AC 每条有任务映射；5 风险含 3 P0 均有缓解
+**📋 Summary:** 17 任务（编号 T-1~T-19 跨 8 Wave）~2.5-3h：W0 基线/W1 孤立 bug 53→49/W2 别名 49→45/W3 Props GATE 45→~10/W4 narrow ~10→0/W5 新测试/W6 check.sh+AGENTS.md/W7 docs+审计；11 AC 全映射；5 风险含 2 P0 均有缓解；Mermaid 依赖图含 W3 GATE 标注
 
-**📥 Input:** architecture.md 5 决策 + 14 AC + 20 新文件 + 4 Wave 预估 3.5h
+**📥 Input:** architecture.md 5 决策 + 8 Wave 17 任务 ~2.5-3h + 11 AC
 
-**📤 Output:** execution-plan.md 含 Mermaid 依赖图+22 任务详解+验收映射+5 风险+Out-of-Scope
+**📤 Output:** execution-plan.md 含依赖图+19 T 任务详解+AC 映射+5 风险+Out-of-Scope 9 项+成功标准 6 项+关键路径 12 验证点
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\architecture.md`
-- Lines: 382, Hash: `13526-#ARCHITECTURE·B阶段·编辑器fram`
+- Lines: 412, Hash: `14465-#E阶段·TSC技术债清理—架构设计（B-plus`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 259, Hash: `9460-#EXECUTIONPLAN·B阶段·编辑器fr`
+- Lines: 154, Hash: `7800-#E阶段·执行计划（B-plus）>Sessi`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# EXECUTION PLAN · B 阶段 · 编辑器 framework
+# E 阶段 · 执行计划（B-plus）
 
-> Session: `wf-20260428234611.` · 承接 `architecture.md` 的 5 决策 + 14 AC + 20 新文件
+> Session: `wf-20260429054300.`
+> Scope: 53 TSC errors → 0；17 任务；8 Wave；~2.5-3h
 
----
-
-## 关键路径与 Wave 依赖
+## 依赖图
 
 ```mermaid
-flowchart TB
-  subgraph W0 ["Wave 0 · 纯 TS 数据层（可独立 jest）"]
-    T1[T-1 editor-state.ts<br/>type only]
-    T2[T-2 editor-state-reducer.
+graph TD
+  W0[W0 基线冻结 10min]
+  W1[W1 孤立 bug 30min 53→49]
+  W2[W2 AssemblyBundle 别名 20min 49→45]
+  W3[W3 Props index sig **GATE** 40min 45→~10]
+  W4[W4 Reactions nar
 ```
 </details>
 
@@ -260,30 +260,32 @@ flowchart TB
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 22 任务全部完成：W0 纯 TS 数据层 + GATE(28 tests)/W1 UI 壳 + TS drawer 镜像/W2 端口 hotspot + 连线 + 属性面板（合并到 EditorCanvas 实现）/W3 RunControls + engine-dispatch + I/O/W4 chemistry config + /editor 路由 + 文档；493/493 测试；TSC 零错；AC-B5/B6 git diff 审计空；AC-B2 reducer 零 React；AC-B14 零新依赖
+**📋 Summary:** 19 任务全完成：W0 基线 53/555 · W1 孤立 bug 53→49 · W2 别名 49→46 · W3 Props GATE 46→22（超目标 24 消）· 加 ChemistryPerComponent index sig · 22→11 · W4 type-guards + acid-base narrow 11→1 · T-11 reaction-utils 1→0 · W5 6+2 新测试 jest 563/563 · W6 check.sh + tsc-workflow-gate skill · W7 architecture-constraints.md + editor-framework 链接；TSC 零错 · Jest 563/563 · 四路审计全通过
 
-**📥 Input:** 22 tasks in 5 Waves; W0 first (state/reducer/bundle/persistence + GATE)
+**📥 Input:** 19 T 任务 8 Wave; W0 基线先行; W3 Props GATE 关键点
 
-**📤 Output:** 23 新文件（数据 8 + drawer 2 + config 3 + UI 5 + 路由 1 + 测试 1 + 文档 1）+ 1 改 + 7 工作流产出；TSC 绿；28 测试 GATE 通过
+**📤 Output:** 16 代码/docs 变更（9 framework 受控 + 1 engines bug 修 + 3 新测试 + 2 工作流防护 + 1 constraints 文档）· TSC 53→0 · Jest +8
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\execution-plan.md`
-- Lines: 259, Hash: `9460-#EXECUTIONPLAN·B阶段·编辑器fr`
+- Lines: 154, Hash: `7800-#E阶段·执行计划（B-plus）>Sessi`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 84, Hash: `3667-#CodeDiff·B阶段·编辑器framewo`
+- Lines: 82, Hash: `3866-#E阶段·代码变更摘要>Session:`w`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Code Diff · B 阶段 · 编辑器 framework
+# E 阶段 · 代码变更摘要
 
-> Session: `wf-20260428234611.` · 22 任务全部完成 · 493/493 测试 PASS
+> Session: `wf-20260429054300.`
+> **TSC 53 → 0** · **Jest 555 → 563**（+8）· **零新依赖** · **老模板零改**
 
-## 文件清单（23 新 + 1 改 + 7 工作流）
+## 变更统计
 
-### 新增 · 数据层 `src/lib/editor/` (7 文件)
-- `editor-state.ts` — EditorState + cloneEditorState + emptyEditorState (78 行)
-- `editor-state-reducer.ts` — 15 action reducer
+```
+framework: 7 files changed, 51 insertions(+), 22 deletions(-)   ← 受控松动
+engines:   1 file  changed, 1 insertion(+), 0 deletions(-)       ← bug fix
+tests:     3 file
 ```
 </details>
 
@@ -304,39 +306,36 @@ flowchart TB
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** 493/493 tests PASS · TSC 零错 · 14 AC 验证矩阵全通过（AC-B10 待浏览器 Runbook）· 5 风险缓解全证据 · AC-B5/B6 git diff 空审计
+**📋 Summary:** TSC 53→0 · Jest 563/563 · 11/11 AC 通过 · 四路审计 framework 受控 +51/-22 其他三路空 · 8 新测试（6 type-guards + 2 registry）+ 1 AC-D1 测试更新
 
-**📥 Input:** 493/493 PASS · TSC 零错 · AC-B5/B6/B9/B14 审计通过
+**📥 Input:** TSC 0 · Jest 563/563 · 四路审计通过 · dogfood check.sh
 
-**📤 Output:** test-report.md 含 AC 逐条证据 + 风险验证 + 11 步浏览器 Runbook
+**📤 Output:** test-report.md 含 TSC 下降曲线 + 11 AC 证据 + framework 7 文件松动清单 + 5 风险验证 + 4 意外发现
 
 **Input Artifact:** `C:\workspace\EGPSpace\output\code.diff`
-- Lines: 84, Hash: `3667-#CodeDiff·B阶段·编辑器framewo`
+- Lines: 82, Hash: `3866-#E阶段·代码变更摘要>Session:`w`
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\test-report.md`
-- Lines: 107, Hash: `4771-#TestReport·B阶段·编辑器frame`
+- Lines: 123, Hash: `4418-#E阶段·测试报告>Session:`wf-`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Test Report · B 阶段 · 编辑器 framework
+# E 阶段 · 测试报告
 
-> Session: `wf-20260428234611.` · 14 AC 逐条验证
+> Session: `wf-20260429054300.`
+> Stage: TEST (5/7)
+> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过
 
-## Test Command
+## 执行命令
 
 ```bash
-npx tsc --noEmit       # TypeScript check
-npx jest               # Unit + integration tests
+npx tsc --noEmit      # TSC 强类型检查
+npx jest              # 单元 + 集成测试
+git diff --shortstat  # 四路硬约束审计
 ```
 
-## 测试结果
-
-### Unit / Integration
-
-```
-Test Suites: 25 passed, 25 total
-Tests: 
+（未来统一入口 `bash ./scripts/check.sh` · 详见 AC-E
 ```
 </details>
 
@@ -357,31 +356,32 @@ Tests:
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** REVIEW 通过：需求 100% · 5 决策 0 偏差 · 6/6 FM 覆盖 · 意外红利 3（耗时 1.5h vs 预估 3.5h / T-12 零迁移 / chemistry 扩展 8min）· 8 遗留债务全 C 阶段预留
+**📋 Summary:** REVIEW 通过：需求 100% 兑现（53→0 TSC）· 5 决策 0 偏差 · 6/6 FM 覆盖 · 零回归 · 7 遗留债务明示 · 意外红利 4 条（耗时节省 33%/测试超 167%/顺修 1 runtime bug/发现 FM-4 并根治）· B-plus 三类允许严格守住 6 条记录无滥用
 
-**📥 Input:** 493/493 · 14 AC 验证矩阵 · 5 风险证据
+**📥 Input:** TSC 0 · Jest 563 · 11 AC 全过 · 首次松动有记录表
 
-**📤 Output:** review-output.md 含需求 + 决策对比 + FM 审计 + 代码质量 + 意外红利 + 遗留债务
+**📤 Output:** review-output.md 含需求对比+决策对比+FM 审计+零回归+代码质量+意外红利+遗留债务+决策复盘
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\review-output.md`
-- Lines: 124, Hash: `4705-#Review·B阶段·编辑器framework`
+- Lines: 103, Hash: `3977-#E阶段·Review复盘>Session:`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Review · B 阶段 · 编辑器 framework
+# E 阶段 · Review 复盘
 
-> Session: `wf-20260428234611.` · 需求达成 · 决策对比 · 遗留债务
+> Session: `wf-20260429054300.`
+> 需求原文：P1 清理 TSC 技术债（3h 推荐）· 53 个 pre-existing errors（主要在 chemistry/reaction.ts 和 framework/）
 
-## 需求达成 · 100%
+## 需求兑现 · 100%
 
-| In-Scope 功能 | 状态 | 实现位置 |
-|---------------|------|---------|
-| IS-1 画布 pan/zoom + 栅格背景 | ✅ | EditorCanvas.tsx + drawGrid helper |
-| IS-2 左侧元件面板 | ✅ | ComponentPalette.tsx |
-| IS-3 拖放放置元
+| 用户原意 | 兑现 |
+|---------|------|
+| 清理 53 个 pre-existing TSC errors | ✅ **53 → 0** |
+| 3h 预算 | ✅ 约 2h 实际（节省 33%）|
+| 主要 chemistr
 ```
 </details>
 
@@ -402,31 +402,33 @@ Tests:
 | Status | ✅ Success |
 | Metrics Gate | ✅ PASSED |
 
-**📋 Summary:** B 编辑器 framework 本地落盘完成：31 文件变更（23 新 + 1 改 + 7 工作流）· TSC 0 错 · Jest 493/493 · 零新依赖 · framework 零改 · 老模板零改 · 耗时 1.5h vs 预估 3.5h
+**📋 Summary:** E TSC 清理完成：16 文件变更（9 framework 受控 + 1 engines bug 修 + 3 测试 + 2 工作流防护 + 1 constraints 新文档 + 1 编辑器文档链接 + 7 output）· TSC 53→0 · Jest 555→563 · 零新依赖 · templates/editor React 零改 · 耗时 2h vs 预估 3h 节省 33% · AC-E11 防 FM-4 复发 · architecture-constraints.md 新建含 6 条松动记录
 
-**📥 Input:** all gates pass; 493/493
+**📥 Input:** all gates passed; TSC 0; Jest 563
 
-**📤 Output:** deploy-output.md 含文件清单 + Runbook 11 步 + 回滚方案 + commit msg 建议 + C 阶段 7 建议
+**📤 Output:** deploy-output.md 含 16 文件清单 + 2 commit 方案 + Runbook + 7 阶段回滚方案 + F 阶段路线图建议
 
 **Input Artifact:** None (first stage)
 
 **Output Artifact:** `C:\workspace\EGPSpace\output\deploy-output.md`
-- Lines: 158, Hash: `4326-#DeployOutput·B阶段·编辑器fra`
+- Lines: 174, Hash: `6764-#E阶段·Deploy清单>Session:`
 
 <details><summary>Preview (first 400 chars)</summary>
 
 ```
-# Deploy Output · B 阶段 · 编辑器 framework
+# E 阶段 · Deploy 清单
 
-> Session: `wf-20260428234611.` · 本地落盘部署完成
+> Session: `wf-20260429054300.`
+> Stage: DEPLOY (7/7)
+> **最终状态**：本地落盘完成 · 待 commit + push
 
-## 文件清单（23 新 + 1 改 + 7 工作流 = 31 文件）
+## 文件清单 · 16 变更
 
-### 新增（23）
+### 新文件（6）
 
-**数据层 `src/lib/editor/` (8)**
-- `editor-state.ts`, `editor-state-reducer.ts`, `port-layout.ts`, `bundle-from-state.ts`
-- `persistence.ts`, `editor-config.ts`
+| # | File | Purpose |
+|---|------|---------|
+| 1 | `src/lib/framework/domains/chemistry/type-guards.ts` | discriminated union helper（asReagent/asFl
 ```
 </details>
 
@@ -447,7 +449,7 @@ Tests:
 | Field | Value |
 |-------|-------|
 | Protocol Version | `evidence-v1` |
-| Session | `wf-20260428234611.` |
+| Session | `wf-20260429054300.` |
 | Run Category | `prod` |
 | Missing Stage Artifacts | 0 |
 
@@ -455,13 +457,13 @@ Tests:
 
 | Stage | Exists | Size(bytes) | SHA256 (prefix) |
 |-------|--------|-------------|------------------|
-| ANALYSE | ✅ | 13033 | `f209126bac3bc045...` |
-| ARCHITECT | ✅ | 16924 | `d7549e3209f927a7...` |
-| PLAN | ✅ | 11301 | `a8aa9b0b6488144c...` |
-| CODE | ✅ | 4465 | `0d8f73e4699b4f1b...` |
-| TEST | ✅ | 6019 | `ec1efdb47e05679e...` |
+| ANALYSE | ✅ | 16515 | `8f398ea4479b0b68...` |
+| ARCHITECT | ✅ | 20009 | `1bb71b2a159e3e8a...` |
+| PLAN | ✅ | 9974 | `5aa7e2dae9e33472...` |
+| CODE | ✅ | 4611 | `4fcd0dbabae9cace...` |
+| TEST | ✅ | 5874 | `d35ce9ce87f700dc...` |
 
-- **Trace Hash**: `382e3ff3cf4df6d8bb9ae97dce0a492f113dcaccff10436457b64b5daf005e63`
+- **Trace Hash**: `42068e6d94befa85f1407f32bd9d44f6bb7795cc0c992107c5c792bc7e4fe2c2`
 - **Quality Report Hash**: N/A
 - **Evolution Log Hash**: N/A
 

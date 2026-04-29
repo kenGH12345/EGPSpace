@@ -1,12 +1,1 @@
-{
-  "activeWorkflow": {
-    "session": "wf-20260428234611.",
-    "startedAt": "2026-04-28T23:58:40.194Z",
-    "currentStage": "DEPLOY",
-    "completedStages": [],
-    "requirement": "B 编辑器 framework",
-    "requirementFingerprint": "framework 编辑器",
-    "ttlExpiry": "2026-04-29T01:46:25.115Z",
-    "stageStartTime": 1777422250996
-  }
-}
+{}

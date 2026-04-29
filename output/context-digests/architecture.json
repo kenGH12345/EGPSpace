@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "stage": "ARCHITECT",
+  "source": {
+    "path": "output/architecture.md",
+    "sourceHash": "1bb71b2a159e3e8a650335ad4ad05b17a8057c27e11d1ed94ac40fc1cf273616",
+    "artifactSize": 20009,
+    "updatedAt": "2026-04-29T07:49:56.474Z"
+  },
+  "scope": {
+    "session": "wf-20260429054300.",
+    "requirementFingerprint": "plus tsc 技术债清理 方案 阶段"
+  },
+  "content": {
+    "summary": "# E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）\r\n\r\n> Session: `wf-20260429054300.`\r\n> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流\r\n\r\n## 🧠 Architecture Reasoning\r\n\r\n**核心洞察**：53 errors 的修复有**内在顺序依赖**（不是并行任务）。根因链是：\r\n\r\n```\r\nRoot: Chemistry Props 缺 index signature\r\n   ↓ 传染\r\nIExperimentComponent<Record<string, unknown>, ...> 约束不满足\r\n   ↓ 传染\r\nChemistryGraph 不满足 DomainGraph<> 约束\r\n   ↓ 传染\r\nreaction.ts / solver.ts / assembler.ts / builder.ts 全链 TS2344/2345/2322\r\n   ↓ 测试文件派生\r\nchemistr",
+    "outline": [
+      "架构设计 · D 阶段 · UX 细节优化包",
+      "思考摘要",
+      "数据流图",
+      "5 核心决策",
+      "D-1 · `componentBounds(c, config): {x, y, w, h}` 放 `port-layout.ts`",
+      "D-2 · Snap 发生在 reducer 内部，不在 EditorCanvas",
+      "D-3 · Hover 状态进 EditorState，但用 `__TRANSIENT__` 标记绕过 history",
+      "D-4 · `CanvasDrawer` 签名扩展用**可选参数** `hovered?: boolean`",
+      "D-5 · 统一 hover 视觉 用 `drawHoverFrame(ctx, bounds)` helper",
+      "时序图 · hit-test 新流程",
+      "Architecture Scorecard",
+      "Scenario Coverage · 场景覆盖矩阵",
+      "E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）",
+      "🧠 Architecture Reasoning",
+      "架构数据流",
+      "时序图 · Wave 修复流程",
+      "D-1 · 修复顺序 = 根因→末梢（Wave 递进）",
+      "D-2 · Props 加 index signature（选方案 A）",
+      "D-3 · Reactions 用 type predicate helper 收窄",
+      "D-4 · AC-E11 = `scripts/check.sh` + AGENTS.md 更新",
+      "D-5 · architecture-constraints.md 新建 + 原硬约束条款不删"
+    ],
+    "keyPoints": [],
+    "decisions": [
+      "### D-1 · `componentBounds(c, config): {x, y, w, h}` 放 `port-layout.ts`",
+      "**选择理由**：",
+      "- port-layout 已是\"坐标-几何\"工具箱（screenToCanvas / findPortAtScreen）",
+      "- 放此处避免新建文件碎片化",
+      "- 所有未来\"元件几何\"需求（framing / alignment / marquee）都走这条 import",
+      "**签名**：",
+      "```ts",
+      "export interface ComponentBounds { x: number; y: number; width: number; height: number; }",
+      "export function componentBounds(",
+      "c: PlacedComponent,",
+      "config: EditorDomainConfig",
+      "): ComponentBounds;",
+      "> Session: `wf-20260429054300.`",
+      "> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流"
+    ],
+    "risks": [],
+    "downstreamConsumers": [
+      "本轮新产出的 API/能力如何被下游**实际消费**，每个消费路径的接入模式：",
+      "### API-1 · `componentBounds(c, config)` — 公共几何工具",
+      "**首次消费方**：`EditorCanvas.tsx` 的 `onMouseDown` 的元件命中检测",
+      "**接入模式**：",
+      "```ts",
+      "// Before (B 阶段硬编码):",
+      "const hit = state.placed.find((p) => {",
+      "const x = p.anchor.x;",
+      "const y = p.anchor.y;",
+      "return canvasPt.x >= x && canvasPt.x <= x + 50 && canvasPt.y >= y && canvasPt.y <= y + 40;",
+      "});",
+      "// After (D 阶段):",
+      "本轮新产出的 3 个 API/能力如何被下游消费：",
+      "### API-1 · 5 个 Chemistry Props 的 index signature",
+      "**影响范围**：所有消费 `FlaskProps/ReagentProps/BubbleProps/SolidProps/ThermometerProps` 的代码",
+      "**接入模式**：**零改动** —— 现有代码自动受益：",
+      "// 现有 chemistry engine / reaction / solver 代码",
+      "graph._components.get('flask_1')?.props.volumeML  // ← 仍然 number（具名字段保留）",
+      "graph._components.get('flask_1')?.props.unknownField  // ← 新：返回 unknown（之前报错）",
+      "```",
+      "**未来扩展成本**：新 Props 接口声明时**按新规范**加 `[key: string]: unknown`（已写入 architecture-constraints.md）。",
+      "### API-2 · `type-guards.ts` — asReagent / asFlask / asSolid / asBubble / asThermometer",
+      "**首次消费**：`acid-base-neutralization.ts` / `metal-acid.ts` / `iron-rusting.ts`"
+    ],
+    "tasks": [
+      "```",
+      "W0 (10min) · 基线冻结 + analysis 确认：tsc 53 + jest 555 + git clean",
+      "W1 (30min) · 孤立 bug · T-1 engines/index.ts import · T-2 circuit re-export ×2 · T-3 @ts-expect-error 删除",
+      "W2 (20min) · AssemblyBundle 别名 · T-4 layout.ts 改 spec → AssemblySpec<D>",
+      "W3 (40min) · Props index sig · T-5 5 Props 各加 1 行 · T-6 跑 tsc 看链式消解",
+      "W4 (50min) · Reactions narrow · T-7 type-guards.ts 新建 · T-8~T-10 三个 reaction 文件改 · T-11 reaction-utils.ts 修 TS2352",
+      "W5 (30min) · 测试补齐 · T-12 3 个 type predicate 测试 · T-13 engine registry 测试 · T-14 jest 全量",
+      "W6 (20min) · AC-E11 · T-15 scripts/check.sh 新建 · T-16 AGENTS.md TEST 阶段更新",
+      "W7 (10min) · docs + 审计 · T-17 architecture-constraints.md + editor-framework.md 链接 + 四路审计",
+      "**总计 17 任务 · 平均 ~11min/任务**。"
+    ],
+    "affectedFiles": [
+      "src/lib/editor/drawers/draw-helpers.ts",
+      "engines/index.ts",
+      "circuit/index.ts",
+      "docs/architecture-constraints.md",
+      "docs/editor-framework.md",
+      "framework/domains/chemistry/type-guards.ts",
+      "github/workflows/ci.yml",
+      "framework/assembly/layout.ts"
+    ],
+    "filesChanged": [],
+    "stageOutputReport": {
+      "kind": "markdown",
+      "artifact": "architecture.md",
+      "outline": [
+        "E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）",
+        "🧠 Architecture Reasoning",
+        "架构数据流",
+        "时序图 · Wave 修复流程",
+        "5 核心决策",
+        "D-1 · 修复顺序 = 根因→末梢（Wave 递进）",
+        "D-2 · Props 加 index signature（选方案 A）",
+        "D-3 · Reactions 用 type predicate helper 收窄"
+      ],
+      "keyPoints": []
+    }
+  },
+  "evidenceRefs": [
+    {
+      "file": "engines/index.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "circuit/index.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "docs/architecture-constraints.md",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "docs/editor-framework.md",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "framework/domains/chemistry/type-guards.ts",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "github/workflows/ci.yml",
+      "artifact": "output/architecture.md"
+    },
+    {
+      "file": "framework/assembly/layout.ts",
+      "artifact": "output/architecture.md"
+    }
+  ],
+  "relevance": {
+    "keywords": [
+      "props",
+      "tsc",
+      "index",
+      "jest",
+      "test",
+      "check",
+      "type",
+      "framework",
+      "unknown",
+      "wave",
+      "scripts",
+      "errors",
+      "chemistry",
+      "string",
+      "architecture",
+      "reaction",
+      "constraints",
+      "narrow",
+      "agents",
+      "reactions",
+      "commit",
+      "sig",
+      "predicate",
+      "bug",
+      "spec",
+      "新建",
+      "editor",
+      "guards",
+      "asreagent",
+      "kind",
+      "bash",
+      "git",
+      "min",
+      "阶段",
+      "e11",
+      "revert",
+      "key",
+      "participant",
+      "测试",
+      "docs"
+    ],
+    "files": [
+      "engines/index.ts",
+      "circuit/index.ts",
+      "docs/architecture-constraints.md",
+      "docs/editor-framework.md",
+      "framework/domains/chemistry/type-guards.ts",
+      "github/workflows/ci.yml",
+      "framework/assembly/layout.ts"
+    ],
+    "modules": [
+      "engines",
+      "circuit",
+      "docs",
+      "docs",
+      "framework",
+      "github",
+      "framework"
+    ]
+  },
+  "generatedAt": "2026-04-29T09:40:17.615Z"
+}

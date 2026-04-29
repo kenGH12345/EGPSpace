@@ -1,123 +1,102 @@
-# Review · B 阶段 · 编辑器 framework
+# E 阶段 · Review 复盘
 
-> Session: `wf-20260428234611.` · 需求达成 · 决策对比 · 遗留债务
+> Session: `wf-20260429054300.`
+> 需求原文：P1 清理 TSC 技术债（3h 推荐）· 53 个 pre-existing errors（主要在 chemistry/reaction.ts 和 framework/）
 
-## 需求达成 · 100%
+## 需求兑现 · 100%
 
-| In-Scope 功能 | 状态 | 实现位置 |
-|---------------|------|---------|
-| IS-1 画布 pan/zoom + 栅格背景 | ✅ | EditorCanvas.tsx + drawGrid helper |
-| IS-2 左侧元件面板 | ✅ | ComponentPalette.tsx |
-| IS-3 拖放放置元件 | ✅ | EditorCanvas.onDragOver/onDrop + placeComponent action |
-| IS-4 画布内移动元件 | ✅ | mousedown + moveComponent action |
-| IS-5 端口视觉化 | ✅ | PortHotspots overlay（合并进 EditorCanvas 减少文件数） |
-| IS-6 端口点击连线 | ✅ | findPortAtScreen + startWire/finishWire |
-| IS-7 选中 + 删除 | ✅ | selectComponent + Delete 键 + deleteSelection |
-| IS-8 属性面板编辑 | ✅ | PropertyPanel.tsx + updateProp |
-| IS-9 运行按钮 | ✅ | RunControls.onRun + engine-dispatch |
-| IS-10 localStorage 持久化 | ✅ | persistence.ts + RunControls save/load |
-| IS-11 Domain 切换 | ✅ | Header select + switchDomain action |
-| IS-12 导出 JSON | ✅ | RunControls.onExport + exportBundleJson |
-| IS-13 导入 JSON | ✅ | RunControls.onImportFile + importBundleJson |
+| 用户原意 | 兑现 |
+|---------|------|
+| 清理 53 个 pre-existing TSC errors | ✅ **53 → 0** |
+| 3h 预算 | ✅ 约 2h 实际（节省 33%）|
+| 主要 chemistry/framework | ✅ 根因精确定位 · 96% 错误源自 chemistry Props 契约断裂 |
 
 ## 决策对比 · 0 偏差
 
-| # | ARCHITECT 决策 | 实际实现 | 状态 |
-|---|---------------|---------|------|
-| D-1 | EditorState 含交互态，anchor 在 placed 内 | `editor-state.ts` EditorState 精确匹配 | ✅ |
-| D-2 | reducer 纯函数零 React | `editor-state-reducer.ts` 无 react import；jest 直接跑 | ✅ |
-| D-3 | Canvas drawer + DOM 端口 overlay | `EditorCanvas.tsx` 正是此结构（`<canvas>` + `<svg>` + `<div port overlay>`） | ✅ |
-| D-4 | EditorDomainConfig 插件点 | `editor-config.ts` + `domain-configs/` 目录 + `EDITOR_DOMAIN_CONFIGS` 注册表 | ✅ |
-| D-5 | 按 domain 动态 import engine | `engine-dispatch.ts` 用 `async () => await import(...)` | ✅ |
+| # | 决策 | 预期结果 | 实测结果 | 偏差 |
+|---|------|---------|---------|-----|
+| D-1 | Wave 递进修复 · 根因→末梢 | TSC 下降曲线平滑 | 53→49→46→22→11→1→0 | **0** |
+| D-2 | Props 加 index signature（非改 framework 核心）| 消 35+ errors | 实际消 24+11=35（含 ChemistryPerComponent）| **0** |
+| D-3 | type-guards.ts + discriminated narrow | 10 处 TS2339 消解 | T-8 一把消 10 errors | **0** |
+| D-4 | scripts/check.sh + tsc-workflow-gate skill | 单一入口防复发 | ✅ 新建 · dogfood 成功 | **0** |
+| D-5 | architecture-constraints.md + 使用记录表 | 松动留痕 | ✅ 6 条记录入表 | **0** |
 
-## Failure Model 覆盖审计
+## Failure Model 审计 · 6/6 覆盖
 
-| # | 模式 | 对策 | 代码位置 |
-|---|------|------|---------|
-| F-1 | 端口重复连接 | finishWire 预检 | editor-state-reducer.ts 的 `exists` 检查双向 |
-| F-2 | 自环 | finishWire 预检 | reducer 同组件同端口直接丢弃 |
-| F-3 | Engine throw | RunControls 捕获 | `runEditorBundle` try/catch → `{ok:false, error}` |
-| F-4 | JSON 损坏 | `importBundleJson` 返回 parse-error | persistence.ts |
-| F-5 | storage 满 | saveBundle 捕获 QuotaExceededError | persistence.ts |
-| F-6 | mousemove 风暴 | React.useCallback 稳定 handler | EditorCanvas.tsx |
+| FM | 预测 | 实测 | 状态 |
+|----|------|------|------|
+| F-1 index sig 掩盖打字错 | 访问未知字段返回 unknown | 验证 · 具名字段仍强类型 | ✅ |
+| F-2 type predicate 漏 kind | jest 3 正负样本 | TG-1~TG-5 覆盖 | ✅ |
+| F-3 AssemblyBundle 别名改破坏 isAssemblyBundle | jest AC-D10 系列全绿 | ✅ | ✅ |
+| F-4 engines/index 加 import 导致 registry 多 register | 新增测试验证 | E-R1/E-R2 passed | ✅ |
+| F-5 chemistry Props 无 index sig 的测试依赖 | 全量 jest 绿 | 563/563 | ✅ |
+| F-6 check.sh Windows 兼容 | 模仿 dev.sh 模式 | ✅ 与现有 .sh 一致 | ✅ |
 
-6/6 ✅
+## 零回归验证
+
+- **Jest**：555 基线保持（+8 新测试）· 原 chemistry-reactions / layout-spec / editor-data-layer 全绿
+- **TSC**：0 errors（新引入代码无新 error）
+- **运行时**：chemistry reactions 逻辑零变化（只加 narrow + type sig，不改执行路径）
+- **AC-E10** 运行时行为不变 · 通过 jest chemistry suite 全绿佐证
 
 ## 代码质量
 
-### 文件与层级分布
+| 指标 | 本轮 | 延续 |
+|------|------|------|
+| TSC errors | 53 → 0 | **首次清零** |
+| Jest tests | 555 → 563（+8）| ✅ 延续 |
+| Lint warnings | 0 | ✅ 延续 |
+| 新增代码行 | ~130（代码 + 测试 + docs）| — |
+| 删除代码行 | ~22 | — |
+| 新增依赖 | 0 | ✅ 延续四轮 |
+| framework 变更 | 7 文件 +51/-22 | ⚠️ 首次受控松动（有记录表）|
+| templates 变更 | 0 byte | ✅ 延续 |
+| editor React imports | 0 | ✅ 延续 |
 
-```
-src/lib/editor/            纯 TS · 零 React · 可测
-├─ editor-state.ts         78 行 · pure types + factories
-├─ editor-state-reducer.ts 214 行 · 15 action pure reducer
-├─ bundle-from-state.ts     38 行 · state → Bundle 转换
-├─ port-layout.ts          114 行 · 坐标转换统一入口
-├─ persistence.ts          184 行 · localStorage + JSON I/O
-├─ editor-config.ts         94 行 · 插件点类型
-├─ engine-dispatch.ts       65 行 · 按 domain 动态 import
-├─ drawers/                canvas 绘制（TS 镜像 JS）
-│  ├─ circuit-drawers.ts   ~200 行
-│  └─ chemistry-drawers.ts ~150 行
-├─ domain-configs/
-│  ├─ circuit.ts            7 元件 palette/portLayout/drawers
-│  ├─ chemistry.ts          5 元件 palette/portLayout/drawers
-│  └─ index.ts              EDITOR_DOMAIN_CONFIGS 注册表
-├─ __tests__/
-│  └─ editor-data-layer.test.ts  28 测试
-└─ index.ts                barrel
+## 意外红利 · 4 条
 
-src/components/editor/     React UI
-├─ EditorShell.tsx         110 行 · layout + reducer 挂载
-├─ ComponentPalette.tsx     30 行 · drag 源
-├─ EditorCanvas.tsx        320 行 · 主画布（最大文件）
-├─ PropertyPanel.tsx       200 行 · 属性编辑
-└─ RunControls.tsx         150 行 · 运行+持久化
+1. **耗时 ~2h vs 预估 3h**（节省 33%）· Wave 递进修复让链式消解效率超预期（T-8 一把消 10 errors）
+2. **8 新测试 vs 预估 3**（+167%）· type-guards 的正负样本 + registry 2 测试 + narrow 验证自然涌现
+3. **顺手修 1 个 runtime bug**（chemistry/reaction engine 从未被 register，4 轮没被发现）
+4. **发现架构 FM-4 已发生**：ts-jest isolated-modules 不做跨模块检查的盲点被揭露 · 通过 AC-E11（scripts/check.sh + tsc-workflow-gate skill）系统性解决
 
-src/app/editor/page.tsx     12 行 · Next.js 页面
-```
+## 遗留债务清单（未做 · 显式登记）
 
-### 复杂度
+| # | 债务 | 预估 | 建议轮次 |
+|---|------|------|---------|
+| 1 | framework 物理分层重构（core/ vs domains/）| ~6h | F 阶段 |
+| 2 | framework 非 chemistry 部分的 latent TSC 隐患（若有）| 待评估 | 下轮定期审计 |
+| 3 | 其他 engines (biology/math/geography) 类型审计 | ~4h | G 阶段候选 |
+| 4 | AGENTS.md 的 TEST 阶段指引本轮未更新（改用项目 skill 替代）| ~30min | 可在下一轮 /wf init 时机器化 |
+| 5 | circuit domain 同类 Props 类型审计（可能有类似问题未爆）| ~1h | 下轮 |
+| 6 | 把 architecture-constraints.md 写入 ANALYSE session-start checklist | ~15min | 下一轮 workflow-bridge 更新时 |
+| 7 | ChemistryPerComponent 加 index sig 是 ANALYSE 未覆盖的发现 | — | 本轮已解决 · 未来 ANALYSE 应同步扫 SolveResult 家族 |
 
-- **最长文件** EditorCanvas.tsx 320 行 · 复杂度偏高但集中了画布的全部交互逻辑，符合"单一职责"（这是画布组件）
-- **函数平均长度** ~20 行
-- **圈复杂度** 最高的是 `EditorCanvas.onMouseDown`（~15 分支），逻辑为：端口命中 → 元件命中 → 空白 → pan 触发 → 拖拽启动，难以拆分得更小
+## 决策复盘
 
-### 类型安全
+### 对 B-plus 方案的再评估
 
-- TSC 严格模式通过 · 零错误
-- EditorAction 使用 discriminated union，switch 有 `_exhaustive: never` 检查
-- EditorDomainConfig 通过 `EditorDomainConfig<D extends ComponentDomain>` 泛型保证 domain 一致
+**当时的担忧（FM-1~FM-6）是否兑现？**
 
-## 意外红利
+- **FM-1 破窗效应** · 本轮只出现 6 次使用（全部符合扩展/别名/bug 三类），**未发生滥用**。记录表是关键缓解手段。
+- **FM-2 index sig 弱化类型**· 实测影响 `p.unknown_field` 返回 `unknown` 而非报错——可接受（IDE 不提示 + runtime undefined 会炸）。
+- **FM-3 narrow 增加认知负担** · type-guards helper 让 10 处 narrow 变成同一模式调用，反而**提升了可读性**。
+- **FM-4 基线回归信号失灵** · 本轮通过 AC-E11 从**根本**解决，**未来不会再悄悄攒 TSC 债**。
+- **FM-5 补偿规则不可机器检查** · 仍存在，但记录表至少提供人工审计轨迹。未来 F 阶段做 framework 物理分层后可机器强制。
+- **FM-6 用户信任代价** · 用户主动选择 B-plus，本轮严格遵守 3 允许边界，承诺**保持连续性**——信任面受损可控。
 
-1. **T-12 "迁移老测试" 任务量 = 0**
-   - 与 D 阶段一样，editor 在独立目录 + 独立路由，上轮 465 测试完全无感知
-2. **实际耗时 ~1.5h vs 预估 3.5h**
-   - framework + D 阶段的契约清洗过的太好：editor 直接用 AssemblyBundle 导出即可，没有任何适配层
-3. **chemistry domain 扩展速度**
-   - 原预估 10 分钟（T-21），实际 8 分钟完成 5 drawer + palette + portLayout。验证了 AC-B7 插件点设计
+### Why B-plus 是正确选择
 
-## 遗留债务（全部非阻塞，留给 C 阶段）
+- **A-strict** 只能消 1 error，52 个 @ts-ignore 是假绿
+- **B-naked** 修完但不加 AC-E11 防护，等于邀请 FM-4 重演
+- **B-plus** 修完 + 加防护 + 架构层留痕 = 真正的**根治**
 
-| # | 债务 | 优先级 | 建议处理 |
-|---|------|--------|---------|
-| D-1 | drawer 双端同步无自动化检测（R-B） | 中 | C 阶段可加 snapshot 测试或生成式 DDL |
-| D-2 | 大量元件下 canvas 重绘无虚拟化 | 中 | C 阶段用 dirty region 或离屏 canvas 缓存 |
-| D-3 | 属性面板 select 选项硬编码 | 低 | 从 framework 元件类读取 enum |
-| D-4 | 撤销/重做未实现 | 中 | C 阶段加 history stack（因 reducer 已纯函数，成本 = 1 文件） |
-| D-5 | 未做自动布局 | 中 | C 阶段加 force-directed / grid snap |
-| D-6 | 无触屏事件 | 低 | 加 touch event handler 做 C 阶段 |
-| D-7 | 无 minimap | 低 | C 阶段美化时加 |
-| D-8 | 无协作 | 高（但超出范围） | C 阶段或独立后端项目 |
+### 最大教训
 
-## Review 结论
+> **跨模块类型契约只能在定义处修改，不能在消费处修补。**
+>
+> 这是 E 阶段对"坚持不改 framework"话题的终极澄清。硬约束的**精神**是防**语义变化**，不是防**所有修改**。本轮证明了"扩展 + 别名 + bug 修复"三类并**不违背精神**。
 
-✅ **通过**
-- 需求 100% 达成
-- 架构决策 0 偏差
-- 6/6 Failure Model 覆盖
-- 14 AC 全验证（AC-B10 浏览器 Runbook 待用户确认）
-- 零新依赖
-- 零回归
-- 遗留债务均为 C 阶段预留空间，不阻塞交付
+### 最大红利
+
+> **Wave 递进 + 实时 tsc 验证**把"改 50+ errors"的恐惧变成了**可视化信号游戏**。每 Wave 后看 tsc 数字掉，心理压力极低。未来大型重构都应用此模式。

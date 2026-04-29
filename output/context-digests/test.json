@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "stage": "TEST",
+  "source": {
+    "path": "output/test-report.md",
+    "sourceHash": "d35ce9ce87f700dc9777588cde8cb0fbd46b837977aa347a0108648d32446a23",
+    "artifactSize": 5874,
+    "updatedAt": "2026-04-29T11:26:09.201Z"
+  },
+  "scope": {
+    "session": "wf-20260429054300.",
+    "requirementFingerprint": "plus tsc 技术债清理 阶段"
+  },
+  "content": {
+    "summary": "# E 阶段 · 测试报告\r\n\r\n> Session: `wf-20260429054300.`\r\n> Stage: TEST (5/7)\r\n> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过\r\n\r\n## 执行命令\r\n\r\n```bash\r\nnpx tsc --noEmit      # TSC 强类型检查\r\nnpx jest              # 单元 + 集成测试\r\ngit diff --shortstat  # 四路硬约束审计\r\n```\r\n\r\n（未来统一入口 `bash ./scripts/check.sh` · 详见 AC-E11）\r\n\r\n## 测试计划（AC 映射）\r\n\r\n| # | Test Case | 类型 | 预期 | 实测 | 状态 |\r\n|---|-----------|------|------|------|------|\r\n| 1 | TSC 零错 | 类型检查 | 0 errors | 0 errors | ✅ AC-E1 |\r\n| 2 | Jest 基线保持 | 回归 | ≥555 passed",
+    "outline": [
+      "测试报告 · D 阶段 · UX 细节优化包",
+      "总体摘要",
+      "AC 验证矩阵（13 / 13）",
+      "P0 核心（hit-test + 零回归）",
+      "Snap",
+      "Hover",
+      "其他",
+      "新测试清单（20 条）",
+      "硬约束审计",
+      "风险缓解证据",
+      "浏览器 Runbook（4 步 · 人工验证）",
+      "TSC 基线说明",
+      "E 阶段 · 测试报告",
+      "执行命令",
+      "测试计划（AC 映射）",
+      "TSC 基线下降曲线",
+      "Jest 结果",
+      "新增测试（8 条）",
+      "修改测试（1 条）",
+      "四路硬约束审计",
+      "framework 变更清单（7 文件 · 全部在松动条款范围）",
+      "风险验证",
+      "意外发现（DEVELOP 记录）",
+      "人工验证 Runbook（本轮跳过，纯类型清理无 UI 变化）"
+    ],
+    "keyPoints": [],
+    "rootCause": [],
+    "decisions": [],
+    "risks": [
+      "| R | 风险 | 缓解 | 证据 |",
+      "| R-A | hintSize 漏填 | componentBounds fallback 50×40 | B-3/B-3b |",
+      "| R-B | snapGrid 异常值 | isFinite + >0 守卫 | B-6/B-7 |",
+      "| R-C | hover 风暴 | ignoreActions + 仅切换 dispatch | H-18/H-19 + EditorCanvas 条件 |",
+      "| R-D | setComponentAnchor 误 snap | reducer 仅 moveComponent case | R-21/R-22 |",
+      "| R-E | drawer 签名 breaking | hovered? 可选参数 | 12 drawer 同步更新零 TSC 新错 |",
+      "---",
+      "| # | 风险 | 预期 | 实测 |",
+      "| R-A | W3 Props 没降 35+ | **降 ≥ 20 即 PASS** | 降 24（46→22）✅ |",
+      "| R-B | W4 narrow 改变运行时 | chemistry jest 全绿 | chemistry suite 全绿（AC-E10 兑现）✅ |",
+      "| R-C | reaction-utils 需改逻辑 | 保守用 as 断言 | 一行加 `c is B` predicate 标记，零逻辑变更 ✅ |",
+      "| R-D | check.sh Windows 问题 | 模仿 scripts/dev.sh | 脚本头 `#!/usr/bin/env bash` · 与 dev/build 一致 ✅ |",
+      "| R-E | 测试侧残留 | 类型断言 workaround | 仅 1 处（AC-D1 精神更新）· 有明确注释说明 ✅ |"
+    ],
+    "downstreamConsumers": [],
+    "tasks": [],
+    "acceptanceCriteria": [],
+    "testEvidence": [
+      "> Session: `wf-20260429054300.`",
+      "> Stage: TEST (5/7)",
+      "> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过"
+    ],
+    "affectedFiles": [
+      "circuit.ts/chemistry.ts",
+      "docs/editor-framework.md",
+      "chemistry/reaction.ts",
+      "framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "engines/__tests__/engines.test.ts",
+      "framework/__tests__/layout-spec.test.ts",
+      "framework/domains/chemistry/components.ts",
+      "framework/domains/chemistry/solver.ts",
+      "framework/assembly/layout.ts",
+      "framework/domains/circuit/index.ts",
+      "framework/domains/chemistry/type-guards.ts",
+      "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "framework/domains/chemistry/reaction-utils.ts"
+    ],
+    "filesChanged": [],
+    "stageOutputReport": {
+      "kind": "markdown",
+      "artifact": "test-report.md",
+      "outline": [
+        "E 阶段 · 测试报告",
+        "执行命令",
+        "测试计划（AC 映射）",
+        "TSC 基线下降曲线",
+        "Jest 结果",
+        "新增测试（8 条）",
+        "修改测试（1 条）",
+        "四路硬约束审计"
+      ],
+      "keyPoints": []
+    }
+  },
+  "coverage": {
+    "hasSummary": true,
+    "hasOutline": true,
+    "hasKeyPoints": false,
+    "hasRootCause": false,
+    "hasDecisions": false,
+    "hasRisks": true,
+    "hasDownstreamConsumers": false,
+    "hasTasks": false,
+    "hasAcceptanceCriteria": false,
+    "hasAffectedFiles": true,
+    "hasFilesChanged": false,
+    "hasTestEvidence": true
+  },
+  "evidenceRefs": [
+    {
+      "file": "framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "engines/__tests__/engines.test.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/__tests__/layout-spec.test.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/domains/chemistry/components.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/domains/chemistry/solver.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/assembly/layout.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/domains/circuit/index.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/domains/chemistry/type-guards.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "artifact": "output/test-report.md"
+    },
+    {
+      "file": "framework/domains/chemistry/reaction-utils.ts",
+      "artifact": "output/test-report.md"
+    }
+  ],
+  "relevance": {
+    "keywords": [
+      "framework",
+      "chemistry",
+      "jest",
+      "domains",
+      "test",
+      "tsc",
+      "diff",
+      "passed",
+      "type",
+      "bash",
+      "scripts",
+      "测试",
+      "predicate",
+      "全绿",
+      "gate",
+      "chemistrypercomponent",
+      "acid",
+      "narrow",
+      "文件",
+      "扩展",
+      "index",
+      "git",
+      "check",
+      "预期",
+      "实测",
+      "errors",
+      "bug",
+      "修复",
+      "editor",
+      "reactions",
+      "base",
+      "guards",
+      "reaction",
+      "utils",
+      "total",
+      "__tests__",
+      "layout",
+      "assemblyspec",
+      "dev",
+      "阶段"
+    ],
+    "files": [
+      "framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "engines/__tests__/engines.test.ts",
+      "framework/__tests__/layout-spec.test.ts",
+      "framework/domains/chemistry/components.ts",
+      "framework/domains/chemistry/solver.ts",
+      "framework/assembly/layout.ts",
+      "framework/domains/circuit/index.ts",
+      "framework/domains/chemistry/type-guards.ts",
+      "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "framework/domains/chemistry/reaction-utils.ts"
+    ],
+    "modules": [
+      "framework",
+      "engines",
+      "framework",
+      "framework",
+      "framework",
+      "framework",
+      "framework",
+      "framework",
+      "framework",
+      "framework"
+    ]
+  },
+  "generatedAt": "2026-04-29T11:26:17.258Z"
+}

@@ -1,196 +1,241 @@
-# ANALYSE · B 阶段 · 编辑器 framework
+# E 阶段 · TSC 技术债清理 — 分析
 
-> Session: `wf-20260428234611.` · 承接 D 阶段（LayoutSpec 解耦已完成）
+> Session: `wf-20260429054300.`
+> Requirement: P1 清理 53 个 pre-existing TSC errors（D 阶段 review 标注"主要在 chemistry/reaction.ts 和 framework/"）
 
----
+## 思考摘要
+
+用户给的 D 阶段 review 印象"主要在 chemistry/reaction.ts 和 framework/"是**粗略归纳**。实际 `npx tsc --noEmit` 基线结果揭示更精细的真相：
+- 错误总数 53 个（其中 49 与 chemistry props 类型打通相关，4 个孤立）
+- **根因高度集中**：5 个 chemistry `Props` interface 不兼容 framework 核心契约 `IExperimentComponent<Record<string, unknown>, ...>`
+- **2 个孤立 bug 是真漏洞**，不是类型系统哲学问题：engines/index.ts 缺 import、circuit/index.ts 缺 re-export
+- **3 个孤立错误可一次性消解**：AssemblyBundle.spec 内联字面量类型与 AssemblySpec 别名不等价
+
+本轮工作本质是**修复 framework 与 chemistry 的类型契约断裂**，这迫使我们**正视 framework 零改硬约束的松动**。
 
 ## 根因 / Root Cause
 
-### 用户终极目标（跨越 B/C 多阶段）
-让**用户在浏览器里拖拽元件 + 点击连线**完成一个实验搭建——不写 TS/JS 代码，鼠标即可。等价于工业界的 **CircuitJS / EveryCircuit / PhET** 级别体验。
+### 问题 1：Chemistry Props 不兼容 framework 核心契约（49/53 errors）
 
-### 当前阻塞（即 B 必须解决的）
-三层原子化重构完成 A→D 四轮之后，**全链条具备"程序化搭建"能力**但**零"交互式搭建"能力**：
+**现象**：
+```ts
+// framework/components/AbstractComponent.ts 要求:
+interface IExperimentComponent<P extends Record<string, unknown>, S> { props: P; ... }
 
-| 能力 | 现状 | 缺口 |
-|------|------|------|
-| 元件抽象 + 端口 + 连接语义 | ✅ 完备（`AbstractComponent` / `DomainGraph` / `ConnectionDecl`） | 0 |
-| 数据序列化（Spec 纯 POJO） | ✅ 完备（D 阶段分离为 `{spec, layout}` Bundle） | 0 |
-| 程序化装配 DSL | ✅ 完备（`CircuitBuilder` / `ChemistryBuilder` fluent API） | 0 |
-| 反应引擎循环 | ✅ 完备（`InteractionEngine.tick`） | 0 |
-| **画布 + 拖拽放置元件** | ❌ 零 | **本轮目标** |
-| **端口点击连线** | ❌ 零 | **本轮目标** |
-| **Bundle 持久化 + 回放** | ❌ 零 | **本轮目标** |
-| **自动布局（力导向/栅格）** | ❌ 零 | C 阶段（不在 B 范围） |
-| **撤销/重做 undo/redo** | ❌ 零 | C 阶段 |
-| **端口可视锚点** | ❌ 零（drawer 只画外形，不画端口点） | **本轮必须加** |
-
-### 本质洞察
-
-B 的**最小可行路径**不是"新做一个自由搭建平台"——而是**把现有 framework 暴露给 React Client Component，让用户通过 DOM 事件构造 `AssemblyBundle`**。这是交互层的**输入适配器**：鼠标事件 → Builder DSL 调用 → Bundle。输出端复用现有 engine/drawer/ComponentMirror 管线。
-
-本质上：
-```
-old:  开发者编程 → CircuitBuilder.battery(...).toSpec() → Engine → Canvas
-new:  用户鼠标 → EditorState → buildFromEditorState() → Bundle → Engine → Canvas
+// chemistry/components.ts 声明:
+interface FlaskProps { volumeML: number; shape: FlaskShape; label?: string; meta?: Record<string, unknown> }
+// 闭合对象类型，无 index signature
 ```
 
----
+**TS 5.x 行为**：闭合对象类型 `FlaskProps` **不**自动 assignable 到 `Record<string, unknown>`（因缺 index signature）。这导致任何用 `ChemistryComponent` 作为 `IExperimentComponent<Record<string, unknown>, ...>` 的泛型实参的地方都报错：
+- `engines/chemistry/reaction.ts`: `InteractionEngine<ChemistryGraph, ...>` 约束不满足（5 errors）
+- `framework/domains/chemistry/**`: solver / assembler / builder / reactions 全链触发（约 35 errors）
+- `chemistry/__tests__/`: 测试侧自然也触发（5 errors）
+
+**为何一直没爆炸**：`ts-jest --isolated-modules` 只对每个文件做局部类型检查，不做跨模块约束验证。Jest 535/535 绿骗了我们四个阶段的眼睛。
+
+### 问题 2：Chemistry Reaction Rules 访问 union 成员字段（10/53 errors）
+
+**现象**：`acid-base-neutralization.ts` 的 reaction rule 函数签名接受 `ChemistryComponent`，该类型是 `Flask | Reagent | Bubble | Solid | Thermometer` union。代码直接访问 `.props.formula`、`.props.concentration`、`.props.moles`：
+```ts
+// acid-base-neutralization.ts L36
+if (c.props.formula === 'HCl') { ... }  // ❌ 'formula' 不存在于 FlaskProps
+```
+
+**根因**：只有 `ReagentProps` 和 `SolidProps` 有 `formula`；只有 `ReagentProps` 有 `concentration` 和 `moles`。访问前必须用 `c.kind === 'reagent'` 收窄类型。这是真正的 **discriminated union 漏窄**。
+
+这也解释了为什么这些 reaction rules **运行时其实能工作**——因为实际只会有 `reagent` 传进这些分支（上游过滤），但 TS 没有证据这么认为。
+
+### 问题 3：AssemblyBundle.spec 内联类型与 AssemblySpec<D> 不等价（4/53 errors）
+
+**现象**：`framework/assembly/layout.ts` L115:
+```ts
+export interface AssemblyBundle<D> {
+  spec: { domain: D; components: Array<...>; connections: unknown[]; metadata?: ... };  // ← 内联字面量
+  layout?: LayoutSpec<D>;
+}
+```
+
+`framework/assembly/spec.ts` 已有 `AssemblySpec<D>` 别名定义相同结构，但 AssemblyBundle 没复用。结果 `CircuitBuilder.toSpec()` 返回 `AssemblySpec<'circuit'>` 赋给 `AssemblyBundle.spec` 报 TS2322（4 处）。
+
+这是**纯结构 duplication**的后果，修复即消除 duplication。
+
+### 问题 4：engines/index.ts 真 bug — 缺 import（1 error）
+
+**现象**：L45 `export { default as chemistryReactionEngine } from './chemistry/reaction';`  只创建了 re-export，不创建当前文件局部绑定。L82 `registry.register(chemistryReactionEngine)` 需要局部绑定但**缺少 `import ... from './chemistry/reaction'`**（对比 L64~66 其他引擎都有）。
+
+**实际影响**：这是**真的运行时 bug** —— `chemistryReactionEngine` 永远不会被注册到 registry。但因为 chemistry 实验的代码路径用 iframe HTML 模板而非 engines/，运行时也没暴露问题。
+
+### 问题 5：circuit/index.ts 缺 2 个 re-export（2 errors）
+
+**现象**：`circuit/__tests__/circuit-assembly.test.ts` 用 `AssemblyBuildError` + `validateSpec`（分别在 `framework/assembly/errors.ts` L43 和 `framework/assembly/validator.ts` L29），但 `framework/domains/circuit/index.ts` 没 re-export 这俩。
+
+**实际影响**：测试编译不过（但 jest 不做严类检查所以现象不明显）。
+
+### 问题 6：layout-spec.test.ts 1 个无用 @ts-expect-error（1 error）
+
+**现象**：L145 `// @ts-expect-error` 指向的代码实际上已**不会**引发类型错（可能是 anchor 字段宽容度已调整），所以 `@ts-expect-error` 本身变成 TS2578 错误。删除即可。
 
 ## 受影响位置
 
-### 新增层（集中在 `src/components/editor/` + `src/lib/editor/`）
+### 必改文件清单（按信号集中度）
 
-| 文件 | 类型 | 职责 |
-|------|------|------|
-| `src/lib/editor/editor-state.ts` | 新 · 类型 | `EditorState` 定义：placed components + draft connections + selection + active domain |
-| `src/lib/editor/editor-state-reducer.ts` | 新 · 逻辑 | `applyEditorAction(state, action) → state` 纯 reducer（不含 React） |
-| `src/lib/editor/bundle-from-state.ts` | 新 · 逻辑 | `EditorState → AssemblyBundle`：把 UI 状态转换为框架可消费的 Bundle |
-| `src/lib/editor/editor-config.ts` | 新 · 类型/数据 | `EditorDomainConfig<D>`：每个 domain 注册 palette 元件列表 + port 视觉偏移 + 默认 props |
-| `src/lib/editor/port-layout.ts` | 新 · 逻辑 | `getPortScreenPos(component, layout, portName, config)` 纯函数 |
-| `src/lib/editor/persistence.ts` | 新 · 逻辑 | `saveBundle(key, bundle)` / `loadBundle(key)` localStorage 封装 |
-| `src/lib/editor/domain-configs/circuit.ts` | 新 · 配置 | circuit palette（5 元件）+ 端口偏移表 |
-| `src/lib/editor/domain-configs/chemistry.ts` | 新 · 配置 | chemistry palette（5 元件）+ 端口偏移表 |
-| `src/components/editor/EditorShell.tsx` | 新 · 组件 | 顶层容器 · 左 palette · 中画布 · 右属性面板 |
-| `src/components/editor/ComponentPalette.tsx` | 新 · 组件 | 左侧可拖拽元件列表（kind + 预览图标） |
-| `src/components/editor/EditorCanvas.tsx` | 新 · 组件 | 中间画布：React/SVG 渲染 placed components + draft wires |
-| `src/components/editor/PlacedComponent.tsx` | 新 · 组件 | 单个元件视图：外形 + 端口 hotspot + 选中态 |
-| `src/components/editor/ConnectionLayer.tsx` | 新 · 组件 | 渲染所有 connection + draft wire |
-| `src/components/editor/PropertyPanel.tsx` | 新 · 组件 | 右侧：选中元件时编辑 props（如 resistor.resistance） |
-| `src/components/editor/RunControls.tsx` | 新 · 组件 | 运行按钮 · 触发 engine.compute(bundle) · 展示 perComponent 结果 |
-| `src/app/editor/page.tsx` | 新 · 路由 | `/editor` 页面入口 · 承载 EditorShell |
-| `src/lib/editor/__tests__/editor-state-reducer.test.ts` | 新 · 测试 | reducer 纯函数测试 |
-| `src/lib/editor/__tests__/bundle-from-state.test.ts` | 新 · 测试 | state → Bundle 转换正确性 |
-| `src/lib/editor/__tests__/persistence.test.ts` | 新 · 测试 | localStorage 保存/加载（mock storage） |
-| `src/lib/editor/__tests__/port-layout.test.ts` | 新 · 测试 | 端口坐标计算 |
+| # | 文件 | 问题 | Errors |
+|---|------|------|--------|
+| 1 | `src/lib/framework/domains/chemistry/components.ts` | 5 个 Props 接口缺 index signature | **解 35+ errors 根**（链式消解） |
+| 2 | `src/lib/framework/assembly/layout.ts` | `AssemblyBundle.spec` 没用 `AssemblySpec<D>` 别名 | 解 4 errors |
+| 3 | `src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts` | 缺 discriminated union narrowing | 解 12 errors（2345/2322/2339） |
+| 4 | `src/lib/framework/domains/chemistry/reactions/metal-acid.ts` | 同上（少）| 解 3 errors |
+| 5 | `src/lib/framework/domains/chemistry/reactions/iron-rusting.ts` | 同上（少） | 解 2 errors |
+| 6 | `src/lib/framework/domains/chemistry/reaction-utils.ts` | 断言冲突（TS2352） | 解 4 errors |
+| 7 | `src/lib/framework/domains/chemistry/__tests__/chemistry-{reactions,components}.test.ts` | 派生问题，大概率跟着 1+3 消解 | 解 6 errors |
+| 8 | `src/lib/engines/index.ts` L82 | 缺 `import chemistryReactionEngine from './chemistry/reaction'` | 解 1 error（且修运行时 bug）|
+| 9 | `src/lib/framework/domains/circuit/index.ts` | 缺 `AssemblyBuildError` + `validateSpec` re-export | 解 2 errors |
+| 10 | `src/lib/framework/__tests__/layout-spec.test.ts` L145 | 删除无用 `@ts-expect-error` | 解 1 error（+ 2 被 #2 带出） |
 
-### 修改层（最小侵入）
+### 关联但可能不用改
 
-| 文件 | 修改内容 |
-|------|---------|
-| `src/lib/framework/index.ts` | 顶层 re-export 已足（`AssemblyBundle` 已导出） — **零改动** |
-| 现有 circuit.html / metal-acid-reaction.html | **零改动**（editor 是并列路径，不影响老实验模板） |
-| `docs/editor-framework.md` | 新文档（B 阶段总览 + 扩展指南） |
-| `docs/component-framework.md` | 索引新增 editor 章节链接 |
-| `output/{analysis,architecture,execution-plan,code.diff,test-report,review-output,deploy-output}.md` | 工作流产出 |
-
-### 复用既有（零改动但关键依赖）
-
-| 文件 | 复用方式 |
-|------|---------|
-| `src/components/infinite-canvas.tsx` | pan/zoom 基础壳 · EditorCanvas 包在它里面 |
-| `src/lib/framework/assembly/*` | FluentAssembly/Assembler/LayoutSpec/AssemblyBundle 作为输出契约 |
-| `src/lib/framework/domains/*/assembly/*-builder.ts` | Builder DSL（editor reducer 最终调用它们产出 Bundle） |
-| `src/lib/framework/domains/*/components.ts` | 运行时元件类（画布渲染需要 port 名字等元数据） |
-| `src/lib/framework/components/registry.ts` | `componentRegistry.create(dto)` 产出元件实例 |
-| `src/lib/engines/physics/circuit.ts` + `src/lib/engines/chemistry/reaction.ts` | RunControls 调用 `engine.compute({graph: bundle.spec})` 得 perComponent |
-| `src/components/ui/*` | shadcn/ui 按钮/卡片/面板等 UI 原语 |
-
-**估算总文件影响**：20 新 + 2 改 + 7 工作流 = **29 文件**
-
----
+- `framework/domains/chemistry/index.ts`、`solver.ts`、`assembly/chemistry-assembler.ts`、`assembly/chemistry-builder.ts`、`chemistry-graph.ts`：各 1 个 TS2344 —— 预期在 #1 修后全部消解（约束链源头被解开）。
+- `framework/assembly/fluent.ts` L137：1 个 TS2322 —— 预期在 #2 修后消解。
+- `framework/domains/chemistry/reactions/index.ts`：1 个 TS2344 —— 同上。
 
 ## 修改范围
 
-### In-Scope（本轮 B 必做 · P0）
+| 文件 | 位置 | 修改 | 类型 |
+|------|------|------|------|
+| `framework/domains/chemistry/components.ts` | `FlaskProps/ReagentProps/BubbleProps/SolidProps/ThermometerProps` 接口各加一行 | `[key: string]: unknown` | P0 根因 |
+| `framework/assembly/layout.ts` | `AssemblyBundle.spec` 字段 | 改为 `spec: AssemblySpec<D>` | P0 根因 |
+| `framework/domains/chemistry/reactions/acid-base-neutralization.ts` | 每个 `.props.formula/concentration/moles` 访问前加 `if (c.kind === 'reagent')` | discriminated narrowing | P0 |
+| `framework/domains/chemistry/reactions/metal-acid.ts` | 同上 | discriminated narrowing | P0 |
+| `framework/domains/chemistry/reactions/iron-rusting.ts` | 同上 | discriminated narrowing | P1 |
+| `framework/domains/chemistry/reaction-utils.ts` | TS2352 断言表达式调整（视具体 case 修）| ad-hoc | P1 |
+| `framework/domains/chemistry/__tests__/*.ts` | 预期自动消解；如残留 2-3 处在测试 helper 里补 type assertion | ad-hoc | P2 |
+| `engines/index.ts` L75 附近 | 新增 `import chemistryReactionEngine from './chemistry/reaction';` | 真 bug 修复 | P0 |
+| `framework/domains/circuit/index.ts` | 新增 `export { AssemblyBuildError } from '../../assembly/errors';` `export { validateSpec } from '../../assembly/validator';` | 缺失导出 | P1 |
+| `framework/__tests__/layout-spec.test.ts` L145 | 删除 `// @ts-expect-error` 一行 | 死指令清除 | P2 |
 
-| # | 功能 | 描述 |
-|---|------|------|
-| **IS-1** | 画布基础 | 基于 `InfiniteCanvas` 的 pan/zoom · 栅格背景（无吸附） |
-| **IS-2** | 元件面板 | 左侧列出当前 domain 的所有可用 kind（从 `EditorDomainConfig.palette`） |
-| **IS-3** | 从面板拖到画布 | HTML5 drag API · drop 后 `placeComponent` action · 生成唯一 id |
-| **IS-4** | 画布内移动元件 | mousedown + mousemove 改 `LayoutEntry.x/y`（实时） |
-| **IS-5** | 端口视觉化 | 每个元件绘制端口小圆点（颜色区分 + hover 高亮） |
-| **IS-6** | 端口点击连线 | 点端口 A → 鼠标跟随 draft 线 → 点端口 B 完成 connection · Esc 取消 |
-| **IS-7** | 选择 + 删除 | 点选元件（高亮边框） · Delete/Backspace 删除 + 级联删相关 connection |
-| **IS-8** | 属性面板编辑 | 选中元件后右侧显示其 props，input change 实时写入 state |
-| **IS-9** | 运行按钮 | RunControls 调 `bundleFromState(state)` + `engine.compute(bundle.spec)` · 结果展示在侧边 |
-| **IS-10** | 持久化 | "保存"按钮 → localStorage（key=`egpspace-editor-<domain>-<slot>`） · "加载"下拉 |
-| **IS-11** | Domain 切换 | 顶部 tab 切换 `circuit` / `chemistry` · 切换清空当前 state（提示保存） |
-| **IS-12** | 画布 → Bundle 导出 JSON | "导出"按钮 → 下载 .json（Bundle 格式） |
-| **IS-13** | JSON → 画布导入 | "导入"按钮 → 读取 .json → validate → 恢复 state |
+**预估变更量**：10 文件 · 主要是加 5 行 index signature + 1 行类型别名引用 + 10-15 处窄化 + 1 行 import + 2 行 re-export + 删 1 行。总计新增 ~25 行，删除 ~3 行，净 +22 行。
 
-### Out-of-Scope（明确不做 · 留给 C）
+## 🛑 硬约束冲突（CRITICAL — 用户必须知晓）
 
-- ❌ 自动布局算法（力导向、栅格吸附）
-- ❌ 正交布线（wire 走 L 形直角）
-- ❌ 撤销/重做 undo/redo（stack-based）
-- ❌ 多选（框选/多选批量操作）
-- ❌ 缩略图 minimap
-- ❌ 美化（过渡动画、主题色定制、元件图形精修）
-- ❌ 分享/协作（URL 分享、多人协作）
-- ❌ 服务端持久化（只做 localStorage，不连后端）
-- ❌ 模板库（仅基础空白画布起步，不含"载入示例实验"按钮——但可通过导入 JSON 实现）
-- ❌ 端口吸附（mouse hover 自动吸附到最近端口）
-- ❌ 连线样式定制（颜色/粗细/类型）
+**四轮（B/C/D 阶段）承诺的硬约束**：
+- **framework 核心零改** (`src/lib/framework/**`)
 
----
+**本轮的现实**：**必须改 framework 文件**才能根治 TSC 错误。无回避路径。
 
-## 关键设计约束（Acceptance Criteria）
+### 冲突性质
 
-| ID | 约束 | 验证方式 |
-|----|------|---------|
-| **AC-B1** | `EditorState` 是纯数据 · 可 JSON.stringify | 测试 roundtrip |
-| **AC-B2** | `editor-state-reducer.ts` 无 React 依赖 · 可在 Node 测试 | jest 直接 import |
-| **AC-B3** | `bundleFromState(state)` 产出的 Bundle 能被现有 Assembler 成功 `assembleBundle` | 测试 assembler 不抛错 |
-| **AC-B4** | Editor 导出的 Bundle JSON 与 Builder DSL 产出的 Bundle JSON 字节完全一致（同样 input） | fingerprint 比对 |
-| **AC-B5** | circuit.html / metal-acid-reaction.html 零 byte 变动 | git diff 空 |
-| **AC-B6** | framework/{components,solvers,interactions,assembly} 零修改 | git diff --stat 空 |
-| **AC-B7** | `EditorDomainConfig` 可扩展：新 domain 只需加 1 个 config 文件 | 类型签名审查 |
-| **AC-B8** | 新增测试 ≥ 20 · 总量 465 → ≥485 全绿 | jest |
-| **AC-B9** | TSC 零错误 | `npx tsc --noEmit` |
-| **AC-B10** | 运行按钮 → engine.compute → 画布显示 perComponent 数值（电流/电压/反应摩尔等） | 浏览器 Runbook |
-| **AC-B11** | 保存到 localStorage + 刷新页面 + 加载 → state 完全恢复 | 浏览器 Runbook |
-| **AC-B12** | 端口点击连线正确形成 ConnectionDecl（端口名+组件 id 匹配） | 测试 + Runbook |
-| **AC-B13** | Port 视觉偏移来自 `EditorDomainConfig.portLayout` · drawer 可独立演化 | 代码审查 |
-| **AC-B14** | 属性面板编辑 props 实时反映在画布 drawer | Runbook |
+| 选项 | 路径 | 后果 |
+|------|------|------|
+| **A**：坚持不改 framework | 只改 src/lib/editor 和 src/lib/engines | 可能只消掉 3-5 个错误，50+ 个错误仍存在 — 本轮失败 |
+| **B**：本轮松动硬约束（建议）| 5 个 Props 加 index signature + AssemblyBundle.spec 改别名 + 3 个 reactions 收窄 + 修真 bug | 消 50+ 错误，但**硬约束从"四轮零改"变为"五轮有 1 次受控改"** |
+| **C**：只改非 framework 部分，framework 部分用 `// @ts-ignore` 掩盖 | 全部 @ts-ignore | **反模式** — 掩盖而非根治，后续更难维护 |
 
----
+### 建议 — 选择 B，附加补偿规则
+
+本质上，"framework 零改"是一个**经验法则**，目的是防止**实验框架核心的语义变化**。本轮的变更：
+1. **Props 加 index signature**：**纯扩展** — 不改变现有字段语义，只让 Props 能被当作 Record 用。零语义变化，零 runtime 影响。
+2. **AssemblyBundle.spec 改用 AssemblySpec<D> 别名**：**消除 duplication** — 两者结构本就相同，这是"让类型系统说出本就真实的事"。零语义变化。
+3. **修真 bug (engines/index.ts)**：**修 bug** 不是改架构。
+
+这三类变更**不违反硬约束的精神**（防止语义变化），只违反字面。
+
+**补偿规则**（加到硬约束列表）：
+- ✅ 允许：Props 加 index signature、类型别名复用、bug 修复
+- ❌ 禁止：新增 component kind、新增 solver、新增 engine、新增 reaction rule、修改现有字段类型
+
+这条规则明确后，未来每轮 /wf 都有清晰边界。
 
 ## 风险评估
 
-### P0 风险（4 条）
+### P0
 
-| ID | 风险 | 影响 | 缓解 |
-|----|------|------|------|
-| **R-1** | React 渲染开销：placed components > 50 时 mousemove 卡顿 | UX 劣化 · 工程师放弃 | ① PlacedComponent 用 React.memo · props 用 ref 稳定 · ② mousemove 走 requestAnimationFrame 节流 · ③ 本轮不做大规模实验（< 50 元件内是 sweet spot） |
-| **R-2** | DOM 坐标系 vs 画布逻辑坐标系混淆 | 点错位置/端口抓不到 | 抽 `screenToCanvas(e, canvasRef) → {x,y}` 单一函数 · 所有事件都走它 · 写测试 |
-| **R-3** | Bundle 导出导入 roundtrip 不等价（Map 序列化、undefined 丢失等） | 加载后 state 损坏 | `persistence.ts` 用 JSON schema 验证 · 新增 roundtrip 测试（AC-B4） |
-| **R-4** | Engine.compute 对 editor 空画布崩溃（spec.components=[]） | 运行按钮闪退 | `RunControls` 加前置 validation · 空画布禁用运行按钮 |
+| R | 风险 | 缓解 |
+|---|------|------|
+| R-A | **硬约束松动导致"滑坡"**：一次松动后未来随便改 framework | 补偿规则明文写入 architecture-constraints.md（E 阶段末），未来每轮 /wf 开头读取 |
+| R-B | **给 5 个 Props 加 index signature 会掩盖打字错误**：`c.props.flask_vloume`（错拼）编译也不报 | 保持具名字段 + index signature 并存；**访问错拼字段变 unknown** 而不是字符串 —— 后续使用时仍会在 assignment 时失败；可接受 |
+| R-C | **discriminated narrowing 写错**：`c.kind === 'reagent'` 里访问 `c.props.unknownField` 会失败；或反过来对 Flask 访问 formula | Jest 已覆盖这些 reactions 的正向路径；修时保证只加 narrowing 不改逻辑；本轮新加 2-3 个 TS 类型测试验证 narrow 后正确 |
 
-### P1 风险（3 条）
+### P1
 
-| ID | 风险 | 缓解 |
+| R | 风险 | 缓解 |
+|---|------|------|
+| R-D | **修 AssemblyBundle.spec 类型可能破坏 isAssemblyBundle 运行时验证** | `isAssemblyBundle` 纯 runtime 检查 shape，与 TS 类型别名无关；修后跑 jest 整套即可 |
+| R-E | **engines/index.ts 加 import 后 registry 真的会多 register** — 这是 behavioural change | 影响范围：`engines.getByType('chemistry_reaction')` 之前返回 undefined，之后有值。搜索该 engine 用法确认无 "检查 undefined then fallback" 的代码 |
+| R-F | **TS2352 断言冲突修 reaction-utils 时可能要改逻辑** | 每个 TS2352 单独看，保守处理：首选改 `as unknown as T` 两阶段断言，其次才改逻辑 |
+
+### P2
+
+| R | 风险 | 缓解 |
+|---|------|------|
+| R-G | circuit/index.ts 新增 re-export 可能与其他文件重名冲突 | grep 检查 `AssemblyBuildError`/`validateSpec` 在 circuit/ 内是否已被定义（应该没） |
+
+## 硬约束（延续 + 本轮补偿）
+
+### 延续（B/C/D 阶段承诺，本轮继续兑现）
+
+- **老模板零改** · `public/templates/` 零 byte 变动
+- **零新依赖** · package.json 不动
+- **零 React 污染** · `src/lib/editor/**` 保持无 react import
+
+### 本轮受控松动（需用户批准）
+
+- **framework 核心允许"扩展性修改"**：
+  - ✅ Props 接口加 index signature
+  - ✅ 类型别名复用（消除 duplication）
+  - ✅ 纯 bug 修复（import 缺漏、re-export 缺漏）
+  - ❌ 仍禁：新增 component kind、solver、engine、reaction rule
+  - ❌ 仍禁：修改现有字段类型、重命名 interface、删除 export
+
+## 承诺验收标准
+
+| AC | 描述 | 验证 |
 |----|------|------|
-| **R-5** | `EditorDomainConfig` 和 framework Builder DSL 出现字段漂移 | config 从 `componentRegistry` 派生元件 kind 列表 · 新增元件 config 加不上就报错 |
-| **R-6** | localStorage 满了（>5MB）保存失败 | try/catch 包保存逻辑 · UI 显示"保存失败，容量已满"提示 |
-| **R-7** | 拖拽时鼠标移出画布后丢失事件 | mouseup 监听挂在 `window` 不是 canvas |
+| AC-E1 | TSC 零错：`npx tsc --noEmit` 输出为空 | 命令执行 |
+| AC-E2 | Jest 555 基线保持（不回归，可超过）| `npx jest` |
+| AC-E3 | framework 变更仅限补偿规则允许的三类（扩展 / 别名 / bug 修复）| `git diff` 人工 review |
+| AC-E4 | chemistry engine 真 bug 修复：`registry.getByType('chemistry_reaction')` 返回非 undefined | 新单元测试 |
+| AC-E5 | 老模板零改 | `git diff public/templates/` 空 |
+| AC-E6 | 零新依赖 | `git diff package.json` 空 |
+| AC-E7 | editor 零 React 污染保持 | `Select-String 'from .react.' src/lib/editor` 匹配 0 |
+| AC-E8 | architecture-constraints.md 明文记录本轮松动 | 文件 diff 可见 |
+| AC-E9 | 新测试覆盖 discriminated union narrowing（至少 3 个，防 narrow 写反）| `npx jest` 输出 |
+| AC-E10 | 回归测试：chemistry reactions 的运行时行为（acid-base / metal-acid）不变 | Jest chemistry suite 全绿 |
 
-### P2 风险（3 条）
+## 下游消费者 / Downstream Consumers
 
-| ID | 风险 | 缓解 |
-|----|------|------|
-| **R-8** | 连线交叉杂乱（无自动布线） | 本轮明确不做，文档里注明"请用户自行编排" |
-| **R-9** | iPad/触屏事件不完善 | 本轮只保证桌面体验 · 文档注明"建议桌面使用" |
-| **R-10** | 刷新页面丢失未保存 state | 本轮不做自动保存 · UI 提示"记得手动保存" |
+本轮是**纯类型清理**，不引入新 API、不改变现有契约的语义。下游消费者**零迁移成本**。
 
----
+| 消费者 | 本轮产出消费方式 | 需要做什么变更 |
+|-------|----------------|--------------|
+| Chemistry reactions (acid-base/metal-acid/iron-rusting) | Props 加 index signature + union narrow 后，原有逻辑更明确 | **零变更**（编译时即正确） |
+| engines/index.ts 导入侧 | `chemistryReactionEngine` 现在真正被 register | **零变更**（原来它就"应该"被 register）|
+| `isAssemblyBundle` 运行时验证 | AssemblyBundle.spec 使用 AssemblySpec 别名 | **零变更**（runtime shape 不变）|
+| 测试套件（535 基线 + 20 D 新 = 555）| 类型收紧后全部应继续通过 | **零变更**（AC-E2 保证）|
+| 未来新 chemistry component kind | 只要 Props 声明时加 `[key: string]: unknown` 就符合契约 | **+1 行**（新规范）|
+| 未来新 chemistry reaction | 直接用 `c.kind === 'reagent'` narrow | **无新约束**（TS 强制）|
+| 未来跨轮 /wf | 新 architecture-constraints.md 规则需遵守 | **读文件**（1 次） |
 
-## Domain 分层（架构约束延续）
+## 与上一轮 /wf 的衔接
 
-| 层 | 归属 | 能否访问 React？ | 能否访问 framework？ |
-|----|------|----------------|-------------------|
-| `src/lib/framework/*` | 纯 TS · 通用装配 | ❌ 不得 | — |
-| `src/lib/engines/*` | 纯 TS · 计算引擎 | ❌ 不得 | ✅ |
-| `src/lib/editor/*` | 纯 TS · editor 数据/逻辑层（reducer/state/config/persistence） | ❌ 不得（保持可测） | ✅ |
-| `src/components/editor/*` | React TSX · UI | ✅ 可以 | ✅ 通过 `@/lib/editor` 和 `@/lib/framework` |
-
-> **这是本轮最关键的架构约束**：`src/lib/editor/` 必须纯 TS 零 React，让 reducer 和 bundle 转换可独立测试。
-
----
+- ✅ 复用 D 阶段已发现的 53 个 pre-existing errors 基线（review-output.md 记录）
+- ✅ 本轮不改 D 阶段新增代码（bounds/snap/hover/drawer 完全不动）
+- ✅ 不影响 C 阶段 history/autoLayout 功能（纯类型修复）
+- ⚠️ **松动"framework 零改"** — 明文记录，补偿规则约束未来
 
 ## 总结
 
-B 是 D 的直接延续。D 把"数据契约"擦干净了，B 把"交互层"接上去。核心 ~20 新文件集中在 `src/lib/editor/` 和 `src/components/editor/` 两个目录，framework 核心**零修改**（AC-B6），老实验模板**零改动**（AC-B5），不碰服务端。
+**本轮交付**：TSC 技术债清零（53 → 0）· 10 文件修改 · ~25 行净增 · ~2-3h 预估 · 同时修复 1 个运行时 bug（chemistry engine 未注册）。
 
-14 AC / 10 风险（4 P0 + 3 P1 + 3 P2）/ 13 In-Scope 功能 / 11 Out-of-Scope 明确划线 / 29 文件影响。
+**关键架构决策**（ARCHITECT 阶段必议）：
+1. 是否接受 framework 零改硬约束的**受控松动**（Option B）
+2. 补偿规则（三类允许 + 若干明文禁止）是否合理
+3. Props 加 index signature vs union narrowing 的分工是否正确
+
+**不做**：
+- 不改 chemistry 实验的 runtime 行为
+- 不新增 component/solver/engine/reaction
+- 不重构 framework 架构（本轮只做最小必要变更）
+- 不追求"AC-E1 + 重构提升"的贪心目标
+
+**延续**：老模板零改、零新依赖、editor 零 React 四轮承诺不变。

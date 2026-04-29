@@ -1,0 +1,224 @@
+{
+  "version": 1,
+  "stage": "DEVELOP",
+  "source": {
+    "path": "output/code.diff",
+    "sourceHash": "4fcd0dbabae9cace016f645233edb28b8e8e69237819801d78c5114732cc352d",
+    "artifactSize": 4611,
+    "updatedAt": "2026-04-29T10:02:59.709Z"
+  },
+  "scope": {
+    "session": "wf-20260429054300.",
+    "requirementFingerprint": "plus tsc 技术债清理 阶段"
+  },
+  "content": {
+    "summary": "# E 阶段 · 代码变更摘要\r\n\r\n> Session: `wf-20260429054300.`\r\n> **TSC 53 → 0** · **Jest 555 → 563**（+8）· **零新依赖** · **老模板零改**\r\n\r\n## 变更统计\r\n\r\n```\r\nframework: 7 files changed, 51 insertions(+), 22 deletions(-)   ← 受控松动\r\nengines:   1 file  changed, 1 insertion(+), 0 deletions(-)       ← bug fix\r\ntests:     3 files changed, 120+ insertions(+), 20 deletions(-)  ← AC-E9 + AC-E4 + AC-D1 测试更新\r\ndocs:      1 file  changed, 1 insertion(+)                       ← 链接引用\r\nnew files: scripts/check.sh (AC-E11)\r\n           ",
+    "outline": [],
+    "keyPoints": [],
+    "rootCause": [],
+    "decisions": [],
+    "risks": [
+      "| R | 风险 | 缓解 | 证据 |",
+      "| R-A | hintSize 漏填 | fallback 50×40 | B-3/B-3b |",
+      "| R-B | snapGrid 异常值 | 守卫（grid>0 且 isFinite）| B-6/B-7 |",
+      "| R-C | hover 风暴 | ignoreActions 白名单 + 仅切换时 dispatch | H-18/H-19 + EditorCanvas |",
+      "| R-D | setComponentAnchor 被误 snap | 仅 moveComponent case | R-21/R-22 |",
+      "| R-E | drawer 签名 breaking | 可选参数 | 12 drawer 同步更新零 TSC 新错 |",
+      "---"
+    ],
+    "downstreamConsumers": [],
+    "tasks": [],
+    "acceptanceCriteria": [],
+    "testEvidence": [],
+    "affectedFiles": [
+      "src/lib/editor/drawers/draw-helpers.ts",
+      "src/lib/editor/__tests__/editor-data-layer.test.ts",
+      "src/lib/editor/port-layout.ts",
+      "src/lib/editor/editor-config.ts",
+      "src/lib/editor/editor-state.ts",
+      "src/lib/editor/editor-state-reducer.ts",
+      "src/lib/editor/history.ts",
+      "src/lib/editor/index.ts",
+      "src/lib/editor/domain-configs/circuit.ts",
+      "src/lib/editor/domain-configs/chemistry.ts",
+      "src/lib/editor/drawers/circuit-drawers.ts",
+      "src/lib/editor/drawers/chemistry-drawers.ts",
+      "src/components/editor/EditorCanvas.tsx",
+      "src/components/editor/EditorShell.tsx",
+      "docs/editor-framework.md",
+      "chemistry/reaction.ts",
+      "src/lib/engines/chemistry/reaction.ts",
+      "src/lib/engines/index.ts",
+      "src/lib/framework/__tests__/layout-spec.test.ts",
+      "src/lib/framework/assembly/fluent.ts",
+      "docs/architecture-constraints.md",
+      "workflow/skills/tsc-workflow-gate.md",
+      "src/lib/framework/domains/chemistry/type-guards.ts",
+      "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "src/lib/framework/domains/circuit/index.ts",
+      "src/lib/framework/assembly/layout.ts",
+      "src/lib/framework/domains/chemistry/components.ts",
+      "src/lib/framework/domains/chemistry/solver.ts",
+      "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "src/lib/framework/domains/chemistry/reaction-utils.ts",
+      "src/lib/engines/__tests__/engines.test.ts"
+    ],
+    "filesChanged": [],
+    "stageOutputReport": {
+      "kind": "diff",
+      "artifact": "code.diff",
+      "filesChanged": [],
+      "additions": 0,
+      "deletions": 5
+    }
+  },
+  "coverage": {
+    "hasSummary": true,
+    "hasOutline": false,
+    "hasKeyPoints": false,
+    "hasRootCause": false,
+    "hasDecisions": false,
+    "hasRisks": true,
+    "hasDownstreamConsumers": false,
+    "hasTasks": false,
+    "hasAcceptanceCriteria": false,
+    "hasAffectedFiles": true,
+    "hasFilesChanged": false,
+    "hasTestEvidence": false
+  },
+  "evidenceRefs": [
+    {
+      "file": "docs/architecture-constraints.md",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "workflow/skills/tsc-workflow-gate.md",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/type-guards.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/engines/index.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/domains/circuit/index.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/__tests__/layout-spec.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/assembly/layout.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/components.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/solver.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/reaction-utils.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/engines/__tests__/engines.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "docs/editor-framework.md",
+      "artifact": "output/code.diff"
+    }
+  ],
+  "relevance": {
+    "keywords": [
+      "framework",
+      "src",
+      "lib",
+      "chemistry",
+      "file",
+      "domains",
+      "文件",
+      "test",
+      "action",
+      "why",
+      "tsc",
+      "docs",
+      "type",
+      "__tests__",
+      "index",
+      "新建",
+      "files",
+      "changed",
+      "engines",
+      "e11",
+      "architecture",
+      "constraints",
+      "workflow",
+      "guards",
+      "narrow",
+      "测试",
+      "jest",
+      "deletions",
+      "bug",
+      "scripts",
+      "check",
+      "import",
+      "layout",
+      "松动规则",
+      "props",
+      "diff",
+      "insertions",
+      "insertion",
+      "受控松动条款",
+      "使用记录表"
+    ],
+    "files": [
+      "docs/architecture-constraints.md",
+      "workflow/skills/tsc-workflow-gate.md",
+      "src/lib/framework/domains/chemistry/type-guards.ts",
+      "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
+      "src/lib/engines/index.ts",
+      "src/lib/framework/domains/circuit/index.ts",
+      "src/lib/framework/__tests__/layout-spec.test.ts",
+      "src/lib/framework/assembly/layout.ts",
+      "src/lib/framework/domains/chemistry/components.ts",
+      "src/lib/framework/domains/chemistry/solver.ts",
+      "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "src/lib/framework/domains/chemistry/reaction-utils.ts",
+      "src/lib/engines/__tests__/engines.test.ts",
+      "docs/editor-framework.md"
+    ],
+    "modules": [
+      "docs",
+      "workflow",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "docs"
+    ]
+  },
+  "generatedAt": "2026-04-29T11:25:11.988Z"
+}

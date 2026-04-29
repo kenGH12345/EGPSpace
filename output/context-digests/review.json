@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "stage": "REVIEW",
+  "source": {
+    "path": "output/review-output.md",
+    "sourceHash": "e9e301a3b646aa83b966be5b710c9ab63da67498fea6122c6a35f114640d0417",
+    "artifactSize": 6054,
+    "updatedAt": "2026-04-29T11:27:21.648Z"
+  },
+  "scope": {
+    "session": "wf-20260429054300.",
+    "requirementFingerprint": "plus tsc 技术债清理 阶段"
+  },
+  "content": {
+    "summary": "# E 阶段 · Review 复盘\r\n\r\n> Session: `wf-20260429054300.`\r\n> 需求原文：P1 清理 TSC 技术债（3h 推荐）· 53 个 pre-existing errors（主要在 chemistry/reaction.ts 和 framework/）\r\n\r\n## 需求兑现 · 100%\r\n\r\n| 用户原意 | 兑现 |\r\n|---------|------|\r\n| 清理 53 个 pre-existing TSC errors | ✅ **53 → 0** |\r\n| 3h 预算 | ✅ 约 2h 实际（节省 33%）|\r\n| 主要 chemistry/framework | ✅ 根因精确定位 · 96% 错误源自 chemistry Props 契约断裂 |\r\n\r\n## 决策对比 · 0 偏差\r\n\r\n| # | 决策 | 预期结果 | 实测结果 | 偏差 |\r\n|---|------|---------|---------|-----|\r\n| D-1 | Wave 递进修复 · 根因→末梢 | TSC 下降曲线平滑 | 53→49→46→2",
+    "outline": [
+      "Review Output · D 阶段 · UX 细节优化包",
+      "思考摘要",
+      "需求覆盖度（100%）",
+      "5 架构决策对比（0 偏差）",
+      "7 Failure Model 审计",
+      "代码质量",
+      "意外红利",
+      "遗留债务",
+      "决策复盘",
+      "结论",
+      "E 阶段 · Review 复盘",
+      "需求兑现 · 100%",
+      "决策对比 · 0 偏差",
+      "Failure Model 审计 · 6/6 覆盖",
+      "零回归验证",
+      "意外红利 · 4 条",
+      "遗留债务清单（未做 · 显式登记）",
+      "对 B-plus 方案的再评估",
+      "Why B-plus 是正确选择",
+      "最大教训"
+    ],
+    "keyPoints": [],
+    "rootCause": [],
+    "decisions": [
+      "| # | 决策 | 实施 | 偏差 |",
+      "| D-1 | componentBounds 放 port-layout.ts | 含 ComponentBounds / PaletteHintEntry 类型 + isPointInBounds 一并交付 | 0（超预期） |",
+      "| D-2 | Snap 在 reducer 内仅 moveComponent case | R-19/R-20/R-21/R-22 四个测试覆盖精确保护 | 0 |",
+      "| D-3 | Hover state + history.ignoreActions | 白名单机制，未来可扩展 updateWireCursor 等 | 0 |",
+      "| D-4 | CanvasDrawer 加可选 hovered? | 12 drawer 同步更新零 breaking | 0 |",
+      "| D-5 | drawHoverFrame helper 统一视觉 | 两域各写一个 drawInteractionFrame wrapper 统一入口 | 0 |",
+      "| # | 决策 | 预期结果 | 实测结果 | 偏差 |",
+      "| D-1 | Wave 递进修复 · 根因→末梢 | TSC 下降曲线平滑 | 53→49→46→22→11→1→0 | **0** |",
+      "| D-2 | Props 加 index signature（非改 framework 核心）| 消 35+ errors | 实际消 24+11=35（含 ChemistryPerComponent）| **0** |",
+      "| D-3 | type-guards.ts + discriminated narrow | 10 处 TS2339 消解 | T-8 一把消 10 errors | **0** |",
+      "| D-4 | scripts/check.sh + tsc-workflow-gate skill | 单一入口防复发 | ✅ 新建 · dogfood 成功 | **0** |",
+      "| D-5 | architecture-constraints.md + 使用记录表 | 松动留痕 | ✅ 6 条记录入表 | **0** |"
+    ],
+    "risks": [],
+    "downstreamConsumers": [],
+    "tasks": [],
+    "acceptanceCriteria": [],
+    "testEvidence": [
+      "- **Jest**：555 基线保持（+8 新测试）· 原 chemistry-reactions / layout-spec / editor-data-layer 全绿",
+      "- **TSC**：0 errors（新引入代码无新 error）",
+      "- **运行时**：chemistry reactions 逻辑零变化（只加 narrow + type sig，不改执行路径）",
+      "- **AC-E10** 运行时行为不变 · 通过 jest chemistry suite 全绿佐证"
+    ],
+    "affectedFiles": [
+      "chemistry/reaction.ts"
+    ],
+    "filesChanged": [],
+    "stageOutputReport": {
+      "kind": "markdown",
+      "artifact": "review-output.md",
+      "outline": [
+        "E 阶段 · Review 复盘",
+        "需求兑现 · 100%",
+        "决策对比 · 0 偏差",
+        "Failure Model 审计 · 6/6 覆盖",
+        "零回归验证",
+        "代码质量",
+        "意外红利 · 4 条",
+        "遗留债务清单（未做 · 显式登记）"
+      ],
+      "keyPoints": []
+    }
+  },
+  "coverage": {
+    "hasSummary": true,
+    "hasOutline": true,
+    "hasKeyPoints": false,
+    "hasRootCause": false,
+    "hasDecisions": true,
+    "hasRisks": false,
+    "hasDownstreamConsumers": false,
+    "hasTasks": false,
+    "hasAcceptanceCriteria": false,
+    "hasAffectedFiles": true,
+    "hasFilesChanged": false,
+    "hasTestEvidence": true
+  },
+  "evidenceRefs": [
+    {
+      "file": "chemistry/reaction.ts",
+      "artifact": "output/review-output.md"
+    }
+  ],
+  "relevance": {
+    "keywords": [
+      "tsc",
+      "chemistry",
+      "errors",
+      "framework",
+      "jest",
+      "index",
+      "type",
+      "narrow",
+      "sig",
+      "延续",
+      "props",
+      "wave",
+      "plus",
+      "guards",
+      "check",
+      "workflow",
+      "skill",
+      "预估",
+      "bug",
+      "e11",
+      "analyse",
+      "阶段",
+      "session",
+      "清理",
+      "pre",
+      "existing",
+      "reaction",
+      "节省",
+      "偏差",
+      "chemistrypercomponent",
+      "一把消",
+      "scripts",
+      "gate",
+      "architecture",
+      "constraints",
+      "覆盖",
+      "unknown",
+      "验证",
+      "engines",
+      "registry"
+    ],
+    "files": [
+      "chemistry/reaction.ts"
+    ],
+    "modules": [
+      "chemistry"
+    ]
+  },
+  "generatedAt": "2026-04-29T11:27:40.868Z"
+}

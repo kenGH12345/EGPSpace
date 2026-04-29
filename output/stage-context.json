@@ -1,56 +1,13 @@
 {
-  "ARCHITECT": {
-    "stageName": "ARCHITECT",
-    "summary": "[ARCHITECTURE · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险",
-    "keyDecisions": [
-      "[ARCHITECTURE · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险",
-      "[🧠 思考摘要] B 是一层鼠标事件 → Builder DSL 调用的输入适配器。architecture 核心解决 5 个问题：",
-      "[关键架构决策] `EditorState` 包含交互态（选中、draft 连线、相机偏移），这些不属于导出的 Bundle。Bundle 是 state 的派生物。",
-      "[D-1 · EditorState 是 Bundle 的超集而非 Bundle 本身] `EditorState` 包含交互态（选中、draft 连线、相机偏移），这些不属于导出的 Bundle。Bundle 是 state 的派生物。",
-      "[D-2 · Reducer 纯函数 + 无 React 依赖] // src/lib/editor/editor-state-reducer.ts"
-    ],
-    "artifacts": [
-      "output\\architecture.md"
-    ],
-    "risks": [],
-    "correctionHistory": [],
-    "meta": {
-      "session": "wf-20260428234611."
-    },
-    "timestamp": "2026-04-29T00:00:27.808Z"
-  },
-  "_meta": {
-    "requirementFingerprint": "framework 编辑器"
-  },
-  "PLAN": {
-    "stageName": "PLAN",
-    "summary": "[EXECUTION PLAN · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `architecture.md` 的 5 决策 + 14 AC + 20 新文件",
-    "keyDecisions": [
-      "[EXECUTION PLAN · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 承接 `architecture.md` 的 5 决策 + 14 AC + 20 新文件",
-      "[关键路径与 Wave 依赖] subgraph W0 [\"Wave 0 · 纯 TS 数据层（可独立 jest）\"]",
-      "[关键路径（最长依赖链）] `T-1 → T-2 → T-4 → T-6(Gate) → T-7 → T-8 → T-12 → T-14 → T-18 → T-19 → T-22 → T-24`",
-      "[22 任务详解] | T | 文件 | AC | 估时 | 依赖 |",
-      "[Wave 0 · 纯 TS 数据层（~40min）] | T | 文件 | AC | 估时 | 依赖 |"
-    ],
-    "artifacts": [
-      "output\\execution-plan.md"
-    ],
-    "risks": [],
-    "correctionHistory": [],
-    "meta": {
-      "session": "wf-20260428234611."
-    },
-    "timestamp": "2026-04-29T00:06:10.621Z"
-  },
   "CODE": {
     "stageName": "CODE",
-    "summary": "[Code Diff · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 22 任务全部完成 · 493/493 测试 PASS",
+    "summary": "[E 阶段 · 代码变更摘要] > Session: `wf-20260429054300.`",
     "keyDecisions": [
-      "[Code Diff · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 22 任务全部完成 · 493/493 测试 PASS",
-      "[文件清单（23 新 + 1 改 + 7 工作流）] `editor-state.ts` — EditorState + cloneEditorState + emptyEditorState (78 行)",
-      "[新增 · 数据层 `src/lib/editor/` (7 文件)] `editor-state.ts` — EditorState + cloneEditorState + emptyEditorState (78 行)",
-      "[新增 · Drawer TS 镜像 `src/lib/editor/drawers/` (2 文件)] `circuit-drawers.ts` — 7 个电路元件 drawer (~200 行)",
-      "[新增 · Domain 配置 `src/lib/editor/domain-configs/` (3 文件)] `circuit.ts` — palette + portLayout + drawers + validateBundle"
+      "[E 阶段 · 代码变更摘要] > Session: `wf-20260429054300.`",
+      "[变更统计] framework: 7 files changed, 51 insertions(+), 22 deletions(-)   ← 受控松动",
+      "[变更文件清单（全部 ≤ 13 文件 · 符合预估）] | # | File | Action | Why |",
+      "[W1 · 孤立 bug（3 文件）] | # | File | Action | Why |",
+      "[W2 · AssemblyBundle 别名消融（1 文件）] | # | File | Action | Why |"
     ],
     "artifacts": [
       "output\\code.diff"
@@ -58,19 +15,22 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428234611."
+      "session": "wf-20260429054300."
     },
-    "timestamp": "2026-04-29T00:22:15.302Z"
+    "timestamp": "2026-04-29T11:25:11.973Z"
+  },
+  "_meta": {
+    "requirementFingerprint": "plus tsc 技术债清理 阶段"
   },
   "TEST": {
     "stageName": "TEST",
-    "summary": "[Test Report · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 14 AC 逐条验证",
+    "summary": "[E 阶段 · 测试报告] > Session: `wf-20260429054300.`",
     "keyDecisions": [
-      "[Test Report · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 14 AC 逐条验证",
-      "[Test Command] npx tsc --noEmit       # TypeScript check",
-      "[Unit / Integration] Test Suites: 25 passed, 25 total",
-      "[TypeScript] npx tsc --noEmit → exit code 0 (零输出)",
-      "[Lint] `src/lib/editor/` → 0 diagnostics"
+      "[E 阶段 · 测试报告] > Session: `wf-20260429054300.`",
+      "[执行命令] npx tsc --noEmit      # TSC 强类型检查",
+      "[测试计划（AC 映射）] | # | Test Case | 类型 | 预期 | 实测 | 状态 |",
+      "[TSC 基线下降曲线] | 阶段 | Errors | Delta | 验证点 |",
+      "[Jest 结果] Test Suites: 28 passed, 28 total"
     ],
     "artifacts": [
       "output\\test-report.md"
@@ -78,19 +38,19 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428234611."
+      "session": "wf-20260429054300."
     },
-    "timestamp": "2026-04-29T00:23:11.126Z"
+    "timestamp": "2026-04-29T11:26:17.244Z"
   },
   "REVIEW": {
     "stageName": "REVIEW",
-    "summary": "[Review · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 需求达成 · 决策对比 · 遗留债务",
+    "summary": "[E 阶段 · Review 复盘] > Session: `wf-20260429054300.`",
     "keyDecisions": [
-      "[Review · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 需求达成 · 决策对比 · 遗留债务",
-      "[需求达成 · 100%] | In-Scope 功能 | 状态 | 实现位置 |",
-      "[决策对比 · 0 偏差] | # | ARCHITECT 决策 | 实际实现 | 状态 |",
-      "[Failure Model 覆盖审计] | # | 模式 | 对策 | 代码位置 |",
-      "[文件与层级分布] src/lib/editor/            纯 TS · 零 React · 可测"
+      "[E 阶段 · Review 复盘] > Session: `wf-20260429054300.`",
+      "[需求兑现 · 100%] | 清理 53 个 pre-existing TSC errors | ✅ 53 → 0 |",
+      "[决策对比 · 0 偏差] | # | 决策 | 预期结果 | 实测结果 | 偏差 |",
+      "[Failure Model 审计 · 6/6 覆盖] | FM | 预测 | 实测 | 状态 |",
+      "[零回归验证] Jest：555 基线保持（+8 新测试）· 原 chemistry-reactions / layout-spec / editor-data-layer 全绿"
     ],
     "artifacts": [
       "output\\review-output.md"
@@ -98,19 +58,19 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428234611."
+      "session": "wf-20260429054300."
     },
-    "timestamp": "2026-04-29T00:24:03.659Z"
+    "timestamp": "2026-04-29T11:27:40.856Z"
   },
   "DEPLOY": {
     "stageName": "DEPLOY",
-    "summary": "[Deploy Output · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 本地落盘部署完成",
+    "summary": "[E 阶段 · Deploy 清单] > Session: `wf-20260429054300.`",
     "keyDecisions": [
-      "[Deploy Output · B 阶段 · 编辑器 framework] > Session: `wf-20260428234611.` · 本地落盘部署完成",
-      "[文件清单（23 新 + 1 改 + 7 工作流 = 31 文件）] 数据层 `src/lib/editor/` (8)",
-      "[新增（23）] 数据层 `src/lib/editor/` (8)",
-      "[修改（1）] `docs/component-framework.md` — Sibling documents 索引加入 editor-framework.md",
-      "[工作流产出（7）] `output/analysis.md`"
+      "[E 阶段 · Deploy 清单] > Session: `wf-20260429054300.`",
+      "[文件清单 · 16 变更] | # | File | Purpose |",
+      "[新文件（6）] | # | File | Purpose |",
+      "[修改文件（10）] | # | File | Action |",
+      "[Commit 建议] 按 Wave 粒度推荐 ≤ 6 个 commit，也可一次性："
     ],
     "artifacts": [
       "output\\deploy-output.md"
@@ -118,8 +78,8 @@
     "risks": [],
     "correctionHistory": [],
     "meta": {
-      "session": "wf-20260428234611."
+      "session": "wf-20260429054300."
     },
-    "timestamp": "2026-04-29T00:24:51.757Z"
+    "timestamp": "2026-04-29T11:28:57.659Z"
   }
 }

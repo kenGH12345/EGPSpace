@@ -58,4 +58,4 @@ _No conventions detected._
 
 | Version | Date | Change |
 |---------|------|--------|
-| v1.0.0 | 2026-04-28 | Auto-discovered from project config files |
+| v1.0.0 | 2026-04-29 | Auto-discovered from project config files |

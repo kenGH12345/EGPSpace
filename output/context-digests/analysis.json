@@ -1,0 +1,374 @@
+{
+  "version": 1,
+  "stage": "ANALYSE",
+  "source": {
+    "path": "output/analysis.md",
+    "sourceHash": "8f398ea4479b0b68374b1c009321ddacd9451e5ea1eb94d13bff600c054b7e21",
+    "artifactSize": 16515,
+    "updatedAt": "2026-04-29T05:46:43.299Z"
+  },
+  "scope": {
+    "session": "wf-20260429054300.",
+    "requirementFingerprint": "53 chemistry errors existing framework p1 pre reaction ts tsc 主要在 技术债 清理"
+  },
+  "content": {
+    "summary": "# E 阶段 · TSC 技术债清理 — 分析\r\n\r\n> Session: `wf-20260429054300.`\r\n> Requirement: P1 清理 53 个 pre-existing TSC errors（D 阶段 review 标注\"主要在 chemistry/reaction.ts 和 framework/\"）\r\n\r\n## 思考摘要\r\n\r\n用户给的 D 阶段 review 印象\"主要在 chemistry/reaction.ts 和 framework/\"是**粗略归纳**。实际 `npx tsc --noEmit` 基线结果揭示更精细的真相：\r\n- 错误总数 53 个（其中 49 与 chemistry props 类型打通相关，4 个孤立）\r\n- **根因高度集中**：5 个 chemistry `Props` interface 不兼容 framework 核心契约 `IExperimentComponent<Record<string, unknown>, ...>`\r\n- **2 个孤立 bug 是真漏洞**，不是类型系统哲学问题：engines/index",
+    "outline": [
+      "需求分析 · D 阶段 · UX 细节优化包",
+      "根因 / Root Cause",
+      "问题 1：**hit-test 写死 50×40，与 drawer 实际绘制尺寸不对齐（P0 数据-视觉一致性 bug）**",
+      "问题 2：**拖动无网格对齐（P1 UX 粗糙）**",
+      "问题 3：**选中态视觉区分度不足（P2）**",
+      "问题 4：**drawer 与 hintSize 对齐缺失（P2 · 隐性）**",
+      "受影响位置",
+      "修改范围",
+      "In-Scope（本轮交付）",
+      "Out-of-Scope（留下一轮）",
+      "风险评估",
+      "硬约束（延续 B/C 阶段）",
+      "E 阶段 · TSC 技术债清理 — 分析",
+      "思考摘要",
+      "问题 1：Chemistry Props 不兼容 framework 核心契约（49/53 errors）",
+      "问题 2：Chemistry Reaction Rules 访问 union 成员字段（10/53 errors）",
+      "问题 3：AssemblyBundle.spec 内联类型与 AssemblySpec<D> 不等价（4/53 errors）",
+      "问题 4：engines/index.ts 真 bug — 缺 import（1 error）",
+      "问题 5：circuit/index.ts 缺 2 个 re-export（2 errors）",
+      "问题 6：layout-spec.test.ts 1 个无用 @ts-expect-error（1 error）",
+      "必改文件清单（按信号集中度）",
+      "关联但可能不用改"
+    ],
+    "keyPoints": [],
+    "decisions": [],
+    "risks": [
+      "| # | 风险 | Sev | 缓解 |",
+      "| R-1 | hintSize 作 hit-test 后若 palette 漏填默认 50×40 退回 | **P0** | port-layout helper 有默认 fallback + 测试覆盖 |",
+      "| R-2 | snapToGrid 改掉所有 anchor 精度 → 破坏 loadBundle 从老 JSON 恢复的精确坐标 | **P0** | 仅在 `moveComponent` 时 snap；`setComponentAnchor`/`loadBundle` 保留精确值 |",
+      "| R-3 | hover state 每帧 mousemove → React 重渲 → 性能 | P1 | hover 用 ref 不进 state，只在切换时 dispatch；或 500ms debounce |",
+      "| R-4 | EditorDomainConfig 加字段 → 现有 domain 必须更新 | P1 | `snapGrid?` 可选 + `circuitEditorConfig` / `chemistryEditorConfig` 各加 1 行 |",
+      "| R-5 | drawer 里写死的选中框不一致被保留 | P2 | 本轮不强制重构 drawer，只加 hover 叠加；selFrame 统一放后轮 |",
+      "| R-6 | C 阶段 undo/redo 对 snapped anchor 表现 | P1 | 新增测试：move → snap → undo → 回到原精确坐标（不是 snapped 前的位置） |",
+      "| R-7 | hintSize 命中盒对非矩形元件（比如化学烧瓶梯形）不精准 | P2 | AABB 是合理近似 · 未来可升级为 polygon hit-test |",
+      "### P0",
+      "| R | 风险 | 缓解 |",
+      "| R-A | **硬约束松动导致\"滑坡\"**：一次松动后未来随便改 framework | 补偿规则明文写入 architecture-constraints.md（E 阶段末），未来每轮 /wf 开头读取 |",
+      "| R-B | **给 5 个 Props 加 index signature 会掩盖打字错误**：`c.props.flask_vloume`（错拼）编译也不报 | 保持具名字段 + index signature 并存；**访问错拼字段变 unknown** 而不是字符串 —— 后续使用时仍会在 assignment 时失败；可接受 |",
+      "| R-C | **discriminated narrowing 写错**：`c.kind === 'reagent'` 里访问 `c.props.unknownField` 会失败；或反过来对 Flask 访问 formula | Jest 已覆盖这些 reactions 的正向路径；修时保证只加 narrowing 不改逻辑；本轮新加 2-3 个 TS 类型测试验证 narrow 后正确 |",
+      "### P1",
+      "| R-D | **修 AssemblyBundle.spec 类型可能破坏 isAssemblyBundle 运行时验证** | `isAssemblyBundle` 纯 runtime 检查 shape，与 TS 类型别名无关；修后跑 jest 整套即可 |",
+      "| R-E | **engines/index.ts 加 import 后 registry 真的会多 register** — 这是 behavioural change | 影响范围：`engines.getByType('chemistry_reaction')` 之前返回 undefined，之后有值。搜索该 engine 用法确认无 \"检查 undefined then fallback\" 的代码 |",
+      "| R-F | **TS2352 断言冲突修 reaction-utils 时可能要改逻辑** | 每个 TS2352 单独看，保守处理：首选改 `as unknown as T` 两阶段断言，其次才改逻辑 |",
+      "### P2"
+    ],
+    "downstreamConsumers": [
+      "本轮交付的产物由以下**消费者**使用，各自需要什么变更：",
+      "| 消费者 | 本轮产出消费方式 | 需要做什么变更 |",
+      "| **EditorCanvas.tsx（交互层）** | 调用新 `componentBounds(c, config)` 替代硬编码 50×40；读 `state.hoveredId` 传给 drawer | hit-test 逻辑改为调用 helper；mouseMove 在非拖拽非连线态额外派发 `hoverComponent` |",
+      "| **circuit-drawers / chemistry-drawers（渲染层）** | 接收新 `hovered: boolean` 参数；hover 态画浅色轮廓 | `CanvasDrawer` 签名增参；每个 drawer 加 hover 分支（~3 行） |",
+      "| **EditorDomainConfig 消费者（circuit.ts / chemistry.ts）** | 可选声明 `snapGrid: 20` | 2 行 config 增量 |",
+      "| **editor-state-reducer.ts** | 消费新的 `hoverComponent` action 和 `snapGrid` 选项 | 新 case + moveComponent 按 snap 取整 |",
+      "| **AssemblyBundle（下游持久化消费者）** | 继续消费 Bundle.layout.entries | **无变更** · snap 只作用于 editor 内 state，export 时 anchor 已是 snapped 整数 |",
+      "| **框架 framework 层** | 不消费本轮任何新增 | **零变更**（硬约束 AC-D8） |",
+      "| **老实验模板 HTML** | 不消费任何 editor 产出 | **零变更**（硬约束 AC-D8） |",
+      "| **未来新 domain（如 optics）扩展者** | 可选声明 `snapGrid`；默认 20 | **零强制变更** · 扩展成本不增加 |",
+      "| **Runbook 验收者（用户）** | 化学域大元件可点、拖动吸附网格、hover 有反馈 | 4 步 Runbook 覆盖（AC-D13） |",
+      "| **C 阶段 history 模块** | 继续消费 move/updateProp 的 squash 配置 | **零变更** · snap 发生在 reducer 内不影响 history 层 |",
+      "本轮是**纯类型清理**，不引入新 API、不改变现有契约的语义。下游消费者**零迁移成本**。",
+      "| Chemistry reactions (acid-base/metal-acid/iron-rusting) | Props 加 index signature + union narrow 后，原有逻辑更明确 | **零变更**（编译时即正确） |",
+      "| engines/index.ts 导入侧 | `chemistryReactionEngine` 现在真正被 register | **零变更**（原来它就\"应该\"被 register）|",
+      "| `isAssemblyBundle` 运行时验证 | AssemblyBundle.spec 使用 AssemblySpec 别名 | **零变更**（runtime shape 不变）|",
+      "| 测试套件（535 基线 + 20 D 新 = 555）| 类型收紧后全部应继续通过 | **零变更**（AC-E2 保证）|",
+      "| 未来新 chemistry component kind | 只要 Props 声明时加 `[key: string]: unknown` 就符合契约 | **+1 行**（新规范）|",
+      "| 未来新 chemistry reaction | 直接用 `c.kind === 'reagent'` narrow | **无新约束**（TS 强制）|",
+      "| 未来跨轮 /wf | 新 architecture-constraints.md 规则需遵守 | **读文件**（1 次） |"
+    ],
+    "tasks": [],
+    "affectedFiles": [
+      "src/components/editor/EditorCanvas.tsx",
+      "src/lib/editor/editor-state-reducer.ts",
+      "src/lib/editor/port-layout.ts",
+      "src/lib/editor/editor-config.ts",
+      "src/lib/editor/drawers/circuit-drawers.ts",
+      "src/lib/editor/drawers/chemistry-drawers.ts",
+      "docs/editor-framework.md",
+      "chemistry/reaction.ts",
+      "engines/index.ts",
+      "circuit/index.ts",
+      "framework/components/AbstractComponent.ts",
+      "chemistry/components.ts",
+      "engines/chemistry/reaction.ts",
+      "framework/assembly/layout.ts",
+      "framework/assembly/spec.ts",
+      "circuit/__tests__/circuit-assembly.test.ts",
+      "framework/assembly/errors.ts",
+      "framework/assembly/validator.ts",
+      "framework/domains/circuit/index.ts",
+      "src/lib/framework/domains/chemistry/components.ts",
+      "src/lib/framework/assembly/layout.ts",
+      "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "src/lib/framework/domains/chemistry/reactions/metal-acid.ts",
+      "src/lib/framework/domains/chemistry/reactions/iron-rusting.ts",
+      "src/lib/framework/domains/chemistry/reaction-utils.ts",
+      "src/lib/engines/index.ts",
+      "src/lib/framework/domains/circuit/index.ts",
+      "src/lib/framework/__tests__/layout-spec.test.ts",
+      "framework/domains/chemistry/index.ts",
+      "assembly/chemistry-assembler.ts",
+      "assembly/chemistry-builder.ts",
+      "framework/assembly/fluent.ts",
+      "framework/domains/chemistry/reactions/index.ts",
+      "framework/domains/chemistry/components.ts",
+      "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "framework/domains/chemistry/reactions/metal-acid.ts",
+      "framework/domains/chemistry/reactions/iron-rusting.ts",
+      "framework/domains/chemistry/reaction-utils.ts",
+      "framework/__tests__/layout-spec.test.ts"
+    ],
+    "filesChanged": [],
+    "stageOutputReport": {
+      "kind": "markdown",
+      "artifact": "analysis.md",
+      "outline": [
+        "E 阶段 · TSC 技术债清理 — 分析",
+        "思考摘要",
+        "根因 / Root Cause",
+        "问题 1：Chemistry Props 不兼容 framework 核心契约（49/53 errors）",
+        "问题 2：Chemistry Reaction Rules 访问 union 成员字段（10/53 errors）",
+        "问题 3：AssemblyBundle.spec 内联类型与 AssemblySpec<D> 不等价（4/53 errors）",
+        "问题 4：engines/index.ts 真 bug — 缺 import（1 error）",
+        "问题 5：circuit/index.ts 缺 2 个 re-export（2 errors）"
+      ],
+      "keyPoints": []
+    }
+  },
+  "evidenceRefs": [
+    {
+      "file": "chemistry/reaction.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "engines/index.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "circuit/index.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/components/AbstractComponent.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "chemistry/components.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "engines/chemistry/reaction.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/assembly/layout.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/assembly/spec.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "circuit/__tests__/circuit-assembly.test.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/assembly/errors.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/assembly/validator.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/circuit/index.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/components.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/assembly/layout.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/reactions/metal-acid.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/reactions/iron-rusting.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/domains/chemistry/reaction-utils.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/engines/index.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/domains/circuit/index.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "src/lib/framework/__tests__/layout-spec.test.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/chemistry/index.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "assembly/chemistry-assembler.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "assembly/chemistry-builder.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/assembly/fluent.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/chemistry/reactions/index.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/chemistry/components.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/chemistry/reactions/metal-acid.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/chemistry/reactions/iron-rusting.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/domains/chemistry/reaction-utils.ts",
+      "artifact": "output/analysis.md"
+    },
+    {
+      "file": "framework/__tests__/layout-spec.test.ts",
+      "artifact": "output/analysis.md"
+    }
+  ],
+  "relevance": {
+    "keywords": [
+      "framework",
+      "chemistry",
+      "index",
+      "props",
+      "errors",
+      "domains",
+      "reaction",
+      "spec",
+      "src",
+      "lib",
+      "bug",
+      "export",
+      "reactions",
+      "signature",
+      "assembly",
+      "engines",
+      "assemblybundle",
+      "unknown",
+      "circuit",
+      "acid",
+      "string",
+      "import",
+      "jest",
+      "error",
+      "assemblyspec",
+      "narrowing",
+      "新增",
+      "tsc",
+      "问题",
+      "union",
+      "kind",
+      "discriminated",
+      "layout",
+      "record",
+      "修复",
+      "现象",
+      "components",
+      "__tests__",
+      "base",
+      "reagent"
+    ],
+    "files": [
+      "chemistry/reaction.ts",
+      "engines/index.ts",
+      "circuit/index.ts",
+      "framework/components/AbstractComponent.ts",
+      "chemistry/components.ts",
+      "engines/chemistry/reaction.ts",
+      "framework/assembly/layout.ts",
+      "framework/assembly/spec.ts",
+      "circuit/__tests__/circuit-assembly.test.ts",
+      "framework/assembly/errors.ts",
+      "framework/assembly/validator.ts",
+      "framework/domains/circuit/index.ts",
+      "src/lib/framework/domains/chemistry/components.ts",
+      "src/lib/framework/assembly/layout.ts",
+      "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "src/lib/framework/domains/chemistry/reactions/metal-acid.ts",
+      "src/lib/framework/domains/chemistry/reactions/iron-rusting.ts",
+      "src/lib/framework/domains/chemistry/reaction-utils.ts",
+      "src/lib/engines/index.ts",
+      "src/lib/framework/domains/circuit/index.ts",
+      "src/lib/framework/__tests__/layout-spec.test.ts",
+      "framework/domains/chemistry/index.ts",
+      "assembly/chemistry-assembler.ts",
+      "assembly/chemistry-builder.ts",
+      "framework/assembly/fluent.ts",
+      "framework/domains/chemistry/reactions/index.ts",
+      "framework/domains/chemistry/components.ts",
+      "framework/domains/chemistry/reactions/acid-base-neutralization.ts",
+      "framework/domains/chemistry/reactions/metal-acid.ts",
+      "framework/domains/chemistry/reactions/iron-rusting.ts",
+      "framework/domains/chemistry/reaction-utils.ts",
+      "framework/__tests__/layout-spec.test.ts"
+    ],
+    "modules": [
+      "chemistry",
+      "engines",
+      "circuit",
+      "framework",
+      "chemistry",
+      "engines",
+      "framework",
+      "framework",
+      "circuit",
+      "framework",
+      "framework",
+      "framework",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src",
+      "src"
+    ]
+  },
+  "generatedAt": "2026-04-29T05:46:53.518Z"
+}

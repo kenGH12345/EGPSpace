@@ -1,39 +1,5 @@
 [
   {
-    "id": "TH-1776856108292-CY6RC",
-    "timestamp": "2026-04-22T11:08:28.292Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "/wf init --path C:\\workspace\\EGPSpace",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "/wf init --path C:\\workspace\\EGPSpace — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1776910982544-GD2LH",
-    "timestamp": "2026-04-23T02:23:02.544Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "Schema统一与LLM生成优化工作流 - 实现声明式物理实验配置系统",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "Schema统一与LLM生成优化工作流 - 实现声明式物理实验配置系统 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
     "id": "TH-1776917912368-S7J4W",
     "timestamp": "2026-04-23T04:18:32.368Z",
     "mode": "sequential",
@@ -315,6 +281,57 @@
     "taskTitles": [],
     "outcome": "success",
     "summary": "B 阶段 · 交互式编辑器 framework（/editor 路由 · 拖拽 + 端口连线 + localStorage 持久化 + JSON 导入导出） — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777434136906-HQBRS",
+    "timestamp": "2026-04-29T03:42:16.906Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "C 阶段 · 撤销重做 (withHistory) + 自动布局 (Grid + Force FR)",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "C 阶段 · 撤销重做 (withHistory) + 自动布局 (Grid + Force FR) — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777441232027-AHK4N",
+    "timestamp": "2026-04-29T05:40:32.027Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "D 阶段 · UX 细节优化包（hit-test 修复 + snap + hover + drawer 一致性）",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "D 阶段 · UX 细节优化包（hit-test 修复 + snap + hover + drawer 一致性） — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777462144988-QBCSI",
+    "timestamp": "2026-04-29T11:29:04.988Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "E 阶段 · TSC 技术债清理（53→0）+ 首次受控松动 framework + AC-E11 工作流防复发",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "E 阶段 · TSC 技术债清理（53→0）+ 首次受控松动 framework + AC-E11 工作流防复发 — completed",
     "metrics": {
       "durationMs": null,
       "errorCount": 0,

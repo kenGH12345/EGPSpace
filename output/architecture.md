@@ -1,381 +1,411 @@
-# ARCHITECTURE · B 阶段 · 编辑器 framework
+# E 阶段 · TSC 技术债清理 — 架构设计（B-plus 方案）
 
-> Session: `wf-20260428234611.` · 承接 `analysis.md` 的 14 AC + 10 风险
+> Session: `wf-20260429054300.`
+> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流
 
----
+## 🧠 Architecture Reasoning
 
-## 🧠 思考摘要
-
-B 是一层**鼠标事件 → Builder DSL 调用**的输入适配器。architecture 核心解决 5 个问题：
-(1) EditorState 形状如何与 AssemblyBundle 解耦；(2) reducer 如何保持可测；(3) Canvas 2D drawer 如何与 React DOM 端口 overlay 共存；(4) 跨 domain 扩展契约是什么；(5) 运行结果如何回显到画布。
-
----
-
-## 关键架构决策
-
-### D-1 · EditorState 是 Bundle 的超集而非 Bundle 本身
-
-`EditorState` 包含**交互态**（选中、draft 连线、相机偏移），这些**不属于**导出的 Bundle。Bundle 是 state 的**派生物**。
-
-```ts
-// src/lib/editor/editor-state.ts
-export interface EditorState<D extends ComponentDomain = ComponentDomain> {
-  domain: D;
-  // 画布上已放置的元件（对应 ComponentDecl + LayoutEntry）
-  placed: Array<{
-    id: string;
-    kind: string;
-    props: Record<string, unknown>;
-    anchor: ComponentAnchor;           // 每个 placed 自带 anchor（原因：reducer 更直观）
-  }>;
-  // 已完成的连接
-  connections: Array<ConnectionDecl>;  // 直接复用 framework 的 ConnectionDecl
-  // UI-only 交互态
-  selection: { kind: 'none' } | { kind: 'component'; id: string } | { kind: 'connection'; index: number };
-  draftWire:
-    | null
-    | { from: { componentId: string; port: string }; cursor: { x: number; y: number } };
-  // UI-only 视觉态（不影响 Bundle）
-  camera: { offset: { x: number; y: number }; zoom: number };
-}
-```
-
-**为什么把 anchor 放回 placed 里而不是独立 layout**？
-- Reducer 写起来更直观：一个 action 只改一个 placed 对象
-- 导出时 `bundleFromState()` 会把 anchor 拆到 LayoutSpec
-- 这是 UI 内部实现细节，**不暴露给 Bundle**
-
-**Trade-off**：
-- ✅ Reducer action 更简洁（不用同时更新 `placed` 和 `layout`）
-- ✅ 回放 Bundle 也简单（`layoutLookup(bundle.layout)[id]` → 填入 placed.anchor）
-- ⚠️ 和 D 的"anchor 不属于 Spec"方向看起来反向——但我们这里是 **UI 内部 state**，不是 Spec；导出时强制分离即可
-
-### D-2 · Reducer 纯函数 + 无 React 依赖
-
-```ts
-// src/lib/editor/editor-state-reducer.ts
-export type EditorAction =
-  | { type: 'placeComponent'; domain: ComponentDomain; kind: string; position: { x: number; y: number }; defaults?: Record<string, unknown> }
-  | { type: 'moveComponent'; id: string; delta: { x: number; y: number } }
-  | { type: 'selectComponent'; id: string | null }
-  | { type: 'deleteSelection' }
-  | { type: 'updateProp'; id: string; key: string; value: unknown }
-  | { type: 'startWire'; componentId: string; port: string }
-  | { type: 'updateWireCursor'; x: number; y: number }
-  | { type: 'finishWire'; componentId: string; port: string }   // commits connection
-  | { type: 'cancelWire' }
-  | { type: 'removeConnection'; index: number }
-  | { type: 'setCamera'; offset: { x: number; y: number }; zoom: number }
-  | { type: 'switchDomain'; domain: ComponentDomain }             // resets state
-  | { type: 'loadBundle'; bundle: AssemblyBundle<ComponentDomain> };
-
-export function applyEditorAction(state: EditorState, action: EditorAction): EditorState { ... }
-```
-
-**约束**：文件 `import` 列表仅含类型和 framework，**禁止** `import React`。通过 ESLint/CI 可审计。
-
-**Trade-off**：
-- ✅ 可独立 jest 测试（AC-B2）
-- ✅ 未来加 undo/redo 只需包一层 `{past: state[], present: state, future: state[]}`
-- ⚠️ React 组件需要 `useReducer` 包一层——成本极低
-
-### D-3 · 混合渲染：Canvas drawer + DOM 端口 overlay
-
-**问题**：现有 drawer（`circuit-draw.js` / `chemistry-components-draw.js`）是 JS Canvas 2D 命令式绘图；editor 在 React 里，如果用 SVG 重写所有 drawer **代价过高**且**破坏 D 阶段的浏览器镜像投资**。
-
-**解法**：
+**核心洞察**：53 errors 的修复有**内在顺序依赖**（不是并行任务）。根因链是：
 
 ```
-┌─ <div class="editor-canvas">  (React, relative position)
-│  ┌─ <canvas>  (absolute, z:1)
-│  │  runtime: for each placed component:
-│  │    drawer(ctx, {id, kind, props, anchor}, perComponentValues)
-│  │  → reuses existing TS-mirror drawer registry
-│  └─ <svg>  (absolute, z:2, pointer-events: none except on ports and wires)
-│     <ConnectionLayer/> — render commits + draft wire
-│     <PortHotspots/>    — <circle> per port · pointer-events:all · onClick
-└─
+Root: Chemistry Props 缺 index signature
+   ↓ 传染
+IExperimentComponent<Record<string, unknown>, ...> 约束不满足
+   ↓ 传染
+ChemistryGraph 不满足 DomainGraph<> 约束
+   ↓ 传染
+reaction.ts / solver.ts / assembler.ts / builder.ts 全链 TS2344/2345/2322
+   ↓ 测试文件派生
+chemistry-reactions.test.ts / chemistry-components.test.ts 测试侧错误
 ```
 
-**TS Drawer 镜像**：新建 `src/lib/editor/drawers/index.ts` 作为 **TS 端 ComponentMirror**（独立于 `public/templates/_shared/component-mirror.js`）。每个 domain 把 drawer 注册进这个 registry：
+**修复顺序 = 根因→末梢**：先打通 Props，50+ errors 自动消解；再修 discriminated union narrowing 这层独立问题（TS2339）；最后修孤立 bug（engines/index.ts / circuit/index.ts / layout-spec.test.ts）。
 
-```ts
-// src/lib/editor/drawers/circuit-drawers.ts
-import type { CanvasDrawer } from './index';
-export const circuitDrawers: Record<string, CanvasDrawer> = {
-  battery: (ctx, comp, values) => { /* port layout 来自 portLayout */ },
-  resistor: (...),
-  ...
-};
+**设计原则**：
+- 每个 Wave 独立可 commit、可 revert（M-1~M-5 迁移单元）
+- Wave 之间有**验证门**（tsc --noEmit 实时反馈 error 数下降曲线）
+- 修复不改变**运行时行为**（AC-E10 回归保障）
+
+## 架构数据流
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ 修复后：类型契约链路重新打通                                    │
+└────────────────────────────────────────────────────────────┘
+
+      Chemistry Props (加 index sig)
+        ├─ FlaskProps     + [key: string]: unknown
+        ├─ ReagentProps   + [key: string]: unknown
+        ├─ BubbleProps    + [key: string]: unknown
+        ├─ SolidProps     + [key: string]: unknown
+        └─ ThermometerProps + [key: string]: unknown
+             │
+             │ 现在可 assign 到 Record<string, unknown>
+             ▼
+      IExperimentComponent<FlaskProps, ChemStampEntry>
+      满足 IExperimentComponent<Record<string, unknown>, unknown>
+             │
+             ▼
+      ChemistryComponent (union)
+      满足 IExperimentComponent<...>
+             │
+             ▼
+      ChemistryGraph._components: Map<string, ChemistryComponent>
+      满足 DomainGraph<IExperimentComponent<...>>
+             │
+             ▼
+      InteractionEngine<ChemistryGraph, ChemistrySolveResult>
+      满足 InteractionEngine<DomainGraph<...>, SolveResult<...>>
+             │
+             ▼
+      ✅ 50+ errors 自动消解
 ```
 
-这**不重写**现有 JS drawer —— JS 侧继续服务于 HTML 模板，TS 侧服务于 React editor。两侧代码形状几乎一样（都是 `(ctx, comp, values) => void`），维护成本 = 两个 drawer 文件同步（可接受，因为 drawer 是纯渲染、变化慢）。
-
-**Trade-off**：
-- ✅ 端口 hotspot 用 DOM 天然支持 hover/click/tooltip
-- ✅ 元件主体用 Canvas 继续高效渲染
-- ✅ 老 HTML 模板完全不受影响（AC-B5）
-- ⚠️ Drawer 需要镜像两套（JS + TS）——未来 C 阶段可做 **drawer 定义语言（DDL）**把 JS 和 TS 都从单源生成（留给 C）
-
-### D-4 · Domain 扩展协议
-
-`EditorDomainConfig<D>` 是插件点：
-
-```ts
-// src/lib/editor/editor-config.ts
-export interface EditorDomainConfig<D extends ComponentDomain> {
-  domain: D;
-  palette: Array<{
-    kind: string;
-    displayName: string;
-    icon: string;          // emoji 或 dataURI
-    defaultProps: Record<string, unknown>;
-    defaultSize: { w: number; h: number };
-  }>;
-  portLayout: Record<
-    string,                              // kind
-    Record<
-      string,                            // port name
-      { dx: number; dy: number }         // offset from anchor
-    >
-  >;
-  drawers: Record<string, CanvasDrawer>;
-  validateBundle?: (bundle: AssemblyBundle<D>) => string[];  // optional domain-specific checks
-}
-
-// src/lib/editor/domain-configs/circuit.ts
-export const circuitEditorConfig: EditorDomainConfig<'circuit'> = { ... };
-
-// src/lib/editor/domain-configs/chemistry.ts
-export const chemistryEditorConfig: EditorDomainConfig<'chemistry'> = { ... };
-
-// src/lib/editor/domain-configs/index.ts
-export const EDITOR_DOMAIN_CONFIGS = { circuit: circuitEditorConfig, chemistry: chemistryEditorConfig };
-```
-
-**扩展一个新 domain（如 optics）**只需：
-1. 在 `src/lib/framework/domains/optics/` 建 components + graph + solver + assembly（这是 framework 层工作，不在 B 阶段）
-2. 在 `src/lib/editor/domain-configs/optics.ts` 新增 config 文件
-3. 在 `EDITOR_DOMAIN_CONFIGS` 映射里注册
-
-Editor 核心代码（`EditorShell`/`EditorCanvas`/`reducer`/`bundle-from-state`）**零修改**。这是 AC-B7 的硬约束。
-
-### D-5 · Run 按钮：动态 import engine
-
-Editor 不直接 hardcode 依赖 `CircuitEngine` 或 `ChemistryReactionEngine`——而是**按 domain 动态加载**：
-
-```ts
-// src/lib/editor/engine-dispatch.ts
-export async function runEditorBundle<D extends ComponentDomain>(
-  domain: D,
-  bundle: AssemblyBundle<D>
-): Promise<ComputeResult> {
-  const engines = {
-    circuit: async () => (await import('@/lib/engines/physics/circuit')).CircuitEngine,
-    chemistry: async () => (await import('@/lib/engines/chemistry/reaction')).ChemistryReactionEngine,
-  };
-  const EngineCtor = await engines[domain]();
-  const engine = new EngineCtor();
-  return engine.compute({ graph: bundle.spec } as unknown as Record<string, number>);
-}
-```
-
-**好处**：
-- Bundle size 按需：初始载入只包含 editor，不包含所有 engine
-- 加新 domain 只需扩 `engines` map
-
----
-
-## 数据流架构图
-
-```mermaid
-flowchart TB
-  subgraph UI ["React UI Layer (src/components/editor)"]
-    A[ComponentPalette] -->|drag| B[EditorCanvas]
-    B --> C[PlacedComponent]
-    B --> D[ConnectionLayer]
-    B --> E[PortHotspots]
-    F[PropertyPanel]
-    G[RunControls]
-  end
-
-  subgraph Logic ["Pure TS Layer (src/lib/editor)"]
-    H[editor-state.ts]
-    I[editor-state-reducer.ts]
-    J[bundle-from-state.ts]
-    K[port-layout.ts]
-    L[persistence.ts]
-    M[engine-dispatch.ts]
-    N[domain-configs/*]
-    O[drawers/*]
-  end
-
-  subgraph Framework ["TS Framework (src/lib/framework)"]
-    P[AssemblySpec + LayoutSpec]
-    Q[AssemblyBundle]
-    R[Assembler.assembleBundle]
-  end
-
-  subgraph Engines ["Engines (src/lib/engines)"]
-    S[CircuitEngine]
-    T[ChemistryReactionEngine]
-  end
-
-  UI -->|dispatch| I
-  I --> H
-  UI -->|read| H
-  B -->|render| O
-  E -->|query| K
-  K -->|read| N
-  G --> J
-  J --> Q
-  G --> M
-  M --> S & T
-  S --> G
-  T --> G
-  L <-->|save/load| Q
-```
-
----
-
-## Mermaid · 组件交互时序（拖放 + 连线 + 运行）
+## 时序图 · Wave 修复流程
 
 ```mermaid
 sequenceDiagram
-  participant User
-  participant Palette as ComponentPalette
-  participant Canvas as EditorCanvas
-  participant Reducer as editor-state-reducer
-  participant Render as PlacedComponent/Port
-  participant Run as RunControls
-  participant Engine
+    participant W0 as W0: 基线冻结
+    participant W1 as W1: 孤立 bug
+    participant W2 as W2: AssemblyBundle 别名
+    participant W3 as W3: Props index sig
+    participant W4 as W4: Reactions narrow
+    participant W5 as W5: 测试+兜底
+    participant W6 as W6: AC-E11 tsc 进工作流
+    participant W7 as W7: docs+审计
 
-  User->>Palette: drag 'battery'
-  User->>Canvas: drop at (120, 80)
-  Canvas->>Reducer: {type:'placeComponent', kind:'battery', position}
-  Reducer-->>Canvas: state' with new placed[id=battery-1]
-  Canvas->>Render: re-render battery-1
-
-  User->>Render: click port '+' on battery-1
-  Render->>Reducer: {type:'startWire', componentId:'battery-1', port:'+'}
-  User->>Canvas: move mouse
-  Canvas->>Reducer: {type:'updateWireCursor', x, y}  (throttled rAF)
-  User->>Render: click port 'a' on resistor-1
-  Render->>Reducer: {type:'finishWire', componentId:'resistor-1', port:'a'}
-  Reducer-->>Canvas: state' with connection
-
-  User->>Run: click 'Run'
-  Run->>Run: bundleFromState(state)
-  Run->>Engine: compute({graph: bundle.spec})
-  Engine-->>Run: {perComponent, events}
-  Run->>Render: pass perComponent to drawers for overlay
+    W0->>W0: npx tsc → 53 errors 快照
+    W0->>W0: Jest 555/555 绿基线
+    W1->>W1: engines/index.ts 加 import (53→52)
+    W1->>W1: circuit/index.ts re-export ×2 (52→50)
+    W1->>W1: layout-spec.test.ts 删 @ts-expect-error (50→49)
+    W2->>W2: AssemblyBundle.spec → AssemblySpec<D> (49→45)
+    W3->>W3: 5 Props 加 [key: string]: unknown (45→~10)
+    W4->>W4: reactions 加 discriminated narrow (~10→0)
+    W5->>W5: 新加 3 narrow 守卫测试
+    W5->>W5: Jest 全量跑绿（555 → 558+）
+    W6->>W6: scripts/check.sh (tsc+jest+lint)
+    W6->>W6: AGENTS.md 更新 TEST 阶段强制
+    W7->>W7: docs/architecture-constraints.md 新建
+    W7->>W7: docs/editor-framework.md 补「受控松动」章节
+    W7->>W7: 硬约束四路 diff 审计
 ```
 
----
+## 5 核心决策
 
-## Architecture Scorecard（14/14 PASS · 逐条自检）
+### D-1 · 修复顺序 = 根因→末梢（Wave 递进）
 
-| ID | 类别 | Sev | 检查 | 状态 | 证据 |
-|----|------|-----|------|------|------|
-| ARCH-001 | Decision Justification | HIGH | 主要技术决策有 WHY | ✅ | D-1~D-5 每条含 Why+Trade-off |
-| ARCH-002 | Decision Justification | MED | Trade-offs 显式 | ✅ | 每决策含 Trade-off 子节 |
-| ARCH-004 | Scalability | HIGH | 水平扩展策略 | N/A | 纯前端，无水平扩展需求 |
-| ARCH-007 | Reliability | HIGH | 无 SPOF | ✅ | 纯浏览器；无后端依赖 |
-| ARCH-008 | Reliability | HIGH | 数据持久化 | ✅ | localStorage + JSON 导入导出（兜底） |
-| ARCH-009 | Reliability | MED | 失败模式有恢复 | ✅ | 见 Failure Model |
-| ARCH-010 | Security | HIGH | 认证授权 | N/A | 纯前端无登录 |
-| ARCH-011 | Security | HIGH | 敏感数据 | N/A | 无敏感数据 |
-| ARCH-012 | Security | MED | 最小权限 | ✅ | localStorage 仅当前 origin，无跨域 |
-| ARCH-013 | Observability | MED | 日志策略 | ✅ | `console.warn` 在连线校验失败/LoadBundle 失败处 |
-| ARCH-015 | Requirements | HIGH | NFR 覆盖 | ✅ | 画布响应 < 16ms / 保存容量 < 5MB 警告 |
-| ARCH-016 | Requirements | HIGH | 功能需求覆盖 | ✅ | 14 AC 全覆盖 13 In-Scope |
-| ARCH-017 | Consistency | HIGH | 无内部矛盾 | ✅ | D-1 将 anchor 放 state 内 + D-3 导出时再拆，一致 |
-| ARCH-018 | Consistency | MED | 图文一致 | ✅ | 数据流图 ↔ 时序图 ↔ 文字描述一致 |
+**决策**：Wave 0 基线 → W1 孤立 bug (3 errors) → W2 别名消融 (4 errors) → W3 Props index sig (~35 errors) → W4 narrow (~10 errors) → W5 测试 → W6 AC-E11 → W7 docs
 
----
+**理由**：
+- **验证实时化**：每 Wave 结束跑 `npx tsc --noEmit` 能看到 error 数下降曲线，不对劲立即 rollback
+- **风险递增**：W1/W2 风险最低（纯结构）、W3 中（接口扩展）、W4 最高（可能改语义）
+- **独立 commit**：每 Wave 一次 commit，单个 Wave 失败不影响其他
 
-## Failure Model（6 模式 · 每条有应对）
+**Trade-off**：
+- 若选"并行修复所有类别" → tsc 输出错乱，定位困难
+- 若选"全部一次性 diff" → 回滚时不知道哪里坏了
 
-| # | 模式 | 触发 | 应对 |
-|---|------|------|------|
-| F-1 | 端口重复连接 | 用户对同一对端口二次点击 | `finishWire` reducer 预检：若 (from,to) 已存在则忽略 · UI 提示"该连接已存在" |
-| F-2 | 自环（A.x → A.x） | 用户在同一元件端口之间连线 | `finishWire` 校验 `from.componentId !== to.componentId OR from.port !== to.port` |
-| F-3 | Engine 运行时 throw | spec 校验失败（端口不匹配 / 必填 prop 缺失） | RunControls 捕获 · 显示 `.errorMessage` · state 不变 |
-| F-4 | LoadBundle JSON 格式错误 | 导入损坏文件 | `persistence.loadBundle` 用 type guard 校验 · 失败返回 `null` · UI 提示 |
-| F-5 | localStorage quota 满 | 保存大 Bundle | `saveBundle` try/catch · 失败提示"容量满，请清理旧存档" |
-| F-6 | 快速连续 mousemove 导致 re-render 风暴 | 移动元件/绘制 draft wire | `updateWireCursor` + `moveComponent` 走 rAF 节流 · PlacedComponent 用 React.memo |
+### D-2 · Props 加 index signature（选方案 A）
 
----
+**决策**：在 `FlaskProps/ReagentProps/BubbleProps/SolidProps/ThermometerProps` 各加一行 `[key: string]: unknown`。
 
-## Migration Safety Case（4 阶段独立可回滚）
+**备选方案**：
+- **方案 B**：改 framework 核心 `IExperimentComponent<P extends Record<string, unknown>>` 为 `<P extends object>` —— **拒绝**。改动面大，所有 domain 受影响，未来语义含糊。
+- **方案 C**：每个 Props 改为 `type FlaskProps = Record<string, unknown> & { volumeML: number; ... }` —— **拒绝**。等价于方案 A 但可读性差。
 
-| 阶段 | 交付 | 回滚方式 |
-|------|------|---------|
-| M-1 · 基础画布 | Wave 0 完成：state/reducer/palette/canvas 壳 · 可放置 + 移动元件（无连线） | `rm -rf src/lib/editor src/components/editor src/app/editor` + 移除 `docs/editor-framework.md` |
-| M-2 · 连线 | Wave 1：port hotspot + draft wire + commit connection | 在 M-1 基础上回滚 `*-wire*` / `ConnectionLayer` 相关文件 |
-| M-3 · 运行 + 持久化 | Wave 2：RunControls + persistence · 可实际算物理 | 回滚 RunControls/persistence/engine-dispatch |
-| M-4 · Domain 扩展 + 文档 | Wave 3：chemistry config · editor-framework.md 文档 | 回滚 domain-configs/chemistry 和文档 |
+**选 A 的理由**：
+- 改动局部（5 个文件各 1 行）
+- 保留具名字段的静态检查（`p.volumeML: number` 仍在）
+- 访问未知字段返回 `unknown`（防御性，不是 `any`）
+- 符合本轮补偿规则"允许扩展"
 
-每阶段**独立 git commit**，回滚粒度明确。
+**代价（FM-2 披露）**：打字错不再被 TS 抓（`p.volumMl` 错拼返回 unknown，但后续赋值/运算时仍会失败）。可接受。
 
----
+### D-3 · Reactions 用 type predicate helper 收窄
 
-## Scenario Coverage（5 场景)
+**决策**：新建 `framework/domains/chemistry/type-guards.ts`（允许新建，因为是"扩展 framework/domains/" 不是改核心类型契约），导出：
 
-| # | 场景 | 预期行为 |
-|---|------|---------|
-| S-1 | 工程师拖放 battery + resistor + bulb · 连线 · Run | Editor 调 CircuitEngine · 画布显示电流/电压数值 |
-| S-2 | 工程师保存方案 "my-circuit-01" · 刷新页面 · 加载 | localStorage 恢复，state 完全相同 |
-| S-3 | 工程师导出 JSON · 发给同事 · 同事导入 · Run | Bundle JSON fingerprint 两端一致，运行结果一致 |
-| S-4 | 工程师切换到 chemistry · 拖放 Flask + Reagent · Run metal-acid | ChemistryReactionEngine 动态载入 · 画布显示反应结果 |
-| S-5 | 工程师画错了连线 · 点击连线 · Delete | 连线删除，相关元件不受影响 |
-
----
-
-## Adversarial Review（4 问 · 自问自答）
-
-**Q1 · 最大的错误假设是什么？**
-"所有 domain 的端口都可以用 `{dx, dy}` 静态偏移表达。" 如果某个 domain 的端口会**动态数量**（如可变端口 hub），portLayout 的固定键值表将失效。应对：portLayout 改为函数 `(component) => Record<portName, {dx,dy}>`；本轮仍用静态表（circuit/chemistry 都是固定端口），C 阶段再升级为函数——**文档里注明此限制**。
-
-**Q2 · 生产中最可能炸的地方？**
-Engine.compute 被传了残缺 bundle（用户没连完整电路就点 Run）。应对：RunControls 在调用前跑 `assembleBundle` 做预校验，失败则**不调 engine**，直接提示"请完成所有端口连接"。
-
-**Q3 · 能否用更简单的架构？**
-"不搞 reducer，直接在 React 里用 useState 多个 setter" —— 看似简单，但：
-- 无法独立测（AC-B2 违反）
-- undo/redo 几乎不可能加
-- state 分散，竞态难调
-结论：坚持 reducer 模式。
-
-**Q4 · 最大的外部依赖风险？**
-React + Next.js —— 但已经是项目主栈，零新增。shadcn/ui 已在项目里。**零新依赖**（AC-B14 的事实兑现）。
-
----
-
-## Out-of-Scope 架构确认（与 ANALYSE 一致）
-
-以下**不在本轮架构内**，相关文件/配置/抽象**不应出现**：
-
-- 撤销/重做 state 栈
-- 自动布局算法（force-directed、grid snap）
-- 正交连线布线
-- 多选 state
-- 服务端 save
-- 多人协作同步层
-- 缩略图 minimap
-
----
-
-## 输出契约（交给 PLAN）
-
-**20 新 + 2 改**文件清单（细节见 `analysis.md` "受影响位置"表）。分 4 Wave：
-
-```
-Wave 0: state/reducer/persistence/config/port-layout + 测试           (~6 files · ~40min)
-Wave 1: UI 壳（EditorShell/Palette/Canvas）+ 画布 drawer(TS 镜像)     (~7 files · ~60min)
-Wave 2: 端口 hotspot + 连线 + 选择/删除 + 属性面板                   (~4 files · ~50min)
-Wave 3: RunControls + engine-dispatch + 导入导出                    (~3 files · ~30min)
-Wave 4: chemistry domain config + 路由挂载 + 文档 + 全量验证         (~4 files · ~30min)
+```ts
+export function asReagent(c: ChemistryComponent): c is Reagent {
+  return c.kind === 'reagent';
+}
+export function asSolid(c: ChemistryComponent): c is Solid { ... }
+export function asFlask(c: ChemistryComponent): c is Flask { ... }
 ```
 
-总预估 ~3.5h（复用 InfiniteCanvas + framework 成熟 API + 架构约束清晰）。
+`acid-base-neutralization.ts` / `metal-acid.ts` / `iron-rusting.ts` 的访问点都从：
+```ts
+if (c.props.formula === 'HCl') { ... }
+```
+改为：
+```ts
+if (asReagent(c) && c.props.formula === 'HCl') { ... }
+```
+
+**理由**：
+- **复用** —— 未来新 reaction 不用重复写 `c.kind === 'reagent'`
+- **可读** —— `asReagent(c)` 比 `c.kind === 'reagent'` 意图更显式
+- **测试** —— type predicate 本身可单元测试（AC-E9 的 3 测试）
+
+**Trade-off**：
+- 新文件是"扩展 framework/domains/" —— 补偿规则下允许，但要明文记录
+- 未来类型进一步收紧时，helper 需要维护
+
+### D-4 · AC-E11 = `scripts/check.sh` + AGENTS.md 更新
+
+**决策**：
+- 新建 `scripts/check.sh`（跑 `npx tsc --noEmit && npx jest --passWithNoTests && npx eslint . --max-warnings=0`）
+- 修改 `AGENTS.md` TEST 阶段的 Step 1（"Lint Check"）改为 "Run scripts/check.sh（含 tsc+jest+lint）"
+- 本轮 TEST 阶段就用新脚本验证（dogfooding）
+
+**理由**：
+- 零新依赖（ts/eslint/jest 都已在 devDeps）
+- 单一入口替代三个命令 —— 未来 Agent 不会漏跑
+- 脚本退出码非零 = TEST 失败，工作流无法放过
+- 文档化后未来 /wf 进 TEST 必跑
+
+**Trade-off**：
+- 添加一个 shell 脚本文件（Windows 下要用 bash 跑，与项目其他 script.sh 一致）
+- 修改 AGENTS.md TEST 阶段指引（少量）
+
+### D-5 · architecture-constraints.md 新建 + 原硬约束条款不删
+
+**决策**：
+- 新建 `docs/architecture-constraints.md` （格式 ADR-style）记录：
+  - 四轮硬约束原文（framework 核心零改 / 老模板零改 / 零新依赖 / 零 React 污染）
+  - **受控松动条款**（E 阶段新增）：3 允许 + 3 禁止
+  - 松动使用记录（E 阶段首次使用记录表）
+- `docs/editor-framework.md` 不删硬约束原文，只加"链接到 constraints.md 获取完整规则"
+
+**理由**：
+- 保留原硬约束原文 —— 承诺历史可追溯，不"改写"
+- 单点真相 —— 未来 /wf Agent 读一个文件就知全部约束
+- "使用记录表" —— 每次松动都留痕，防止累计腐烂
+
+**Trade-off**：
+- 新建一个文档
+- 未来 Agent 要记得读它（需要加到 session-start checklist）
+
+## Architecture Scorecard
+
+| ID | 维度 | 状态 | 说明 |
+|----|------|------|------|
+| A-1 | 简单性 | ✅ | 修复本质是"类型扩展 + narrow 添加"，无新 API 设计 |
+| A-2 | 可测性 | ✅ | type predicate helper 纯函数可测；tsc 输出本身是机器验证 |
+| A-3 | 可逆性 | ✅ | 每 Wave 独立 commit；index sig 可单独撤回 |
+| A-4 | 一致性 | ✅ | 5 个 Props 加同一行；3 个 reactions 用同一套 helper |
+| A-5 | 性能 | ✅ | 类型修复零运行时影响；narrow check 已有运行时等价 if |
+| A-6 | 可扩展 | ✅ | type-guards.ts 未来新 reaction 直接用 |
+| A-7 | 向后兼容 | ✅ | 零 API 改动，只加约束 |
+| A-8 | 零新依赖 | ✅ | 所有工具（ts/eslint/jest）已在 devDeps |
+| A-9 | 可观测 | ✅ | check.sh 输出 tsc/jest/lint 三段式报告 |
+| A-10 | 安全 | N/A | 纯类型清理 |
+| A-11 | 文档 | ✅ | architecture-constraints.md 新 + editor-framework.md 补充 |
+| A-12 | 可回滚 | ✅ | Wave 独立 commit + M-1~M-5 迁移单元 |
+| A-13 | 错误处理 | ✅ | type predicate 明确 `is`；check.sh 非零退出 = 失败 |
+| A-14 | 学习成本 | ✅ | Props index sig 是标准 TS 模式；narrow helper 是 TS type predicate 标准 |
+
+## Scenario Coverage · 场景覆盖矩阵
+
+| # | 场景 | 决策覆盖 | 验证方式 |
+|---|------|---------|---------|
+| S-1 | 基线：`npx tsc --noEmit` 当前 53 errors | W0 快照 | 命令跑 |
+| S-2 | 修 engines/index.ts L82 真 bug | D-1 W1 | tsc 断 1 减 |
+| S-3 | 修 circuit/index.ts 缺 2 re-export | D-1 W1 | tsc 断 2 减 |
+| S-4 | 删 layout-spec.test.ts L145 无用 @ts-expect-error | D-1 W1 | tsc 断 1 减 |
+| S-5 | AssemblyBundle.spec → AssemblySpec<D> | D-1 W2 | tsc 断 4 减 |
+| S-6 | 5 Props 加 index signature → 链式解 35+ errors | D-2 W3 | tsc 断 ~35 减 |
+| S-7 | 10 处 `c.props.formula` 加 asReagent narrow | D-3 W4 | tsc 断 ~10 减（最后归零） |
+| S-8 | 新 reaction rule 开发场景 | D-3（type-guards 复用） | 架构推导 |
+| S-9 | type predicate 写反（漏 kind 检查）| AC-E9（3 单测）| jest 新测试 |
+| S-10 | Jest 555 基线保持 | AC-E2 | jest 全量跑 |
+| S-11 | Chemistry engine 真 bug 修复（真的 register）| AC-E4 | 新加 registry.getByType 测试 |
+| S-12 | 未来 /wf TEST 阶段必跑 tsc | D-4（AC-E11）| AGENTS.md + scripts/check.sh |
+| S-13 | 未来新 domain 加 Props | 遵循新规范"Props 加 index sig" | 文档化 |
+| S-14 | 硬约束第 6 轮又想松动 | architecture-constraints.md 使用记录表 | 人工 review |
+
+**覆盖率**：14 场景 · 11 有机器验证 · 3 为架构/推导/文档验证。
+
+## Consumer Adoption Design · 消费者接入设计
+
+本轮新产出的 3 个 API/能力如何被下游消费：
+
+### API-1 · 5 个 Chemistry Props 的 index signature
+
+**影响范围**：所有消费 `FlaskProps/ReagentProps/BubbleProps/SolidProps/ThermometerProps` 的代码
+
+**接入模式**：**零改动** —— 现有代码自动受益：
+```ts
+// 现有 chemistry engine / reaction / solver 代码
+graph._components.get('flask_1')?.props.volumeML  // ← 仍然 number（具名字段保留）
+graph._components.get('flask_1')?.props.unknownField  // ← 新：返回 unknown（之前报错）
+```
+
+**未来扩展成本**：新 Props 接口声明时**按新规范**加 `[key: string]: unknown`（已写入 architecture-constraints.md）。
+
+### API-2 · `type-guards.ts` — asReagent / asFlask / asSolid / asBubble / asThermometer
+
+**首次消费**：`acid-base-neutralization.ts` / `metal-acid.ts` / `iron-rusting.ts`
+
+**接入模式**：
+```ts
+import { asReagent } from '../type-guards';
+
+// 每处访问 reagent-specific 字段前调用
+for (const c of graph.contentsOf(flask)) {
+  if (asReagent(c) && c.props.formula === 'HCl') {
+    // c 在此分支被窄化为 Reagent 类型
+    const conc = c.props.concentration;  // number，静态已知
+    ...
+  }
+}
+```
+
+**未来扩展**：
+- 新 reaction rule 直接 `import { asX }` 用
+- 新 component kind (e.g. `Catalyst`)？遵循补偿规则"禁止新增 kind"，**不加**；若有真实需求则走另一轮 /wf 专门议决
+
+### API-3 · `scripts/check.sh` — 统一质量闸门
+
+**首次消费**：本轮的 TEST 阶段
+
+**接入模式**：
+```bash
+bash ./scripts/check.sh
+# 输出：
+# ✅ TSC: 0 errors
+# ✅ Jest: 558/558 passed
+# ✅ ESLint: 0 warnings
+# 退出码 0 = 全绿；非零 = 失败
+```
+
+**未来消费**：
+- 每次 `/wf TEST` 必跑
+- 本地开发者 commit 前手动跑（推荐）
+- 若未来项目加 CI，直接 `.github/workflows/ci.yml` 调用此脚本
+
+**AGENTS.md 增量**（TEST 阶段）：
+
+```markdown
+## Stage 6: TEST
+...
+**Step 1: Quality Check（替代原 Lint Check）**
+bash ./scripts/check.sh
+- 非零退出视为 TEST 失败，必须修复
+- 本脚本整合 tsc+jest+lint，单一入口防漏跑
+```
+
+### 总消费性评估
+
+| API | 接入点数 | 每点成本 | 总成本 | 迁移风险 |
+|-----|---------|---------|--------|---------|
+| Props index sig | 0（零消费侧改动） | 0 | 0 | 零 |
+| type-guards | 3 reaction 文件，共 ~15 次调用 | 2-3 行 | ~20 行 | 低（jest 覆盖） |
+| check.sh | 1（AGENTS.md TEST 阶段） | 3 行 | 3 行 | 零 |
+
+**合计消费侧改动 ~23 行** · 新产出代码 ~25 行 · **总 ~48 行**
+
+## Failure Model · 6 模式
+
+| # | 失败模式 | 触发 | 缓解 |
+|---|---------|------|------|
+| F-1 | Props 加 index sig 后打字错不被 TS 抓 | 未来 `c.props.volumMl` 错拼 | ESLint 规则 no-unused-vars 会在赋值时抓；jest 运行时 undefined 会炸 |
+| F-2 | type predicate 漏写 kind 检查（e.g. `asReagent` 没 `kind === 'reagent'`）| 实现错误 | AC-E9 · 3 单测验证每个 predicate 正负样本 |
+| F-3 | AssemblyBundle.spec 改别名后 runtime 验证破坏 | `isAssemblyBundle` shape 检查改变 | 纯类型别名，runtime 零影响；jest 全量跑验证 |
+| F-4 | engines/index.ts 加 import 后 registry 多 register（behavioural change）| 真 bug 修复 | AC-E4 新加测试验证；grep 确认无 "检查 undefined fallback" 代码 |
+| F-5 | Jest 某测试依赖 chemistry Props 的"无 index sig"行为（极罕见）| 如测试验证 `Object.keys()` 长度 | 全量 jest 跑一遍；若失败单点修复 |
+| F-6 | scripts/check.sh 在 Windows PowerShell 下路径问题 | Windows 环境 | 与 `scripts/dev.sh` / `build.sh` 同模式（bash 调用），已被验证 |
+
+## Migration Safety · 7 阶段独立回滚
+
+| M | Wave | 修改内容 | 如果失败如何回滚 |
+|---|------|---------|-----------------|
+| M-1 | W1 | engines/index.ts + circuit/index.ts + layout-spec.test.ts | `git revert` 单 commit |
+| M-2 | W2 | framework/assembly/layout.ts 的 AssemblyBundle.spec | `git revert` 单 commit |
+| M-3 | W3 | 5 Props index signature | `git revert` 单 commit · Props 独立 |
+| M-4 | W4 | type-guards.ts 新建 + 3 reactions narrow | `git revert` 恢复旧访问模式 |
+| M-5 | W5 | 测试新加 | 删测试文件即可 |
+| M-6 | W6 | scripts/check.sh + AGENTS.md TEST 阶段 | `git revert` |
+| M-7 | W7 | docs/architecture-constraints.md + editor-framework.md | `git revert` |
+
+## Adversarial Self-Review · 对抗自审
+
+### Q1 · 最大错误假设？
+
+**假设**："Props 加 index signature 不改变运行时行为"。
+
+**挑战**：真的吗？如果某测试用 `Object.keys(props)` 枚举字段，之前返回 `['volumeML', 'shape', 'label', 'meta']`，现在**是否还一样**？
+
+**验证**：index signature 只影响**类型级别**，不影响 `Object.keys` 的运行时行为（`Object.keys` 返回实际枚举属性，与类型声明无关）。假设成立。
+
+### Q2 · 最可能炸的地方？
+
+**候选**：W4 reactions narrow —— 如果我把 `if (asReagent(c))` 加错位置，可能改变 reaction 触发条件，jest 原本绿的回归测试会失败。
+
+**缓解**：
+- W4 每个 reaction 文件单独 commit，jest 全量跑
+- AC-E10 明文要求 chemistry reactions 运行时行为不变
+- 出错立即 git revert，退回到 W3 状态（40+ errors 消但 10 个 TS2339 仍在），继续排查
+
+### Q3 · 更简方案？
+
+**候选**：全部用 `// @ts-ignore` 压（A-strict 方案）
+
+**拒绝理由**：这是假绿。FM-4 风险。用户已选 B-plus。
+
+### Q4 · 最大依赖风险？
+
+**候选**：`scripts/check.sh` 依赖系统 bash。Windows 下需要 git bash / WSL。
+
+**缓解**：项目已有 `scripts/{dev,build,start,prepare}.sh` 模式，开发者早有 bash 环境。AGENTS.md 记录"需要 bash"。
+
+## AC 与决策映射（更新 10 → 11）
+
+| AC | 描述 | 决策 |
+|----|------|------|
+| AC-E1 | TSC 零错 | D-1/D-2/D-3（Wave 1~4 合力） |
+| AC-E2 | Jest 555 基线保持 | D-1（Wave 递进验证） |
+| AC-E3 | framework 变更仅限三类 | D-5（architecture-constraints.md 使用记录）|
+| AC-E4 | chemistry engine 真 bug 修复 | D-1（W1 修 engines/index.ts）|
+| AC-E5 | 老模板零改 | 延续（不修改 public/templates/）|
+| AC-E6 | 零新依赖 | 延续（ts/eslint/jest 已有）|
+| AC-E7 | editor 零 React 污染 | 延续（不碰 src/lib/editor/）|
+| AC-E8 | architecture-constraints.md 记录松动 | D-5 |
+| AC-E9 | 3+ type predicate 测试 | D-3 |
+| AC-E10 | chemistry reactions 行为不变 | D-1（Wave 递进验证 + Jest）|
+| **AC-E11** | **TSC 进工作流（scripts/check.sh + AGENTS.md）**| **D-4（新增）** |
+
+## Wave 分解预估 · ~2.5-3h · 17 任务
+
+```
+W0 (10min) · 基线冻结 + analysis 确认：tsc 53 + jest 555 + git clean
+W1 (30min) · 孤立 bug · T-1 engines/index.ts import · T-2 circuit re-export ×2 · T-3 @ts-expect-error 删除
+W2 (20min) · AssemblyBundle 别名 · T-4 layout.ts 改 spec → AssemblySpec<D>
+W3 (40min) · Props index sig · T-5 5 Props 各加 1 行 · T-6 跑 tsc 看链式消解
+W4 (50min) · Reactions narrow · T-7 type-guards.ts 新建 · T-8~T-10 三个 reaction 文件改 · T-11 reaction-utils.ts 修 TS2352
+W5 (30min) · 测试补齐 · T-12 3 个 type predicate 测试 · T-13 engine registry 测试 · T-14 jest 全量
+W6 (20min) · AC-E11 · T-15 scripts/check.sh 新建 · T-16 AGENTS.md TEST 阶段更新
+W7 (10min) · docs + 审计 · T-17 architecture-constraints.md + editor-framework.md 链接 + 四路审计
+```
+
+**总计 17 任务 · 平均 ~11min/任务**。
+
+## 与上一轮 /wf 的衔接
+
+- ✅ 不改 D 阶段任何文件（bounds/snap/hover/drawer 纹丝不动）
+- ✅ 不改 C 阶段 history/autoLayout 功能
+- ✅ 不改 B 阶段 editor framework
+- ⚠️ **受控松动** framework 零改硬约束（D-5 明文记录）
+- ✅ 老模板 / 零新依赖 / editor 零 React 三约束延续
+
+## 总结
+
+**本轮交付**：53 → 0 TSC errors · 10 文件修改 + 2 新建（type-guards.ts / check.sh） + 1 新文档（architecture-constraints.md） · ~2.5-3h · 附带修 1 runtime bug（chemistry engine 未注册）+ 补防护层（AC-E11 tsc 进工作流）。
+
+**关键创新**：受控松动条款 + 使用记录表 —— 让"硬约束松动"从模糊软规则变成**有审计轨迹的受控流程**。
+
+**不做**：
+- 不新增 component kind / solver / engine / reaction
+- 不重构 framework 物理结构（core/ vs domains/ 分层留给 F 阶段）
+- 不修 framework 非 chemistry 部分的 latent 问题（scope creep 保护）
