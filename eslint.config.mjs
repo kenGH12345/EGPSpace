@@ -52,6 +52,29 @@ const eslintConfig = defineConfig([
       }],
     },
   },
+  {
+    // F 阶段 · framework 物理分层边界守护
+    // 外部代码（editor/engines/components）只能从 @/lib/framework barrel 导入，
+    // 禁止伸进 contracts/runtime/builders 内部分层路径。
+    // 见 docs/architecture-constraints.md 的 F 阶段条款。
+    files: ['src/lib/editor/**/*.ts', 'src/lib/editor/**/*.tsx',
+            'src/lib/engines/**/*.ts', 'src/lib/engines/**/*.tsx',
+            'src/components/**/*.ts', 'src/components/**/*.tsx'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: [
+              '@/lib/framework/contracts/*',
+              '@/lib/framework/runtime/*',
+              '@/lib/framework/builders/*',
+            ],
+            message: 'F 阶段物理边界：外部代码只能从 @/lib/framework (barrel) 导入，禁止伸进内部分层目录。参见 docs/architecture-constraints.md',
+          },
+        ],
+      }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

@@ -1,7 +1,7 @@
 # Architecture Constraints
 
-> **本项目跨 /wf 轮次必须遵守的硬约束 + 受控松动条款**
-> **Last updated**: E 阶段 · 2026-04-29
+> **本项目跨 /wf 轮次必须遵守的硬约束 + 物理边界 + 受控松动条款**
+> **Last updated**: F 阶段 · 2026-04-29
 
 ## 目的
 
@@ -12,13 +12,35 @@
 
 ---
 
-## 🔒 核心硬约束（四轮承诺）
+## 🔒 核心硬约束（四轮承诺 + F 阶段物理兑现）
 
-### C-1 · Framework 核心零改
+### C-1 · Framework 物理分层边界（F 阶段兑现）
 
-**原约束**：`src/lib/framework/**` 下所有文件 **零改动**。
+**F 阶段前**：`src/lib/framework/**` 零改动（软约束，由人类守护）。
 
-**E 阶段受控松动**：允许 3 类修改，禁 3 类修改 —— 见下 [受控松动条款](#受控松动条款e-阶段新增)。
+**F 阶段后（新契约）**：framework 内部物理分层为 4 目录，**机器守护**：
+
+```
+src/lib/framework/
+├── contracts/    ← 🔒 type-dominant · 修改需 [contracts-change] commit + ADR
+├── runtime/      ← 🟡 impl-dominant · 允许 bug 修复和性能优化
+├── builders/     ← 🟢 增量区 · 允许新增 builder 工具
+└── domains/      ← 🟢 自由演化 · chemistry/circuit 等
+```
+
+**依赖方向红线**（`scripts/arch-audit.sh` 强制）：
+- `runtime` → `contracts`（合法）
+- `builders` → `contracts + runtime`（合法）
+- `domains` → `contracts + runtime + builders`（合法）
+- `contracts → runtime/builders/domains`（❌ 禁 · 例外见下）
+- `runtime → builders/domains`（❌ 禁）
+- `builders → domains`（❌ 禁）
+- **外部代码（editor/engines/components）只能从 `@/lib/framework` barrel 导入**，ESLint `no-restricted-imports` 硬规则
+
+**F 阶段明示例外**（记录在 `scripts/arch-audit.sh` allowlist）：
+- `contracts/graph.ts → runtime/union-find`：`DomainGraph` 是混合文件（3 type + 1 reference impl class），其实现部分使用 `UnionFind` 是合理的。未来重构可把 class 分离到 runtime/。
+
+**E 阶段受控松动条款归档**：E 阶段的"允许 3 类 / 禁 3 类"自然语言规则已由 F 阶段物理边界 + ESLint + arch-audit 替代。旧条款保留为**历史记录**，不再是现行规则。
 
 ### C-2 · 老模板零改
 
@@ -44,7 +66,9 @@
 
 ---
 
-## 受控松动条款（E 阶段新增）
+## 受控松动条款（E 阶段历史记录 · F 阶段后已归档）
+
+> ⚠️ **F 阶段后本小节不再是现行规则**——E 阶段的"允许 3 类 / 禁 3 类"自然语言软条款已由 F 阶段的**物理分层 + ESLint + arch-audit**机器守护替代。本小节保留仅为历史追溯。新约束见上方 C-1 · Framework 物理分层边界。
 
 ### ✅ 允许的 framework 修改
 
@@ -85,6 +109,7 @@
 | 4 | 2026-04-29 | **E 阶段** | `framework/domains/circuit/index.ts` 补 `AssemblyBuildError` + `validateSpec` re-export | 3 bug 修复 | 用户批准 B-plus |
 | 5 | 2026-04-29 | **E 阶段** | 新建 `framework/domains/chemistry/type-guards.ts`（discriminated union helper）| 1 扩展 | 用户批准 B-plus |
 | 6 | 2026-04-29 | **E 阶段** | 更新 `layout-spec.test.ts` 的 AC-D1 测试（精神不变，字面放宽）| 2 别名复用关联 | 用户批准 B-plus |
+| 7 | 2026-04-29 | **F 阶段** | 一次性 framework 物理分层重构：15 核心文件从 `components/solvers/interactions/assembly/` 迁移到 `contracts/runtime/builders/`；删除 4 旧目录；barrel 兼容保持；新增 ESLint + arch-audit 守护；E 阶段软条款由物理边界替代 | 一次性物理兑现 | 用户批准 F-plus |
 
 ---
 

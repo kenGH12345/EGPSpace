@@ -314,7 +314,8 @@ bash ./scripts/dev.sh       # 启动开发预览 (port 5000)
 
 ## 相关文档
 
-- **[Architecture Constraints](./architecture-constraints.md)** — 硬约束 + 受控松动条款（E 阶段新增）
+- **[Architecture Constraints](./architecture-constraints.md)** — 硬约束 + 物理边界（F 阶段）+ 受控松动条款（E 阶段归档）
+- **[Framework Boundary Skill](../.workflow/skills/framework-boundary.md)** — F 阶段物理分层 · 未来 /wf Agent 必读
 - **[Assembly Framework](./assembly-framework.md)** — 装配层底座
 - **[Layout Spec](./layout-spec.md)** — anchor 解耦契约（D 阶段）
 - **[Component Framework](./component-framework.md)** — 元件抽象与 domain 扩展
