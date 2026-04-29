@@ -35,7 +35,7 @@ export function findContainedPair<A extends ChemistryComponent, B extends Chemis
   const contents = graph.contentsOf(flaskId);
   const a = contents.find(predA);
   if (!a) return null;
-  const b = contents.find((c) => c.id !== a.id && predB(c));
+  const b = contents.find((c): c is B => c.id !== a.id && predB(c));
   if (!b) return null;
   return [a, b];
 }

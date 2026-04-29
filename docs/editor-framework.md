@@ -136,18 +136,167 @@ Click ▶ 运行
   → drawer 下一帧时用 values 绘制 (overlay current/voltage/pH/...)
 ```
 
+## 撤销 / 重做（C 阶段）
+
+编辑器使用 **高阶 reducer 包装（`withHistory`）** 实现撤销/重做，对业务 reducer 零侵入。
+
+### 架构
+
+```
+EditorShell.useReducer(
+  withHistory(applyEditorAction, HISTORY_OPTIONS),  ← 高阶包装
+  emptyHistory(emptyEditorState(domain))
+)
+
+HistoryState<EditorState> = {
+  past: EditorState[],    // 过去快照栈（最多 50 条）
+  present: EditorState,   // 当前状态（UI 读这个）
+  future: EditorState[],  // redo 栈（正常 action 会清空）
+}
+```
+
+### Squash 策略（避免 push 风暴）
+
+连续的 `moveComponent` / `updateProp` / `updateWireCursor` / `setCamera` 在 500ms 时间窗内对**同一目标**合并为 1 条历史。算法：比较 `actionType + targetId + 时间戳`。
+
+好处：
+- 拖动 100 次 mousemove 只留 1 条 undo 条目
+- 输入框连续打字只留 1 条 undo
+
+不被 squash：`placeComponent` / `deleteSelection` / `finishWire` / `loadBundle` 等「里程碑」action 一次一条。
+
+### 快捷键
+
+| 键位 | 动作 |
+|------|------|
+| `Ctrl+Z` / `Cmd+Z` | 撤销 |
+| `Ctrl+Shift+Z` / `Cmd+Shift+Z` | 重做 |
+| `Ctrl+Y` | 重做 |
+
+输入框 / Textarea / contentEditable 内**不拦截**（避免误触覆盖浏览器原生行为）。
+
+### 内存保护
+
+`maxPast = 50` → 超过时最早的按 FIFO 丢弃。50 步 × ~KB/快照 ≈ 50KB 量级可忽略。
+
+### 扩展新 squash action
+
+在 `EditorShell.HISTORY_OPTIONS.squashActions` 加入 action.type 即可。
+
+## 自动布局（C 阶段）
+
+解决两个问题：① 导入无 layout 的 JSON 时元件挤在 (0,0) · ② 手动摆乱后一键整理。
+
+### 算法
+
+| 算法 | 特点 | 使用场景 |
+|------|------|---------|
+| **Grid**（默认） | 确定性 · 按 N 计算 cols=min(ceil(√N), 6) · cell=120×100 | `loadBundle` 兜底 · 快速占位 |
+| **Force**（Fruchterman-Reingold） | Mulberry32 PRNG 稳定 seed（同 ids → 同结果）· 100 迭代 · temperature 衰减 | 手动点「力导向布局」· 呈现连接拓扑 |
+
+### 触发
+
+- **自动**：`loadBundle` action 内部检测「无 layout + 所有 anchor=(0,0)」→ grid 兜底
+- **手动**：header 的「⊞ 自动布局」下拉菜单 → grid / force
+
+⚠️ 「有 layout」或「任何非零 anchor」→ **不覆盖**用户坐标（数据保护）
+
+### 扩展新算法
+
+1. 在 `src/lib/editor/layout/` 加 `my-algo.ts`，导出 `myAlgo(input: LayoutInput): LayoutOutput`
+2. 修改 `layout/auto-layout.ts` 的 switch 加一个 case
+3. 修改 `LayoutAlgorithm` 类型加字面量
+4. 在 `RunControls` 下拉菜单加 `<option>`
+
+### 性能
+
+- Grid: O(N) · 1ms 级别
+- Force: O(iter × N²) = O(100 × N²) · 100 元件 < 2000ms（测试覆盖）
+
+## UX 细节（D 阶段）
+
+### 元件几何边界 · `componentBounds`
+
+所有"元件占地面积"的概念（hit-test、hover 检测、选中框）都走 `componentBounds(component, palette)` 单点真相。它根据 palette entry 的 `hintSize` 计算 AABB，fallback 为 50×40。
+
+```ts
+import { componentBounds, isPointInBounds } from '@/lib/editor';
+const b = componentBounds(placedComp, config.palette);
+// { x, y, width, height }
+if (isPointInBounds(canvasPt, b)) { /* clicked */ }
+```
+
+**好处**：
+- 替代硬编码 50×40（B 阶段的近似实现）
+- 化学域 60×60 大元件正确命中
+- 未来 alignment guides / marquee selection / auto-framing 统一走它
+
+### 拖动网格对齐 · `snapGrid`
+
+每个 domain config 可声明 `snapGrid: number`（默认 20），用户拖动元件时 anchor 自动对齐到此粒度。
+
+```ts
+// circuit.ts / chemistry.ts
+export const xxxEditorConfig = {
+  ...,
+  snapGrid: 20, // 20px grid
+};
+```
+
+**规则**：
+- 仅 `moveComponent` action 按 snap 对齐
+- `setComponentAnchor` / `loadBundle` / `placeComponent` **保留精确坐标**（保护导入的 JSON 原始值）
+- `snapGrid = 0` 或 undefined 关闭 snap
+- 拖动结束的 anchor 一定是 snapGrid 的整数倍
+
+### 悬停反馈 · hover state
+
+`state.hoveredId` 跟踪当前悬停的元件 id，drawer 接收 `hovered?: boolean` 参数在元件 AABB 外画浅蓝虚线（blue-300，2px padding）。
+
+- **Selected 优先级高于 hovered**：选中态覆盖 hover 视觉（避免两框叠加）
+- `hoverComponent` action 进 `history.ignoreActions` 白名单 · **永不污染 undo 栈**（连续 mousemove 不会把历史打爆）
+- 鼠标离开画布时自动清除 hover（`onMouseLeave`）
+
+### history `ignoreActions` 机制
+
+新增通用机制：特定 action type 进 `ignoreActions` 集合 → 更新 present 但完全不影响 past/future。用于 transient UI state（hover、光标位置等）。
+
+```ts
+const HISTORY_OPTIONS = {
+  maxPast: 50,
+  squash: { ... },
+  ignoreActions: new Set(['hoverComponent']), // 永不进 undo 栈
+};
+```
+
+未来可扩展：`updateWireCursor`（连线过程中光标跟随）同类场景。
+
+### `CanvasDrawer` 签名扩展
+
+```ts
+// Before (B 阶段)
+type CanvasDrawer = (ctx, c, values, selected) => void;
+
+// After (D 阶段 · 可选参数向后兼容)
+type CanvasDrawer = (ctx, c, values, selected, hovered?) => void;
+```
+
+所有现有 drawer 已更新。新写 drawer 建议用统一 helper `drawHoverFrame(ctx, bounds)`（或各 domain 自己的 `drawInteractionFrame(ctx, ax, ay, selected, hovered)` wrapper）。
+
 ## Out-of-Scope（本轮明确不做）
 
-- 撤销/重做 undo/redo
-- 自动布局 / 正交布线
+
 - 多选 / 框选
 - 端口吸附
 - minimap
 - 服务端持久化 / 多人协作
 - 触屏 full support
 - 美化动画
+- 分支撤销树（Git 式）
+- 撤销跨会话持久化（history 仅内存）
+- Drawer DDL（消除 JS/TS 两端双写）
 
-这些留给 C 阶段 / 用户体验迭代。
+这些留给 **D 阶段 / 用户体验迭代**。
 
 ## 快速开始
 
@@ -165,6 +314,7 @@ bash ./scripts/dev.sh       # 启动开发预览 (port 5000)
 
 ## 相关文档
 
+- **[Architecture Constraints](./architecture-constraints.md)** — 硬约束 + 受控松动条款（E 阶段新增）
 - **[Assembly Framework](./assembly-framework.md)** — 装配层底座
 - **[Layout Spec](./layout-spec.md)** — anchor 解耦契约（D 阶段）
 - **[Component Framework](./component-framework.md)** — 元件抽象与 domain 扩展

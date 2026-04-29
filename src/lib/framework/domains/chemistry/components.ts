@@ -50,6 +50,8 @@ export interface FlaskProps {
   label?: string;
   /** Optional extension slot for future fields without breaking DTOs. */
   meta?: Record<string, unknown>;
+  /** E 阶段 · index signature 让 Props 兼容 IExperimentComponent<Record<string, unknown>, ...> 契约 */
+  [key: string]: unknown;
 }
 
 export class Flask extends AbstractComponent<FlaskProps, ChemStampEntry> {
@@ -80,6 +82,7 @@ export interface ReagentProps {
   phase: ChemistryPhase;
   label?: string;
   meta?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export class Reagent extends AbstractComponent<ReagentProps, ChemStampEntry> {
@@ -112,6 +115,7 @@ export interface BubbleProps {
   /** Cumulative moles produced so far. */
   accumulatedMoles?: number;
   meta?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export class Bubble extends AbstractComponent<BubbleProps, ChemStampEntry> {
@@ -139,6 +143,7 @@ export interface SolidProps {
   massG: number;
   state: SolidState;
   meta?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export class Solid extends AbstractComponent<SolidProps, ChemStampEntry> {
@@ -166,6 +171,7 @@ export interface ThermometerProps {
   /** [min, max] display range for the thermometer scale. */
   range: readonly [number, number];
   meta?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export class Thermometer extends AbstractComponent<ThermometerProps, ChemStampEntry> {

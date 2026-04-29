@@ -26,6 +26,9 @@ export type { CircuitPerComponent, CircuitSolveResult } from './solver';
 export { CIRCUIT_REACTIONS, overloadBulbRule } from './reactions';
 // Assembly layer (Spec + DSL builder + assembler)
 export * from './assembly';
+// E 阶段 · 补缺失 re-export（circuit-assembly.test.ts 消费）
+export { AssemblyBuildError } from '../../assembly/errors';
+export { validateSpec } from '../../assembly/validator';
 
 // ── Register factories for DTO → instance reconstruction ────────────────
 componentRegistry.register('circuit', 'battery', (dto) =>

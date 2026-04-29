@@ -29,6 +29,8 @@ export interface ChemistryPerComponent {
   state: ChemistryComponentState;
   /** Only present for Solid; mirrors Solid.state. */
   solidState?: 'intact' | 'rusting' | 'dissolved';
+  /** E 阶段 · index signature 让类型兼容 SolveResult<Record<string, unknown>> 契约 */
+  [key: string]: unknown;
 }
 
 /**

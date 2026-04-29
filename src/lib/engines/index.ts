@@ -64,6 +64,7 @@ import { registry } from './registry';
 import buoyancyEngine from './physics/buoyancy';
 import circuitEngine from './physics/circuit';
 import titrationEngine from './chemistry/titration';
+import chemistryReactionEngine from './chemistry/reaction';
 
 // Phase 2 engines
 import osmosisEngine from './biology/osmosis';

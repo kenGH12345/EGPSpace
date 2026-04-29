@@ -14,6 +14,8 @@
 import type { ReactionRule, ReactionEvent } from '../../../index';
 import type { ChemistrySolveResult, ChemistryGraph } from '../index';
 import { molesOf, makeReagent, spawnId, REACTION_REGISTRY } from '../index';
+import { asReagent } from '../type-guards';
+import type { Reagent } from '../components';
 import { TitrationEngine } from '@/lib/engines/chemistry/titration';
 
 const FORMULA = REACTION_REGISTRY['chemistry/acid-base-neutralization'];
@@ -29,10 +31,10 @@ export const acidBaseNeutralizationRule: ReactionRule<ChemistryGraph, ChemistryS
     const candidates = solution.reactions.filter((rc) => rc.ruleId === FORMULA.id);
 
     for (const cand of candidates) {
-      // Find acid and base components by formula
-      const reactants = cand.reactantIds
+      // Find acid and base components by formula (narrow via asReagent for TS)
+      const reactants: Reagent[] = cand.reactantIds
         .map((id) => graph.get(id))
-        .filter((c): c is NonNullable<typeof c> => !!c && c.kind === 'reagent');
+        .filter((c): c is Reagent => !!c && asReagent(c));
       const acid = reactants.find((r) => r.props.formula === 'H2SO4');
       const base = reactants.find((r) => r.props.formula === 'NaOH');
       if (!acid || !base) continue;

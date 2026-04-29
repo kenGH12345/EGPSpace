@@ -15,11 +15,16 @@
  *     touching business logic
  *   - JSON-safe: LayoutSpec serialises independently for persistence
  *
- * ⚠️ This file must NOT import AssemblySpec (enforced by AC-D1). The two
- * types are intentionally decoupled at the type level.
+ * ⚠️ `LayoutSpec` and `LayoutEntry` must NOT reference AssemblySpec (enforced
+ * by AC-D1). The two types are intentionally decoupled at the type level.
+ *
+ * NOTE (E 阶段): `AssemblyBundle` is the organisational layer — it's fine for
+ * it to reference `AssemblySpec<D>` directly (see L108 comment). This does NOT
+ * violate AC-D1 which only constrains LayoutSpec itself.
  */
 
 import type { ComponentDomain, ComponentAnchor } from '../components/base';
+import type { AssemblySpec } from './spec';
 
 // ── LayoutEntry ───────────────────────────────────────────────────────────
 
@@ -112,12 +117,7 @@ export function layoutLookup<D extends ComponentDomain>(
  * Use `assembleBundle({spec, layout})` on Assembler to build a graph from a bundle.
  */
 export interface AssemblyBundle<D extends ComponentDomain = ComponentDomain> {
-  spec: {
-    domain: D;
-    components: Array<{ id: string; kind: string; props: Record<string, unknown> }>;
-    connections: unknown[];
-    metadata?: Record<string, unknown>;
-  };
+  spec: AssemblySpec<D>;
   layout?: LayoutSpec<D>;
   metadata?: Record<string, unknown>;
 }

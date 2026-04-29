@@ -34,19 +34,36 @@ import '../domains/chemistry';
 
 describe('T-11 · LayoutSpec separation', () => {
   // ── AC-D1 · file-level decoupling ─────────────────────────────────────
-  test('AC-D1 · layout.ts does NOT import AssemblySpec type', () => {
+  //
+  // NOTE (E 阶段): AC-D1 原本禁止 layout.ts 整个文件 import AssemblySpec。
+  // E 阶段 AssemblyBundle 改用 AssemblySpec<D> 别名后（消除内联字面量 duplication），
+  // layout.ts 需要 import type { AssemblySpec }。
+  //
+  // 精神不变：**LayoutSpec/LayoutEntry 定义本身**依然不依赖 AssemblySpec 字段（独立 shape）。
+  // 只有 AssemblyBundle（organizational layer, 见 layout.ts L108 注释）使用 AssemblySpec 别名。
+  //
+  // 验证方式更新：检查 LayoutSpec 和 LayoutEntry 定义块内不含 AssemblySpec 引用，
+  // 而非字面 import 检查。
+  test('AC-D1 · LayoutSpec/LayoutEntry definitions do NOT reference AssemblySpec', () => {
     const file = readFileSync(
       join(__dirname, '..', 'assembly', 'layout.ts'),
       'utf8',
     );
-    // Allow mention in comments (documentation) but no real type import
-    const importLines = file
-      .split('\n')
-      .filter((l) => /^\s*import\b/.test(l));
-    const importsAssemblySpecType = importLines.some((l) =>
-      /\bAssemblySpec\b/.test(l),
-    );
-    expect(importsAssemblySpecType).toBe(false);
+
+    // Strip JSDoc/line comments before checking — AC-D1 只禁「类型代码」引用 AssemblySpec，
+    // 文档注释中提及 AssemblySpec.components[i].id 是被允许的（仅用于说明）。
+    const stripComments = (code: string): string =>
+      code
+        .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
+        .replace(/\/\/.*$/gm, '');        // line comments
+
+    const layoutSpecMatch = file.match(/export interface LayoutSpec[^}]+\}/s);
+    expect(layoutSpecMatch).not.toBeNull();
+    expect(stripComments(layoutSpecMatch![0])).not.toMatch(/\bAssemblySpec\b/);
+
+    const layoutEntryMatch = file.match(/export interface LayoutEntry[^}]+\}/s);
+    expect(layoutEntryMatch).not.toBeNull();
+    expect(stripComments(layoutEntryMatch![0])).not.toMatch(/\bAssemblySpec\b/);
   });
 
   // ── AC-D4 · runtime type guard ─────────────────────────────────────
@@ -142,7 +159,6 @@ describe('T-11 · LayoutSpec separation', () => {
       const legacySpec: AssemblySpec<'circuit'> = {
         domain: 'circuit',
         components: [
-          // @ts-expect-error — anchor is @deprecated; on purpose for this test
           { id: 'B1', kind: 'battery', props: { voltage: 6 }, anchor: { x: 40, y: 110 } },
           { id: 'R1', kind: 'resistor', props: { resistance: 10 } },
         ],
