@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>电路 v3 · 组件化</title>
+<title>电路串并联</title>
 <link rel="stylesheet" href="/templates/_shared/ui-core.css">
 <style>
   .circuit-canvas-wrapper {
@@ -12,21 +12,18 @@
     border-radius: 8px;
     overflow: hidden;
   }
-  .circuit-canvas-wrapper canvas {
-    max-width: 100%; height: auto; display: block;
+  .circuit-canvas-wrapper canvas { max-width: 100%; height: auto; display: block; }
+  .topology-btns { display: flex; gap: 8px; margin-top: 6px; }
+  .topology-btns .eureka-btn { flex: 1; font-size: 12px; }
+  .topology-btns .eureka-btn.active {
+    background: #059669; color: #fff; border-color: #047857;
   }
-  .events-panel {
-    min-height: 28px;
-    padding: 6px 10px;
-    margin-top: 6px;
-    background: #FEF3C7;
-    border: 1px solid #F59E0B;
-    border-radius: 6px;
-    font-size: 12px;
-    color: #92400E;
+  .switch-hit-hint {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 4px;
+    text-align: center;
   }
-  .events-panel.empty { background: #F1F5F9; border-color: #CBD5E1; color: #64748B; }
-  .badge-info { background:#DBEAFE; color:#1E40AF; padding:2px 8px; border-radius:12px; font-size:11px; }
 </style>
 </head>
 <body>
@@ -42,7 +39,7 @@
       <p class="eureka-stat-value success" id="stat-power">0.0 W</p>
     </div>
     <div class="eureka-stat">
-      <p class="eureka-stat-label">等效电阻</p>
+      <p class="eureka-stat-label">等效电阻 R_eq</p>
       <p class="eureka-stat-value" id="stat-req">0.0 Ω</p>
     </div>
   </div>
@@ -50,333 +47,398 @@
   <div class="eureka-card" style="margin-top:12px;">
     <div class="eureka-card-header">
       <span>电路结构</span>
-      <span class="badge-info" id="arch-version">v3-component · MNA 求解</span>
+      <span class="badge-info" id="status-badge">串联电路</span>
     </div>
     <div class="circuit-canvas-wrapper">
       <canvas id="circuit-canvas" width="640" height="260"></canvas>
     </div>
-    <div class="events-panel empty" id="events-panel">（无过载事件）</div>
+    <div class="switch-hit-hint">点击电路图中的开关可切换开/关状态</div>
   </div>
 
   <div class="eureka-card" style="margin-top:12px;">
     <div class="eureka-card-header"><span>参数控制</span></div>
     <div class="eureka-controls">
       <div class="eureka-control">
+        <label>拓扑</label>
+        <div class="topology-btns">
+          <button class="eureka-btn active" id="btn-series">串联</button>
+          <button class="eureka-btn" id="btn-parallel">并联</button>
+        </div>
+      </div>
+      <div class="eureka-control">
         <label>电池电压 U (V)</label>
         <input type="range" class="eureka-slider" id="ctrl-voltage" min="1" max="30" step="0.5" value="6">
         <span class="eureka-slider-value" id="val-voltage">6.0</span>
       </div>
       <div class="eureka-control">
-        <label>电阻 R (Ω)</label>
-        <input type="range" class="eureka-slider" id="ctrl-resistance" min="1" max="30" step="0.5" value="10">
-        <span class="eureka-slider-value" id="val-resistance">10.0</span>
+        <label>电阻 R1 (Ω)</label>
+        <input type="range" class="eureka-slider" id="ctrl-r1" min="0.5" max="100" step="0.5" value="10">
+        <span class="eureka-slider-value" id="val-r1">10.0</span>
       </div>
       <div class="eureka-control">
-        <label>开关</label>
-        <button class="eureka-btn" id="ctrl-switch" type="button">闭合（ON）</button>
+        <label>电阻 R2 (Ω)</label>
+        <input type="range" class="eureka-slider" id="ctrl-r2" min="0.5" max="100" step="0.5" value="10">
+        <span class="eureka-slider-value" id="val-r2">10.0</span>
       </div>
     </div>
   </div>
 </div>
 
-<!-- L3 Atoms (load order matters) -->
 <script src="/templates/_shared/experiment-core.js"></script>
 <script src="/templates/_shared/ui-core.js"></script>
 <script src="/templates/_shared/component-mirror.js"></script>
 <script src="/templates/_shared/circuit-draw.js"></script>
-<script src="/templates/_shared/circuit-builder.js"></script>
 
 <script>
 (function () {
   'use strict';
 
-  // ════════════════════════════════════════════════════════════════════════
-  // Build the circuit declaratively (L4 consumer of the new assembly layer)
-  // ════════════════════════════════════════════════════════════════════════
-
-  const circuit = new CircuitBuilder()
-    .battery({ voltage: 6, id: 'B1', anchor: { x: 40,  y: 110 } })
-    .switch_({ closed: true, id: 'S1', anchor: { x: 160, y: 110 } })
-    .resistor({ resistance: 10, id: 'R1', anchor: { x: 280, y: 110 } })
-    .bulb({ ratedPower: 2, id: 'L1', anchor: { x: 420, y: 110 } })
-    .loop();
-
   const canvas = document.getElementById('circuit-canvas');
   const ctx = canvas.getContext('2d');
-  const eventsPanel = document.getElementById('events-panel');
 
-  let switchClosed = true;
-
-  // ════════════════════════════════════════════════════════════════════════
-  // Rendering helpers (use ComponentMirror's dispatch table)
-  // ════════════════════════════════════════════════════════════════════════
-
-  // ════════════════════════════════════════════════════════════════════════
-  // Port-name → geometry mapping (semantic convention, matches circuit-draw.js)
-  // ════════════════════════════════════════════════════════════════════════
-  //
-  // Every component occupies a 50×40 rect starting at anchor (ax, ay).
-  // Horizontal lead wire is at y = ay + 20.
-  //   Left port  = (ax,      ay + 20)
-  //   Right port = (ax + 50, ay + 20)
-  //
-  // Port-name convention per kind (see src/lib/framework/domains/circuit/assembly/circuit-spec.ts):
-  //   battery:            negative (left) | positive (right)
-  //   switch / ammeter:   in       (left) | out      (right)
-  //   wire/resistor/bulb/voltmeter: a (left) | b (right)
-  //
-  // This mapping is the single source of truth for "which geometric point
-  // does this named port live at". It is what gives components connectivity
-  // and makes the whole graph a coherent system — not a bunch of loose symbols.
-  const PORT_SIDE = {
-    battery:   { negative: 'left',  positive: 'right' },
-    switch:    { in: 'left',        out: 'right' },
-    ammeter:   { in: 'left',        out: 'right' },
-    wire:      { a: 'left',         b: 'right' },
-    resistor:  { a: 'left',         b: 'right' },
-    bulb:      { a: 'left',         b: 'right' },
-    burnt_bulb:{ a: 'left',         b: 'right' },
-    voltmeter: { a: 'left',         b: 'right' },
+  const state = {
+    voltage: 6,
+    r1: 10,
+    r2: 10,
+    topology: 0, // 0=series, 1=parallel
+    switchMain: true,
+    switch1: true,
+    switch2: true,
   };
 
-  function portPos(comp, portName) {
-    const ax = (comp.anchor && comp.anchor.x) || 0;
-    const ay = (comp.anchor && comp.anchor.y) || 0;
-    const sideTable = PORT_SIDE[comp.kind];
-    const side = sideTable ? sideTable[portName] : null;
-    // Fallback: unknown kind or port → best-guess right port
-    const isLeft = side === 'left';
-    return {
-      x: ax + (isLeft ? 0 : 50),
-      y: ay + 20,
-      side: isLeft ? 'left' : 'right',
-    };
-  }
-
-  // Build a quick id→component lookup (components() returns a small array but
-  // this keeps the connection walk O(|E|) instead of O(|E|·|V|)).
-  function buildCompIndex(components) {
-    const idx = Object.create(null);
-    for (const c of components) idx[c.id] = c;
-    return idx;
-  }
+  const R_BULB = 6; // 简化灯泡电阻
 
   // ════════════════════════════════════════════════════════════════════════
-  // drawConnectionLines — semantic connectivity rendering
+  // Local computation — Ohm's law, no host dependency
   // ════════════════════════════════════════════════════════════════════════
-  //
-  // Walks circuit._spec.connections (the same graph the solver consumes),
-  // and for every connection draws a wire between the two named ports'
-  // geometric positions. If the two ports are on opposite sides (right→left)
-  // of adjacent-ish components, a straight horizontal wire suffices; if
-  // they're both on the same side or far apart (e.g. the closing wire
-  // from last component's right back to first component's left), an
-  // L-shaped or U-shaped bus wire is drawn, routing up over the row of
-  // components to avoid crossing their bodies.
-  //
-  // This is the single source of graph visualization — any CircuitBuilder
-  // topology (series, parallel, bridge …) will render correctly as long
-  // as components have anchors.
-  function drawConnectionLines(components, connections) {
-    if (!components || !components.length) return;
-    if (!connections || !connections.length) return;
 
-    const compIndex = buildCompIndex(components);
+  function computeLocal() {
+    const U = state.voltage;
+    const R1 = state.r1;
+    const R2 = state.r2;
 
-    // Compute top bus Y: one "lane" above the highest component row.
-    // All U-shaped return wires route through this bus to avoid overlap.
-    let minAy = Infinity;
-    for (const c of components) {
-      const ay = (c.anchor && c.anchor.y) || 0;
-      if (ay < minAy) minAy = ay;
-    }
-    const busY = Math.max(12, minAy - 50);
+    if (state.topology === 0) {
+      // Series: B1 → S总 → R1 → R2 → L总
+      const isClosed = state.switchMain;
+      const R_eq = R1 + R2 + R_BULB;
+      const I = isClosed ? U / R_eq : 0;
+      const P_total = U * I;
 
-    ctx.save();
-    ctx.strokeStyle = '#334155';     // slate-700 · solid dark
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+      return {
+        current: I,
+        power: P_total,
+        rEq: isClosed ? R_eq : Infinity,
+        perComponent: {
+          B1:  { current: I, voltage: U, power: U * I, glow: 0 },
+          S总: { current: I, voltage: 0, power: 0, glow: 0 },
+          R1:  { current: I, voltage: I * R1, power: I * I * R1, glow: 0 },
+          R2:  { current: I, voltage: I * R2, power: I * I * R2, glow: 0 },
+          L总: { current: I, voltage: I * R_BULB, power: I * I * R_BULB, glow: Math.min(1.5, I * 0.5) },
+        },
+        badgeText: isClosed ? '串联电路 · 通路' : '串联电路 · 断路',
+        badgeKind: isClosed ? 'success' : 'warning',
+      };
+    } else {
+      // Parallel: B1 → S总 → [S1→R1→L1] ∥ [S2→R2→L2] → L总
+      const mainClosed = state.switchMain;
+      const b1Closed = state.switch1;
+      const b2Closed = state.switch2;
 
-    for (const conn of connections) {
-      const fromComp = compIndex[conn.from.componentId];
-      const toComp   = compIndex[conn.to.componentId];
-      if (!fromComp || !toComp) continue;  // skip orphan references
+      const I1 = (mainClosed && b1Closed) ? U / (R1 + R_BULB) : 0;
+      const I2 = (mainClosed && b2Closed) ? U / (R2 + R_BULB) : 0;
+      const I_total = I1 + I2;
 
-      const a = portPos(fromComp, conn.from.portName);
-      const b = portPos(toComp,   conn.to.portName);
-
-      ctx.beginPath();
-      if (a.y === b.y && a.side === 'right' && b.side === 'left' && a.x < b.x) {
-        // Short horizontal wire between a right-port and a following left-port
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-      } else if (a.y === b.y && a.side === 'right' && b.side === 'left' && a.x >= b.x) {
-        // Closing return wire: last.right → up → over → down → first.left
-        const rightStub = a.x + 20;
-        const leftStub  = Math.max(12, b.x - 20);
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(rightStub, a.y);
-        ctx.lineTo(rightStub, busY);
-        ctx.lineTo(leftStub,  busY);
-        ctx.lineTo(leftStub,  b.y);
-        ctx.lineTo(b.x, b.y);
+      const R_branch1 = R1 + R_BULB;
+      const R_branch2 = R2 + R_BULB;
+      let R_eq;
+      if (I_total <= 0) {
+        R_eq = Infinity;
       } else {
-        // Generic case (parallel branches, different rows, same-side ports):
-        // route via the top bus using an elbow path.
-        const midY = Math.min(a.y, b.y, busY) - 10;
-        const aExit = a.side === 'left' ? a.x - 15 : a.x + 15;
-        const bExit = b.side === 'left' ? b.x - 15 : b.x + 15;
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(aExit, a.y);
-        ctx.lineTo(aExit, midY);
-        ctx.lineTo(bExit, midY);
-        ctx.lineTo(bExit, b.y);
-        ctx.lineTo(b.x, b.y);
+        const g1 = 1 / R_branch1;
+        const g2 = 1 / R_branch2;
+        const g_total = (mainClosed && b1Closed ? g1 : 0) + (mainClosed && b2Closed ? g2 : 0);
+        R_eq = g_total > 0 ? 1 / g_total : Infinity;
       }
-      ctx.stroke();
+      const P_total = U * I_total;
+
+      let badgeText, badgeKind;
+      if (!mainClosed) { badgeText = '并联电路 · 总断路'; badgeKind = 'warning'; }
+      else if (!b1Closed && !b2Closed) { badgeText = '并联电路 · 分路全断'; badgeKind = 'warning'; }
+      else { badgeText = '并联电路 · 通路'; badgeKind = 'success'; }
+
+      return {
+        current: I_total,
+        power: P_total,
+        rEq: Number.isFinite(R_eq) ? R_eq : Infinity,
+        perComponent: {
+          B1:  { current: I_total, voltage: U, power: U * I_total, glow: 0 },
+          S总: { current: I_total, voltage: 0, power: 0, glow: 0 },
+          S1:  { current: I1, voltage: 0, power: 0, glow: 0 },
+          R1:  { current: I1, voltage: I1 * R1, power: I1 * I1 * R1, glow: 0 },
+          L1:  { current: I1, voltage: I1 * R_BULB, power: I1 * I1 * R_BULB, glow: Math.min(1.5, I1 * 0.5) },
+          S2:  { current: I2, voltage: 0, power: 0, glow: 0 },
+          R2:  { current: I2, voltage: I2 * R2, power: I2 * I2 * R2, glow: 0 },
+          L2:  { current: I2, voltage: I2 * R_BULB, power: I2 * I2 * R_BULB, glow: Math.min(1.5, I2 * 0.5) },
+          L总: { current: I_total, voltage: I_total * R_BULB, power: I_total * I_total * R_BULB, glow: Math.min(1.5, I_total * 0.5) },
+        },
+        badgeText, badgeKind,
+      };
     }
-
-    ctx.restore();
   }
-
-  function render(perComponent) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const components = circuit.components();
-    // Pull the connection graph from the live builder — this is the SAME
-    // data the host-side solver consumes. Visual and semantic truth align.
-    const connections = circuit.toSpec().connections;
-    drawConnectionLines(components, connections);
-    ComponentMirror.renderAll(ctx, components, perComponent);
-  }
-
-  // ════════════════════════════════════════════════════════════════════════
-  // Dispatch compute via postMessage RPC — engine.v2 runs the MNA solver
-  // ════════════════════════════════════════════════════════════════════════
-
-  let pendingCompute = false;
 
   async function recompute() {
-    if (pendingCompute) return;  // simple debouncing
-    pendingCompute = true;
+    let result;
     try {
-      const voltage = parseFloat(document.getElementById('ctrl-voltage').value);
-      const resistance = parseFloat(document.getElementById('ctrl-resistance').value);
-
-      // Mutate the switch prop on the live builder
-      const swComp = circuit.findById('S1');
-      if (swComp) swComp.props.closed = switchClosed;
-
-      const result = await window.requestCompute('physics/circuit', {
-        graph: circuit.toSpec(),
-        overrides: {
-          B1: { voltage: voltage },
-          R1: { resistance: resistance },
-        },
+      result = await window.requestCompute('physics/circuit', {
+        voltage: state.voltage,
+        r1: state.r1,
+        r2: state.r2,
+        topology: state.topology,
+        switchMain: state.switchMain,
+        switch1: state.switch1,
+        switch2: state.switch2,
       });
-
-      applyResult(result);
     } catch (err) {
-      console.error('[circuit-v3] compute failed:', err);
-      updateStatsError(err.message || String(err));
-    } finally {
-      pendingCompute = false;
+      result = { values: computeLocal() };
     }
+    applyResult(result);
   }
 
   function applyResult(result) {
-    const values = result.values || {};
-    const perComponent = values.perComponent || {};
-    const events = values.events || [];
+    const v = result.values || computeLocal();
+    document.getElementById('stat-current').textContent = (v.current || 0).toFixed(3) + ' A';
+    document.getElementById('stat-power').textContent = (v.power || 0).toFixed(2) + ' W';
+    document.getElementById('stat-req').textContent = Number.isFinite(v.rEq) ? v.rEq.toFixed(2) + ' Ω' : '∞';
 
-    // Top KPIs: pull from L1's per-component map
-    let totalI = 0, totalP = 0;
-    for (const id in perComponent) {
-      const v = perComponent[id];
-      if (v && typeof v.power === 'number') totalP += v.power;
+    const badge = document.getElementById('status-badge');
+    badge.textContent = v.badgeText || (state.topology === 0 ? '串联电路' : '并联电路');
+
+    draw(v.perComponent || {});
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // Drawing helpers
+  // ════════════════════════════════════════════════════════════════════════
+
+  function drawWire(x1, y1, x2, y2, current) {
+    ctx.save();
+    ctx.strokeStyle = current > 0 ? '#F59E0B' : '#64748B';
+    ctx.lineWidth = Math.min(4, 1.5 + Math.abs(current || 0) * 0.5);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function makeComp(id, kind, x, y, props) {
+    return { id: id, domain: 'circuit', kind: kind, anchor: { x: x, y: y }, props: props || {} };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // Series layout
+  // ════════════════════════════════════════════════════════════════════════
+
+  function drawSeries(perComp) {
+    const yWire = 130;
+    const yComp = 110;
+    const returnY = 25;
+
+    const comps = [
+      makeComp('B1',  'battery',  30,  yComp, { voltage: state.voltage }),
+      makeComp('S总', 'switch',   120, yComp, { closed: state.switchMain }),
+      makeComp('R1',  'resistor', 220, yComp, { resistance: state.r1 }),
+      makeComp('R2',  'resistor', 320, yComp, { resistance: state.r2 }),
+      makeComp('L总', 'bulb',     420, yComp, { ratedPower: 2 }),
+    ];
+
+    const I = (perComp.B1 && perComp.B1.current) || 0;
+
+    // Forward wires (bottom)
+    drawWire(80,  yWire, 120, yWire, I); // B1 → S总
+    drawWire(170, yWire, 220, yWire, I); // S总 → R1
+    drawWire(270, yWire, 320, yWire, I); // R1 → R2
+    drawWire(370, yWire, 420, yWire, I); // R2 → L总
+
+    // Return wire (top loop)
+    drawWire(470, yWire, 500, yWire, I);
+    drawWire(500, yWire, 500, returnY, I);
+    drawWire(500, returnY, 10, returnY, I);
+    drawWire(10, returnY, 10, yWire, I);
+    drawWire(10, yWire, 30, yWire, I);
+
+    // Components
+    for (const c of comps) {
+      window.ComponentMirror.draw(ctx, c, perComp[c.id] || {});
     }
-    // Battery current = current flowing out of positive terminal
-    const bV = perComponent.B1;
-    if (bV && typeof bV.current === 'number') totalI = Math.abs(bV.current);
+  }
 
-    const rEq = totalI > 1e-9 ? (parseFloat(document.getElementById('ctrl-voltage').value) / totalI) : Infinity;
+  // ════════════════════════════════════════════════════════════════════════
+  // Parallel layout
+  // ════════════════════════════════════════════════════════════════════════
 
-    EurekaUI.updateStat('stat-current', totalI.toFixed(3) + ' A');
-    EurekaUI.updateStat('stat-power', totalP.toFixed(2) + ' W');
-    EurekaUI.updateStat('stat-req', Number.isFinite(rEq) ? rEq.toFixed(2) + ' Ω' : '∞');
+  function drawParallel(perComp) {
+    const yMain = 130;
+    const yMainComp = 110;
+    const yTop = 60;
+    const yTopComp = 40;
+    const yBot = 200;
+    const yBotComp = 180;
+    const returnY = 25;
 
-    // Events panel
-    if (events.length > 0) {
-      eventsPanel.classList.remove('empty');
-      eventsPanel.innerHTML = events.map(e =>
-        '💥 <b>' + (e.sourceRuleId || '?') + '</b> → ' + (e.reason || '') +
-        (e.targetId ? ' <code>(' + e.targetId + ')</code>' : '')
-      ).join('<br>');
+    const mainComps = [
+      makeComp('B1',  'battery',  20,  yMainComp, { voltage: state.voltage }),
+      makeComp('S总', 'switch',   100, yMainComp, { closed: state.switchMain }),
+      makeComp('L总', 'bulb',     530, yMainComp, { ratedPower: 2 }),
+    ];
+    const topComps = [
+      makeComp('S1', 'switch',   230, yTopComp, { closed: state.switch1 }),
+      makeComp('R1', 'resistor', 340, yTopComp, { resistance: state.r1 }),
+      makeComp('L1', 'bulb',     450, yTopComp, { ratedPower: 2 }),
+    ];
+    const botComps = [
+      makeComp('S2', 'switch',   230, yBotComp, { closed: state.switch2 }),
+      makeComp('R2', 'resistor', 340, yBotComp, { resistance: state.r2 }),
+      makeComp('L2', 'bulb',     450, yBotComp, { ratedPower: 2 }),
+    ];
+
+    const I_total = (perComp.B1 && perComp.B1.current) || 0;
+    const I1 = (perComp.S1 && perComp.S1.current) || 0;
+    const I2 = (perComp.S2 && perComp.S2.current) || 0;
+
+    // Main line
+    drawWire(70,  yMain, 100, yMain, I_total); // B1 → S总
+    drawWire(150, yMain, 190, yMain, I_total); // S总 → junction
+
+    // Junction → top branch
+    drawWire(190, yMain, 190, yTop, I1);
+    drawWire(190, yTop,  230, yTop, I1);
+
+    // Junction → bottom branch
+    drawWire(190, yMain, 190, yBot, I2);
+    drawWire(190, yBot,  230, yBot, I2);
+
+    // Top branch internal
+    drawWire(280, yTop, 340, yTop, I1); // S1 → R1
+    drawWire(390, yTop, 450, yTop, I1); // R1 → L1
+
+    // Bottom branch internal
+    drawWire(280, yBot, 340, yBot, I2); // S2 → R2
+    drawWire(390, yBot, 450, yBot, I2); // R2 → L2
+
+    // Branches → merge
+    drawWire(500, yTop, 520, yTop, I1);
+    drawWire(520, yTop, 520, yMain, I1);
+    drawWire(500, yBot, 520, yBot, I2);
+    drawWire(520, yBot, 520, yMain, I2);
+
+    // Merge → L总
+    drawWire(520, yMain, 530, yMain, I_total);
+
+    // L总 → return
+    drawWire(580, yMain, 610, yMain, I_total);
+    drawWire(610, yMain, 610, returnY, I_total);
+    drawWire(610, returnY, 0, returnY, I_total);
+    drawWire(0, returnY, 0, yMain, I_total);
+    drawWire(0, yMain, 20, yMain, I_total);
+
+    // Draw components
+    for (const c of mainComps) window.ComponentMirror.draw(ctx, c, perComp[c.id] || {});
+    for (const c of topComps)  window.ComponentMirror.draw(ctx, c, perComp[c.id] || {});
+    for (const c of botComps)  window.ComponentMirror.draw(ctx, c, perComp[c.id] || {});
+  }
+
+  function draw(perComp) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (state.topology === 0) {
+      drawSeries(perComp);
     } else {
-      eventsPanel.classList.add('empty');
-      eventsPanel.textContent = '（无过载事件 · 电路稳定）';
+      drawParallel(perComp);
     }
-
-    // If burnout occurred, BurntBulb may now exist in the engine-side graph.
-    // Reflect by syncing the builder's mirror: if perComponent has a key we don't know, it was spawned.
-    if (values.burntCount > 0) {
-      // Simple strategy: if L1 is no longer present in perComponent but a burnt_bulb is,
-      // swap L1's kind client-side to visualise the outcome.
-      const l1HasBurnt = Object.keys(perComponent).some(k => k !== 'L1' && perComponent[k] && perComponent[k].state === 'open');
-      if (l1HasBurnt && swComp) {
-        const l1 = circuit.findById('L1');
-        if (l1 && l1.kind === 'bulb') l1.kind = 'burnt_bulb';
-      }
-    }
-
-    render(perComponent);
-  }
-
-  function updateStatsError(msg) {
-    EurekaUI.updateStat('stat-current', '— A');
-    EurekaUI.updateStat('stat-power', '— W');
-    EurekaUI.updateStat('stat-req', '— Ω');
-    eventsPanel.classList.remove('empty');
-    eventsPanel.innerHTML = '⚠ 计算失败: ' + msg;
   }
 
   // ════════════════════════════════════════════════════════════════════════
-  // Wire up controls
+  // Controls
   // ════════════════════════════════════════════════════════════════════════
 
-  function bindSlider(ctrlId, valId) {
+  function bindSlider(ctrlId, valId, stateKey) {
     const ctrl = document.getElementById(ctrlId);
     const val = document.getElementById(valId);
     if (!ctrl || !val) return;
     val.textContent = parseFloat(ctrl.value).toFixed(1);
     ctrl.addEventListener('input', function () {
       val.textContent = parseFloat(ctrl.value).toFixed(1);
+      state[stateKey] = parseFloat(ctrl.value);
       recompute();
     });
   }
-  bindSlider('ctrl-voltage', 'val-voltage');
-  bindSlider('ctrl-resistance', 'val-resistance');
+  bindSlider('ctrl-voltage', 'val-voltage', 'voltage');
+  bindSlider('ctrl-r1', 'val-r1', 'r1');
+  bindSlider('ctrl-r2', 'val-r2', 'r2');
 
-  const switchBtn = document.getElementById('ctrl-switch');
-  switchBtn.addEventListener('click', function () {
-    switchClosed = !switchClosed;
-    switchBtn.textContent = switchClosed ? '闭合（ON）' : '断开（OFF）';
-    // If we had burnt the bulb, clicking switch effectively resets circuit
-    // but burnout is permanent in domain — UI could provide a 'reset' separately
+  // Topology buttons
+  const btnSeries = document.getElementById('btn-series');
+  const btnParallel = document.getElementById('btn-parallel');
+
+  btnSeries.addEventListener('click', function () {
+    if (state.topology === 0) return;
+    state.topology = 0;
+    btnSeries.classList.add('active');
+    btnParallel.classList.remove('active');
     recompute();
   });
 
-  // ════════════════════════════════════════════════════════════════════════
-  // Initial paint — emit ready, then fire first compute
-  // ════════════════════════════════════════════════════════════════════════
+  btnParallel.addEventListener('click', function () {
+    if (state.topology === 1) return;
+    state.topology = 1;
+    btnParallel.classList.add('active');
+    btnSeries.classList.remove('active');
+    recompute();
+  });
 
-  render({});  // placeholder paint with no solved values
+  // Canvas click — toggle switches
+  canvas.addEventListener('click', function (e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    if (state.topology === 0) {
+      // S总 hit box [120, 170] x [110, 150]
+      if (x >= 120 && x <= 170 && y >= 110 && y <= 150) {
+        state.switchMain = !state.switchMain;
+        recompute();
+      }
+    } else {
+      // S总 [100, 150] x [110, 150]
+      if (x >= 100 && x <= 150 && y >= 110 && y <= 150) {
+        state.switchMain = !state.switchMain;
+        recompute();
+      }
+      // S1 [230, 280] x [40, 80]
+      else if (x >= 230 && x <= 280 && y >= 40 && y <= 80) {
+        state.switch1 = !state.switch1;
+        recompute();
+      }
+      // S2 [230, 280] x [180, 220]
+      else if (x >= 230 && x <= 280 && y >= 180 && y <= 220) {
+        state.switch2 = !state.switch2;
+        recompute();
+      }
+    }
+  });
+
+  // Initial paint + compute
+  draw({});
+  recompute();
 
   if (window.EurekaHost) {
-    EurekaHost.emitReady('physics/circuit');
+    window.EurekaHost.setTemplateId('physics/circuit');
+    window.EurekaHost.emitReady(['voltage', 'r1', 'r2', 'topology', 'switchMain', 'switch1', 'switch2']);
   }
-  // First compute (async)
-  recompute();
 })();
 </script>
 </body>
