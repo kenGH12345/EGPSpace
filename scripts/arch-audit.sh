@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/arch-audit.sh — F 阶段物理边界审计
+# scripts/arch-audit.sh — F+G 阶段物理边界审计
 # 零新 npm 依赖 · 纯 node fs + 正则 · CI 可直接接入
 #
 # Checks:
@@ -7,6 +7,7 @@
 #   2. runtime/   不 import builders | domains
 #   3. builders/  不 import domains
 #   4. 外部代码（editor | engines | components）不伸进 framework 内部分层
+#   5. iframe 模板底座单一（G 阶段 C-3）: public/templates/ 下 HTML 仅引用 experiment-core.js · 不得出现 physics-core.js
 #
 # Exit: 0 = all pass · 1 = violations found
 
@@ -93,6 +94,40 @@ function checkExternal() {
   totalViolations += violations;
 }
 checkExternal();
+
+// 5. iframe 模板底座单一 (C-3, G 阶段兑现)
+//    All iframe HTML templates under public/templates/ must load only
+//    experiment-core.js. The legacy physics-core.js was retired in G 阶段 W6.
+//    Any reintroduction of physics-core.js signals architecture regression.
+function checkIframeFoundation() {
+  const root = 'public/templates';
+  if (!fs.existsSync(root)) {
+    console.log(`✅ [iframe foundation] directory not found, skipping`);
+    return;
+  }
+  const htmls = [];
+  function walkHtml(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walkHtml(p);
+      else if (p.endsWith('.html')) htmls.push(p);
+    }
+  }
+  walkHtml(root);
+  let violations = 0;
+  for (const f of htmls) {
+    const code = fs.readFileSync(f, 'utf8');
+    if (/physics-core\.js/.test(code)) {
+      console.error(`❌ iframe-foundation: ${f.replace(/\\/g, '/')} references legacy physics-core.js`);
+      violations++;
+    }
+  }
+  if (violations === 0) {
+    console.log(`✅ [iframe foundation] ${htmls.length} templates on single source (experiment-core.js)`);
+  }
+  totalViolations += violations;
+}
+checkIframeFoundation();
 
 console.log('');
 if (totalViolations > 0) {
