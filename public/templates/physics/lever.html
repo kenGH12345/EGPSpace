@@ -9,6 +9,10 @@
   .lever-canvas-wrapper {
     background: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%);
   }
+  .lever-canvas-wrapper .eureka-canvas {
+    width: 680px !important;
+    height: 360px !important;
+  }
 </style>
 </head>
 <body>
@@ -70,11 +74,6 @@
     </div>
   </div>
 
-  <div class="eureka-formula">
-    <p class="eureka-formula-title">杠杆平衡条件</p>
-    <div class="eureka-formula-expression">F₁ × L₁ = F₂ × L₂</div>
-    <p class="eureka-formula-note">左侧力矩 = 右侧力矩时，杠杆处于平衡状态</p>
-  </div>
 </div>
 
 <script src="/templates/_shared/experiment-core.js"></script>
@@ -272,7 +271,11 @@
   update();
   animate();
   setTimeout(() => { try { EurekaHints.show(canvas, '👆 调整左右力或臂长，观察杠杆倾斜', 5000); } catch {} }, 600);
-  EurekaHost.emitReady(['leftForce', 'leftArm', 'rightForce', 'rightArm']);
+  EurekaHost.emitReady(['leftForce', 'leftArm', 'rightForce', 'rightArm'], {
+    formulas: [
+      { title: '杠杆平衡条件', expression: 'F₁ × L₁ = F₂ × L₂', note: '左侧力矩 = 右侧力矩时，杠杆处于平衡状态' },
+    ],
+  });
 })();
 </script>
 </body>

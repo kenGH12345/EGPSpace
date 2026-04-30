@@ -37,6 +37,8 @@ export interface IframeExperimentProps {
   onReady?: (template: TemplateMetadata) => void;
   /** Called on every message the template emits (already validated). */
   onMessage?: (msg: ExperimentMessage) => void;
+  /** Called when template reports ready with metadata (e.g. formulas). */
+  onMetadataChange?: (metadata: Record<string, unknown>) => void;
   /** Optional initial parameter values to send after ready. */
   initialParams?: Record<string, number>;
   /** Extra CSS class for outer wrapper. */
@@ -51,6 +53,7 @@ export function IframeExperiment({
   templateId,
   onReady,
   onMessage,
+  onMetadataChange,
   initialParams,
   className,
   height = 900,
@@ -142,6 +145,9 @@ export function IframeExperiment({
       if (validated.type === 'ready') {
         setStatus('ready');
         onReady?.(template);
+        if (validated.metadata && Object.keys(validated.metadata).length > 0) {
+          onMetadataChange?.(validated.metadata);
+        }
         if (initialParams) {
           sendCommand({ source: MESSAGE_SOURCE, type: 'set_params', params: initialParams });
         }

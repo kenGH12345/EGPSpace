@@ -35,12 +35,23 @@ interface BaseExperimentMessage {
   requestId?: string;
 }
 
+export interface ExperimentFormula {
+  title: string;
+  expression: string;
+  note?: string;
+}
+
 /** Template is ready — host may now send initial params. */
 export interface ReadyMessage extends BaseExperimentMessage {
   type: 'ready';
   templateId: string;
   /** Parameter names the template supports (for host validation) */
   supportedParams?: string[];
+  /** Optional metadata e.g. formulas, principles to display in the host sidebar. */
+  metadata?: {
+    formulas?: ExperimentFormula[];
+    [key: string]: unknown;
+  };
 }
 
 /** User changed a parameter inside the template. */

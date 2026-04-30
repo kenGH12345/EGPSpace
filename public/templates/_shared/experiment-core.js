@@ -77,12 +77,13 @@
     },
 
     /** Send a 'ready' message to the host. Call once when template is initialized. */
-    emitReady(supportedParams) {
+    emitReady(supportedParams, metadata) {
       _post({
         type: 'ready',
         templateId: _templateId,
         protocolVersion: PROTOCOL_VERSION,
         supportedParams: supportedParams || [],
+        metadata: metadata || {},
       });
     },
 

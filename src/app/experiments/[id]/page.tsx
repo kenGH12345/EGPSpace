@@ -91,6 +91,7 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   const [isLoaded, setIsLoaded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
+  const [formulas, setFormulas] = useState<Array<{ title: string; expression: string; note?: string }> | undefined>(undefined);
 
   // 客户端挂载后从 sessionStorage 加载配置
   useEffect(() => {
@@ -110,6 +111,11 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
     }
     setIsLoaded(true);
   }, []);
+
+  // Reset formulas when experiment changes
+  useEffect(() => {
+    setFormulas(undefined);
+  }, [id]);
 
   // Auto-generate experiment when no preset and no AI config
   useEffect(() => {
@@ -243,12 +249,21 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
             discussion={discussion}
             knowledge={displayKnowledge}
             steps={exp?.steps}
+            formulas={formulas}
           />
 
           {/* 右侧实验区 */}
           <div className="lg:col-span-3">
             <ExperimentWithChat experimentName={displayName} experimentTopic={aiConfig?.topic ?? exp?.subject}>
-              <ExperimentRenderer experiment={exp} aiSchema={aiSchema} aiConfig={aiConfig} resolvedTemplateId={resolvedTemplateId} />
+              <ExperimentRenderer
+                experiment={exp}
+                aiSchema={aiSchema}
+                aiConfig={aiConfig}
+                resolvedTemplateId={resolvedTemplateId}
+                onMetadataChange={(meta) => {
+                  if (meta.formulas) setFormulas(meta.formulas as Array<{ title: string; expression: string; note?: string }>);
+                }}
+              />
             </ExperimentWithChat>
           </div>
         </div>

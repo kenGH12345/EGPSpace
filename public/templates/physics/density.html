@@ -116,12 +116,6 @@
     </div>
   </div>
 
-  <!-- Formula card -->
-  <div class="eureka-formula">
-    <p class="eureka-formula-title">密度公式</p>
-    <div class="eureka-formula-expression">ρ = m / V</div>
-    <p class="eureka-formula-note" id="formula-note">密度 = 质量 ÷ 体积</p>
-  </div>
 </div>
 
 <script src="/templates/_shared/experiment-core.js"></script>
@@ -297,11 +291,11 @@
         statusBadge.textContent = sub.name + ' · 密度偏差 ' + EurekaFormat.num(diff * 100, 1) + '%';
         statusBadge.className = 'eureka-badge warning';
       }
-      formulaNote.textContent = sub.name + ' 的标准密度 = ' + sub.rho + ' kg/m³';
+      if (formulaNote) formulaNote.textContent = sub.name + ' 的标准密度 = ' + sub.rho + ' kg/m³';
     } else {
       statusBadge.textContent = '自定义物质 · ρ = ' + EurekaFormat.num(densityKgm3, 1) + ' kg/m³';
       statusBadge.className = 'eureka-badge info';
-      formulaNote.textContent = '密度 = 质量 ÷ 体积';
+      if (formulaNote) formulaNote.textContent = '密度 = 质量 ÷ 体积';
     }
 
     vMass.textContent = state.mass;
@@ -425,7 +419,11 @@
     try { EurekaHints.show(canvas, '👆 点击不同物质按钮切换实验对象', 5000); } catch {}
   }, 600);
 
-  EurekaHost.emitReady(['mass', 'volume', 'substance']);
+  EurekaHost.emitReady(['mass', 'volume', 'substance'], {
+    formulas: [
+      { title: '密度公式', expression: 'ρ = m / V', note: '密度 = 质量 ÷ 体积' },
+    ],
+  });
 })();
 </script>
 </body>

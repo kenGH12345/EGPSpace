@@ -12,6 +12,12 @@ interface TeachingErrors {
   concept?: string[];
 }
 
+export interface ExperimentFormula {
+  title: string;
+  expression: string;
+  note?: string;
+}
+
 interface ExperimentKnowledgePanelProps {
   coreQuestion?: string;
   variables?: TeachingVariables;
@@ -19,6 +25,7 @@ interface ExperimentKnowledgePanelProps {
   discussion?: string[];
   knowledge?: string[];
   steps?: string[];
+  formulas?: ExperimentFormula[];
 }
 
 export function ExperimentKnowledgePanel({
@@ -28,6 +35,7 @@ export function ExperimentKnowledgePanel({
   discussion,
   knowledge,
   steps,
+  formulas,
 }: ExperimentKnowledgePanelProps) {
   return (
     <div className="space-y-4">
@@ -138,6 +146,19 @@ export function ExperimentKnowledgePanel({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* 实验原理 / 公式 */}
+      {formulas && formulas.length > 0 && (
+        <div className="space-y-3">
+          {formulas.map((f, i) => (
+            <div key={i} className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-2xl p-5 border border-blue-200">
+              <h3 className="font-bold text-blue-800 mb-2 text-sm">{f.title}</h3>
+              <div className="text-lg font-mono font-semibold text-blue-900 mb-1">{f.expression}</div>
+              {f.note && <p className="text-xs text-blue-700">{f.note}</p>}
+            </div>
+          ))}
         </div>
       )}
     </div>

@@ -27,6 +27,7 @@ interface ExperimentRendererProps {
   aiSchema: ExperimentSchema | null;
   aiConfig: GeneratedConfig | null;
   resolvedTemplateId: string | null;
+  onMetadataChange?: (metadata: Record<string, unknown>) => void;
 }
 
 /** AI-generated experiment config type (legacy, non-schema) */
@@ -56,10 +57,11 @@ export function ExperimentRenderer({
   aiSchema,
   aiConfig,
   resolvedTemplateId,
+  onMetadataChange,
 }: ExperimentRendererProps) {
   // PRIMARY PATH — Triple-Lock approved template via iframe
   if (resolvedTemplateId) {
-    return <IframeExperiment templateId={resolvedTemplateId} height={900} />;
+    return <IframeExperiment templateId={resolvedTemplateId} height={900} onMetadataChange={onMetadataChange} />;
   }
 
   // SECONDARY — Unified Schema (declarative framework)

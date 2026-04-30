@@ -139,17 +139,6 @@
     </div>
   </div>
 
-  <!-- Formula card -->
-  <div class="eureka-formula" id="formula-solid">
-    <p class="eureka-formula-title">固体压强公式</p>
-    <div class="eureka-formula-expression">p = F / S</div>
-    <p class="eureka-formula-note">压强 = 压力 ÷ 受力面积</p>
-  </div>
-  <div class="eureka-formula" id="formula-liquid" style="display:none;">
-    <p class="eureka-formula-title">液体压强公式</p>
-    <div class="eureka-formula-expression">p = ρ × g × h</div>
-    <p class="eureka-formula-note">液体压强 = 液体密度 × 重力加速度 × 深度</p>
-  </div>
 </div>
 
 <script src="/templates/_shared/experiment-core.js"></script>
@@ -210,8 +199,8 @@
       tabLiquid.classList.remove('active');
       controlsSolid.style.display = '';
       controlsLiquid.style.display = 'none';
-      formulaSolid.style.display = '';
-      formulaLiquid.style.display = 'none';
+      if (formulaSolid) formulaSolid.style.display = '';
+      if (formulaLiquid) formulaLiquid.style.display = 'none';
       statLabel1.textContent = '压力 F';
       statLabel2.textContent = '受力面积 S';
     } else {
@@ -219,8 +208,8 @@
       tabLiquid.classList.add('active');
       controlsSolid.style.display = 'none';
       controlsLiquid.style.display = '';
-      formulaSolid.style.display = 'none';
-      formulaLiquid.style.display = '';
+      if (formulaSolid) formulaSolid.style.display = 'none';
+      if (formulaLiquid) formulaLiquid.style.display = '';
       statLabel1.textContent = '液体密度 ρ';
       statLabel2.textContent = '深度 h';
     }
@@ -457,7 +446,12 @@
     try { EurekaHints.show(canvas, '👆 点击"液体压强"标签切换实验模式', 5000); } catch {}
   }, 600);
 
-  EurekaHost.emitReady(['force', 'area', 'liquidDensity', 'depth', 'gravity', 'mode']);
+  EurekaHost.emitReady(['force', 'area', 'liquidDensity', 'depth', 'gravity', 'mode'], {
+    formulas: [
+      { title: '固体压强公式', expression: 'p = F / S', note: '压强 = 压力 ÷ 受力面积' },
+      { title: '液体压强公式', expression: 'p = ρ × g × h', note: '液体压强 = 液体密度 × 重力加速度 × 深度' },
+    ],
+  });
 })();
 </script>
 </body>
