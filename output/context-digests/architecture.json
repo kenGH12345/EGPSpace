@@ -3,16 +3,16 @@
   "stage": "ARCHITECT",
   "source": {
     "path": "output/architecture.md",
-    "sourceHash": "8976b0b0b13536dee5d3cf91d18fbfc2f408c7e53e6e28e19765d11a7b4e0627",
-    "artifactSize": 32346,
-    "updatedAt": "2026-04-29T13:35:58.509Z"
+    "sourceHash": "71336c1f93b1f56b483bee6106a1676afbdd0ff01a0104b3d04d1488147fadf7",
+    "artifactSize": 23856,
+    "updatedAt": "2026-04-30T01:47:02.816Z"
   },
   "scope": {
-    "session": "wf-20260429132738.",
-    "requirementFingerprint": "co framework location proposal 文件级 物理分层重构 目录级分层 阶段"
+    "session": "wf-20260430013937.",
+    "requirementFingerprint": "core coze diff physics smoke 删除 本轮忽略 测试先行 视觉截图不 阶段三轨合一"
   },
   "content": {
-    "summary": "# F 阶段 · framework 物理分层重构 · ARCHITECT\r\n\r\n> Session: wf-20260429132738. · 基线: e12560f · 依据 analysis.md 13 AC + 7 风险\r\n\r\n---\r\n\r\n## 🧠 Architecture Reasoning\r\n\r\n### 核心架构决策 5 条\r\n\r\n1. **Proposal B' = 目录级分层 + 文件级 co-location**（拒绝 Proposal A/B，拒绝文件级拆分）：\r\n   - 目录分：`contracts/` `runtime/` `builders/` `domains/`\r\n   - 文件保留 co-location（type + guard 同文件，改名时同步）\r\n   - 分类规则：**文件 type 定义行数 > impl 行数**归 contracts，否则归 runtime\r\n\r\n2. **单别名 `@framework` + barrel 兜底** vs 多别名：**选单别名 + barrel**\r\n   - 下游 import 稳定：`impor",
+    "summary": "# G 阶段 · ARCHITECT · 三轨合一架构设计\r\n\r\n> **Session**: `wf-20260430013937.`\r\n> **Precedes**: PLAN\r\n> **Input**: analysis.md · 13 G-Goal + 7 风险 + 5 决策点\r\n\r\n---\r\n\r\n## 思考摘要\r\n\r\n**G 阶段架构本质**：对 F 阶段暴露的\"测试空洞 + 底座分叉\"做**两阶强化**——短期防 regression（Playwright smoke）+ 长期防复发（底座统一 + 硬约束 C-3 + skill 文档）。\r\n\r\n**核心策略**：**测试先行 + 渐进迁移 + 文档兜底**。Track-B（测试）先建立守护 → Track-A（迁移）在守护下安全推进 → Track-C（文档）把结果固化为未来记忆。三者缺一不可。\r\n\r\n**约束纪律**：延续 E/F 阶段\"硬约束兑现四件套\"精神——物理+机器+流程+文档同时守护新边界 C-3。\r\n\r\n---\r\n\r\n## 1 · 5 决策定型\r\n\r\n### D-G1 · physics-core.js 退役",
     "outline": [
       "架构设计 · D 阶段 · UX 细节优化包",
       "思考摘要",
@@ -45,7 +45,18 @@
       "依赖规则（红线）",
       "3 · Scorecard（14 quality attributes）",
       "4 · Scenario Harness（14 场景验证）",
-      "5 · tsconfig paths 设计"
+      "5 · tsconfig paths 设计",
+      "G 阶段 · ARCHITECT · 三轨合一架构设计",
+      "1 · 5 决策定型",
+      "D-G1 · physics-core.js 退役方式 → **方案 B1（完全删除）**",
+      "D-G2 · Playwright smoke 覆盖范围 → **方案 C2（4 + 4 采样）**",
+      "D-G3 · 视觉基线策略 → **方案 V2（截图但不 pixel diff）**",
+      "D-G4 · Wave 顺序 → **方案 O1（B → A → C）**",
+      "D-G5 · Coze 环境集成 → **方案 N1（本轮忽略）**",
+      "2 · 目录结构（G 阶段落地后全貌）",
+      "3 · Architecture Scorecard",
+      "4 · Scenario Coverage（14 场景）",
+      "5 · Failure Model（6 FM）"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -63,7 +74,19 @@
       "config: EditorDomainConfig",
       "): ComponentBounds;",
       "> Session: `wf-20260429054300.`",
-      "> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流"
+      "> Scope: 53 pre-existing TSC errors → 0；受控松动 framework 零改硬约束；加 AC-E11 tsc 进工作流",
+      "### D-G1 · physics-core.js 退役方式 → **方案 B1（完全删除）**",
+      "**理由**：",
+      "1. F 阶段 C-1/C-2 硬约束精神是\"物理边界\"——保留 shim 违背\"单一真相源\"",
+      "2. `public/templates` 全扫证实 11 个当前用户迁移后无残余引用（A-2 之后 rg 返回空）",
+      "3. 若未来有外部 HTML 误引用 → arch-audit 会 fail 暴露问题（机器守护）· 比隐晦 shim 好",
+      "4. 简化 · 维护成本最低",
+      "**配套机制**：",
+      "- `scripts/arch-audit.sh` 新增 check: `if rg 'physics-core\\.js' public/templates; then exit 1`（底座单一性守护）",
+      "- 迁移 commit 和删除 commit **分两次**：先改 11 模板指向新底座并验证，再单独删 physics-core",
+      "### D-G2 · Playwright smoke 覆盖范围 → **方案 C2（4 + 4 采样）**",
+      "**4 个 compute-using iframe（深度测试）**：",
+      "1. `physics/circuit` — F 阶段 bug 源头 · 含 RPC + 连线闭环"
     ],
     "risks": [],
     "downstreamConsumers": [
@@ -101,7 +124,19 @@
       "| **framework/domains/** ~25 文件 · 相对路径 | 路径跟随物理分层调整 | 60min · 分布在 W3/W4/W5 |",
       "| **templates/** | 零（不 import framework）| 0min |",
       "| **未来 /wf Agent** | 读 `framework-boundary.md` | — |",
-      "| **未来新 domain** | 按 `domains/` 模板创建 · 只 import contracts/runtime/builders | — |"
+      "| **未来新 domain** | 按 `domains/` 模板创建 · 只 import contracts/runtime/builders | — |",
+      "| 消费者 | 适应动作 | 工作量 |",
+      "| 13 原 experiment-core 模板 | 零 | 0 |",
+      "| 11 待迁 physics-core 模板 | script src 1 行 | ~1min × 11 = 11min |",
+      "| `tests/e2e/` 新建 | 新建 2 .spec.ts + 8 基线 PNG | W1-W2 完成 |",
+      "| `package.json` | +1 devDep + 1 script | 1min |",
+      "| `playwright.config.ts` | 新建 | 5min |",
+      "| `scripts/arch-audit.sh` | +1 check | 2min |",
+      "| `docs/roadmap-g.md` | 新建 | W7 完成 |",
+      "| `docs/architecture-constraints.md` | +C-3 + 记录 #8 | W7 完成 |",
+      "| `.workflow/skills/iframe-rpc-safety.md` | 新建 | W7 完成 |",
+      "| `workflow.config.js` | 注册 skill | 1min |",
+      "### 对 IDE Agent / 开发者的 UX"
     ],
     "tasks": [
       "```",
@@ -178,21 +213,26 @@
       "runtime/index.ts",
       "builders/index.ts",
       "src/lib/engines/chemistry/reaction.ts",
-      "src/lib/engines/physics/circuit.ts"
+      "src/lib/engines/physics/circuit.ts",
+      "docs/roadmap-g.md",
+      "workflow/skills/iframe-rpc-safety.md",
+      "tests/e2e/iframe-smoke/compute.spec.ts",
+      "tests/e2e/iframe-smoke/migration.spec.ts",
+      "public/templates/_shared/physics-core.js"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "architecture.md",
       "outline": [
-        "F 阶段 · framework 物理分层重构 · ARCHITECT",
-        "🧠 Architecture Reasoning",
-        "核心架构决策 5 条",
-        "1 · 目标架构全貌",
-        "1.1 目录结构（最终形态）",
-        "1.2 文件归属判定规则（R-F1 的系统化应对）",
-        "1.3 15 个核心文件具体分配",
-        "2 · 依赖方向图"
+        "G 阶段 · ARCHITECT · 三轨合一架构设计",
+        "思考摘要",
+        "1 · 5 决策定型",
+        "D-G1 · physics-core.js 退役方式 → **方案 B1（完全删除）**",
+        "D-G2 · Playwright smoke 覆盖范围 → **方案 C2（4 + 4 采样）**",
+        "D-G3 · 视觉基线策略 → **方案 V2（截图但不 pixel diff）**",
+        "D-G4 · Wave 顺序 → **方案 O1（B → A → C）**",
+        "D-G5 · Coze 环境集成 → **方案 N1（本轮忽略）**"
       ],
       "keyPoints": []
     }
@@ -213,273 +253,95 @@
   },
   "evidenceRefs": [
     {
-      "file": "contracts/assembly.ts",
+      "file": "docs/roadmap-g.md",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "components/base.ts",
+      "file": "docs/architecture-constraints.md",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "components/graph.ts",
+      "file": "workflow/skills/iframe-rpc-safety.md",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "contracts/component.ts",
+      "file": "tests/e2e/iframe-smoke/compute.spec.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "contracts/graph.ts",
+      "file": "tests/e2e/iframe-smoke/migration.spec.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "components/port.ts",
+      "file": "public/templates/_shared/physics-core.js",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "contracts/port.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "components/registry.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "runtime/registry.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "components/union-find.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "runtime/union-find.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "solvers/base.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "contracts/solver.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "interactions/engine.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "runtime/engine.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "interactions/rule.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "contracts/rule.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "interactions/events.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "contracts/events.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "assembly/spec.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "assembly/layout.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "contracts/layout.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "assembly/errors.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "contracts/errors.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "assembly/validator.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "runtime/validator.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "assembly/assembler.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "runtime/assembler.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "assembly/fluent.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "builders/fluent.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "framework/index.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "framework/__tests__/framework.test.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "chemistry/__tests__/type-guards.test.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "framework/contracts/component.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "src/lib/framework/index.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "contracts/index.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "runtime/index.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "builders/index.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "src/lib/engines/chemistry/reaction.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "src/lib/engines/physics/circuit.ts",
+      "file": "docs/editor-framework.md",
       "artifact": "output/architecture.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "contracts",
-      "framework",
-      "runtime",
-      "type",
-      "barrel",
-      "import",
-      "builders",
-      "domains",
-      "lib",
+      "core",
+      "physics",
+      "smoke",
+      "experiment",
+      "min",
+      "playwright",
+      "track",
       "arch",
       "audit",
+      "iframe",
       "wave",
-      "eslint",
-      "src",
-      "components",
-      "tsc",
-      "文件",
-      "jest",
-      "assembly",
-      "git",
-      "min",
-      "class",
-      "const",
-      "editor",
-      "engines",
-      "component",
-      "移动",
-      "index",
-      "revert",
       "commit",
-      "error",
-      "bypass",
-      "export",
-      "chemistry",
-      "更新",
-      "bash",
+      "eurekacanvas",
+      "e2e",
+      "新建",
+      "diff",
+      "window",
+      "skill",
+      "rpc",
       "scripts",
-      "architecture",
-      "base",
-      "graph"
+      "constraints",
+      "test",
+      "red",
+      "compute",
+      "config",
+      "check",
+      "png",
+      "tsc",
+      "workflow",
+      "chemistry",
+      "timeout",
+      "eurekahints",
+      "git",
+      "模板",
+      "roadmap",
+      "docs",
+      "safety",
+      "迁移",
+      "public",
+      "templates"
     ],
     "files": [
-      "contracts/assembly.ts",
-      "components/base.ts",
-      "components/graph.ts",
-      "contracts/component.ts",
-      "contracts/graph.ts",
-      "components/port.ts",
-      "contracts/port.ts",
-      "components/registry.ts",
-      "runtime/registry.ts",
-      "components/union-find.ts",
-      "runtime/union-find.ts",
-      "solvers/base.ts",
-      "contracts/solver.ts",
-      "interactions/engine.ts",
-      "runtime/engine.ts",
-      "interactions/rule.ts",
-      "contracts/rule.ts",
-      "interactions/events.ts",
-      "contracts/events.ts",
-      "assembly/spec.ts",
-      "assembly/layout.ts",
-      "contracts/layout.ts",
-      "assembly/errors.ts",
-      "contracts/errors.ts",
-      "assembly/validator.ts",
-      "runtime/validator.ts",
-      "assembly/assembler.ts",
-      "runtime/assembler.ts",
-      "assembly/fluent.ts",
-      "builders/fluent.ts",
-      "framework/index.ts",
-      "framework/__tests__/framework.test.ts",
-      "chemistry/__tests__/type-guards.test.ts",
-      "framework/contracts/component.ts",
-      "src/lib/framework/index.ts",
-      "contracts/index.ts",
-      "runtime/index.ts",
-      "builders/index.ts",
-      "src/lib/engines/chemistry/reaction.ts",
-      "src/lib/engines/physics/circuit.ts"
+      "docs/roadmap-g.md",
+      "docs/architecture-constraints.md",
+      "workflow/skills/iframe-rpc-safety.md",
+      "tests/e2e/iframe-smoke/compute.spec.ts",
+      "tests/e2e/iframe-smoke/migration.spec.ts",
+      "public/templates/_shared/physics-core.js",
+      "docs/editor-framework.md"
     ],
     "modules": [
-      "contracts",
-      "components",
-      "components",
-      "contracts",
-      "contracts",
-      "components",
-      "contracts",
-      "components",
-      "runtime",
-      "components",
-      "runtime",
-      "solvers",
-      "contracts",
-      "interactions",
-      "runtime",
-      "interactions",
-      "contracts",
-      "interactions",
-      "contracts",
-      "assembly"
+      "docs",
+      "docs",
+      "workflow",
+      "tests",
+      "tests",
+      "public",
+      "docs"
     ]
   },
-  "generatedAt": "2026-04-29T13:36:07.983Z"
+  "generatedAt": "2026-04-30T01:47:12.149Z"
 }

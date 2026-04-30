@@ -3,16 +3,16 @@
   "stage": "PLAN",
   "source": {
     "path": "output/execution-plan.md",
-    "sourceHash": "30d29465d26cb8f13ab6f0322faf6ab4d4050f038c54f02b6516a8fb9ec3acc4",
-    "artifactSize": 19006,
-    "updatedAt": "2026-04-29T13:42:13.377Z"
+    "sourceHash": "62baf56f4a4ad3b8f7f85fc701faa65446cf1b1b432d77758eb6b669cc8d098c",
+    "artifactSize": 16550,
+    "updatedAt": "2026-04-30T01:50:30.692Z"
   },
   "scope": {
-    "session": "wf-20260429132738.",
-    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
+    "session": "wf-20260430013937.",
+    "requirementFingerprint": "wave 执行计划 测试先行 阶段三轨"
   },
   "content": {
-    "summary": "# F 阶段 · 执行计划 · framework 物理分层重构\r\n\r\n> Session: wf-20260429132738. · 基线: e12560f · 依据 architecture.md 5 决策 + 7 Wave\r\n\r\n---\r\n\r\n## 一 · Mermaid 依赖图\r\n\r\n```mermaid\r\ngraph TD\r\n    T0[T-0 基线冻结<br/>tsc 0 + jest 563]\r\n    T1[T-1 arch-audit.sh 骨架]\r\n    T2[T-2 contracts/runtime/builders<br/>空目录 + index.ts]\r\n    T3[T-3 迁 rule.ts 到 contracts/]\r\n    T4[T-4 迁 events.ts 到 contracts/]\r\n    T5[T-5 迁 errors.ts 到 contracts/]\r\n    T6[T-6 更新 barrel · W2 验证]\r\n\r\n    T7[T-7 迁 component.ts 到 contracts/]\r\n    T8[T-8 迁 port",
+    "summary": "# G 阶段 · PLAN · 8 Wave × 24 任务执行计划\r\n\r\n> **Session**: `wf-20260430013937.`\r\n> **上游**: analysis.md 13 G-Goal · architecture.md 5 决策 + 8 Wave 粗时序\r\n> **总估时**: 5h 10min（含 buffer · 实际可能 4h30min-5h30min）\r\n> **Critical Path**: T-G0-1 → T-G1-1 → T-G2-1 → T-G3-1 → T-G4-1 → T-G5-1 → T-G6-1\r\n> **最高风险任务**: T-G3-1（R-G1 源头 · EurekaCanvas 合并）· T-G1-1（R-G2 源头 · Playwright 装）· T-G5-1（R-G5 守护点）\r\n\r\n---\r\n\r\n## 🧠 Plan 思考摘要\r\n\r\n**Critical Path 选择**：W0→W6 是硬链路（任何一个失败都阻塞后续）。W7（Track-C 文档三件）**可与 W6 并行**（都在 W5 smoke 通过后）。W",
     "outline": [
       "执行计划 · D 阶段 · UX 细节优化包",
       "任务总览",
@@ -49,7 +49,19 @@
       "Wave 5 · 迁 1 builders 文件（20min · 2 任务）",
       "Wave 6 · 测试路径统一 + bypass 清理（40min · 5 任务）",
       "Wave 7 · 硬约束兑现四件套 + 最终验证（40min · 6 任务）",
-      "三 · AC ↔ 任务映射表（13 AC）"
+      "三 · AC ↔ 任务映射表（13 AC）",
+      "G 阶段 · PLAN · 8 Wave × 24 任务执行计划",
+      "🧠 Plan 思考摘要",
+      "依赖图（Mermaid）",
+      "24 任务详细清单",
+      "Wave 0 · 基线冻结（10min）",
+      "Wave 1 · Playwright 基础设施（75min · R-G2 源头）",
+      "Wave 2 · Compute Smoke 4 用例（85min）",
+      "Wave 3 · 底座合并（40min · R-G1 源头 🔴）",
+      "Wave 4 · 11 模板迁移（30min）",
+      "Wave 5 · 迁移采样 Smoke（30min · R-G5 守护点）",
+      "Wave 6 · 删除 physics-core + arch-audit（20min）",
+      "Wave 7 · Track-C 文档（50min · 并行机会）"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -73,7 +85,15 @@
       "| R-C | P1 | T-25 engines bypass 其实不是 bypass | ANALYSE 已修正理解 · T-25 降级为 grep 确认 |",
       "| R-D | P1 | T-28 ESLint 规则误伤 framework 内部 | `files` glob 只含 editor/engines/components 目录 · 验证 `eslint framework/` 不报错 |",
       "| R-E | P2 | Windows PowerShell 执行 bash arch-audit.sh | 同 scripts/check.sh 既有模式 · git bash 兜底 |",
-      "---"
+      "---",
+      "| 风险 ID | 描述 | 负责任务 | 缓解点 |",
+      "| **R-G1** P0 | EurekaCanvas 合并漂移 | **T-G3-1 + T-G3-2** | T-G2-4 smoke 作前置基线 · T-G5-1 作后置兜底 |",
+      "| **R-G2** P1 | Playwright Windows 兼容 | **T-G1-1** | fallback manual smoke · 不阻塞 Track-A |",
+      "| **R-G3** P1 | iframe 加载时序 flaky | T-G1-2 + T-G2-2 | 10s timeout · waitForFunction · auto-fix 3 轮 |",
+      "| **R-G4** P2 | pixel diff 易碎 | 无（V2 已规避）| 截图保存不比对 |",
+      "| **R-G5** P1 | 迁移引入 regression | **T-G5-1** 唯一守护 | 迁移前 W2 基线 · 迁移后 W5 强制 smoke |",
+      "| **R-G6** P1 | Coze 同步滞后 | 无（D-G5 OOS）| 文档指引 + G+1 候选 |",
+      "| **R-G7** P2 | Scope creep | T-G8-2 | 4 批分离 · diff 自审 |"
     ],
     "downstreamConsumers": [],
     "tasks": [
@@ -107,7 +127,12 @@
       "- 文件：`scripts/check.sh` 同模式（LF endings · `#!/usr/bin/env bash`）",
       "- AC 映射：AC-F11（脚手架）",
       "- 失败处理：Windows PowerShell LF/CRLF 问题 → 同 E 阶段 check.sh 处理",
-      "---"
+      "---",
+      "> **Session**: `wf-20260430013937.`",
+      "> **上游**: analysis.md 13 G-Goal · architecture.md 5 决策 + 8 Wave 粗时序",
+      "> **总估时**: 5h 10min（含 buffer · 实际可能 4h30min-5h30min）",
+      "> **Critical Path**: T-G0-1 → T-G1-1 → T-G2-1 → T-G3-1 → T-G4-1 → T-G5-1 → T-G6-1",
+      "> **最高风险任务**: T-G3-1（R-G1 源头 · EurekaCanvas 合并）· T-G1-1（R-G2 源头 · Playwright 装）· T-G5-1（R-G5 守护点）"
     ],
     "acceptanceCriteria": [
       "- [ ] **T-32 全部 8 项验证通过**",
@@ -199,21 +224,28 @@
       "assembly/assembler.ts",
       "runtime/assembler.ts",
       "runtime/index.ts",
-      "assembly/fluent.ts"
+      "assembly/fluent.ts",
+      "tests/e2e/iframe-smoke/iframe-helpers.ts",
+      "tests/e2e/iframe-smoke/compute.spec.ts",
+      "public/templates/_shared/experiment-core.js",
+      "tests/e2e/iframe-smoke/migration.spec.ts",
+      "public/templates/_shared/physics-core.js",
+      "docs/roadmap-g.md",
+      "workflow/skills/iframe-rpc-safety.md"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "execution-plan.md",
       "outline": [
-        "F 阶段 · 执行计划 · framework 物理分层重构",
-        "一 · Mermaid 依赖图",
-        "二 · 33 任务详解",
-        "Wave 0 · 基线冻结（15min · 2 任务）",
-        "Wave 1 · 建立空目录 + barrel 骨架（40min · 1 任务）",
-        "Wave 2 · 迁 3 pure type 文件（45min · 4 任务）",
-        "Wave 3 · 迁 6 核心 co-located 文件 · 🚦 GATE（60min · 7 任务）",
-        "Wave 4 · 迁 5 runtime 文件（40min · 6 任务）"
+        "G 阶段 · PLAN · 8 Wave × 24 任务执行计划",
+        "🧠 Plan 思考摘要",
+        "依赖图（Mermaid）",
+        "24 任务详细清单",
+        "Wave 0 · 基线冻结（10min）",
+        "Wave 1 · Playwright 基础设施（75min · R-G2 源头）",
+        "Wave 2 · Compute Smoke 4 用例（85min）",
+        "Wave 3 · 底座合并（40min · R-G1 源头 🔴）"
       ],
       "keyPoints": []
     }
@@ -234,273 +266,101 @@
   },
   "evidenceRefs": [
     {
-      "file": "chemistry/reaction.ts",
+      "file": "tests/e2e/iframe-smoke/iframe-helpers.ts",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "physics/circuit.ts",
+      "file": "tests/e2e/iframe-smoke/compute.spec.ts",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "workflow/skills/framework-boundary.md",
+      "file": "public/templates/_shared/experiment-core.js",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "docs/editor-framework.md",
+      "file": "tests/e2e/iframe-smoke/migration.spec.ts",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "src/lib/framework/contracts/index.ts",
+      "file": "public/templates/_shared/physics-core.js",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "src/lib/framework/runtime/index.ts",
+      "file": "docs/roadmap-g.md",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "src/lib/framework/builders/index.ts",
+      "file": "docs/architecture-constraints.md",
       "artifact": "output/execution-plan.md"
     },
     {
-      "file": "framework/index.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/interactions/rule.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/contracts/rule.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/rule.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "interactions/events.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/events.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "assembly/errors.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/errors.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/index.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "components/base.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/component.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "components/port.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/port.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "components/graph.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/graph.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "runtime/union-find.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "solvers/base.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/solver.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "assembly/spec.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/assembly.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "assembly/layout.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "contracts/layout.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "components/union-find.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "components/registry.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "runtime/registry.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "interactions/engine.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "runtime/engine.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "assembly/validator.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "runtime/validator.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "assembly/assembler.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "runtime/assembler.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "runtime/index.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "assembly/fluent.ts",
+      "file": "workflow/skills/iframe-rpc-safety.md",
       "artifact": "output/execution-plan.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "contracts",
-      "framework",
-      "components",
-      "动作",
-      "tsc",
-      "runtime",
-      "barrel",
-      "assembly",
-      "更新",
-      "git",
-      "graph",
-      "jest",
-      "import",
-      "文件",
-      "映射",
-      "lib",
-      "验证",
-      "src",
-      "wave",
-      "index",
-      "domains",
       "min",
-      "base",
+      "smoke",
+      "core",
+      "iframe",
+      "acceptance",
+      "文件改动",
+      "依赖",
+      "时长",
+      "physics",
+      "goal",
+      "playwright",
+      "风险",
+      "wave",
+      "track",
+      "e2e",
+      "spec",
+      "png",
+      "eurekacanvas",
+      "compute",
+      "验证",
+      "experiment",
+      "并行",
+      "config",
       "arch",
-      "audit",
-      "component",
-      "port",
-      "eslint",
-      "rule",
-      "gate",
-      "union",
-      "find",
-      "engines",
-      "builders",
-      "errors",
-      "type",
-      "pass",
       "npx",
-      "export",
-      "events"
+      "新建",
+      "test",
+      "tests",
+      "templates",
+      "audit",
+      "timeout",
+      "public",
+      "源头",
+      "workflow",
+      "git",
+      "page",
+      "skill",
+      "helpers",
+      "case",
+      "diff"
     ],
     "files": [
-      "chemistry/reaction.ts",
-      "physics/circuit.ts",
-      "workflow/skills/framework-boundary.md",
-      "docs/editor-framework.md",
-      "src/lib/framework/contracts/index.ts",
-      "src/lib/framework/runtime/index.ts",
-      "src/lib/framework/builders/index.ts",
-      "framework/index.ts",
-      "src/lib/framework/interactions/rule.ts",
-      "src/lib/framework/contracts/rule.ts",
-      "contracts/rule.ts",
-      "interactions/events.ts",
-      "contracts/events.ts",
-      "assembly/errors.ts",
-      "contracts/errors.ts",
-      "contracts/index.ts",
-      "components/base.ts",
-      "contracts/component.ts",
-      "components/port.ts",
-      "contracts/port.ts",
-      "components/graph.ts",
-      "contracts/graph.ts",
-      "runtime/union-find.ts",
-      "solvers/base.ts",
-      "contracts/solver.ts",
-      "assembly/spec.ts",
-      "contracts/assembly.ts",
-      "assembly/layout.ts",
-      "contracts/layout.ts",
-      "components/union-find.ts",
-      "components/registry.ts",
-      "runtime/registry.ts",
-      "interactions/engine.ts",
-      "runtime/engine.ts",
-      "assembly/validator.ts",
-      "runtime/validator.ts",
-      "assembly/assembler.ts",
-      "runtime/assembler.ts",
-      "runtime/index.ts",
-      "assembly/fluent.ts"
+      "tests/e2e/iframe-smoke/iframe-helpers.ts",
+      "tests/e2e/iframe-smoke/compute.spec.ts",
+      "public/templates/_shared/experiment-core.js",
+      "tests/e2e/iframe-smoke/migration.spec.ts",
+      "public/templates/_shared/physics-core.js",
+      "docs/roadmap-g.md",
+      "docs/architecture-constraints.md",
+      "workflow/skills/iframe-rpc-safety.md"
     ],
     "modules": [
-      "chemistry",
-      "physics",
-      "workflow",
+      "tests",
+      "tests",
+      "public",
+      "tests",
+      "public",
       "docs",
-      "src",
-      "src",
-      "src",
-      "framework",
-      "src",
-      "src",
-      "contracts",
-      "interactions",
-      "contracts",
-      "assembly",
-      "contracts",
-      "contracts",
-      "components",
-      "contracts",
-      "components",
-      "contracts"
+      "docs",
+      "workflow"
     ]
   },
-  "generatedAt": "2026-04-29T13:42:23.803Z"
+  "generatedAt": "2026-04-30T01:50:38.848Z"
 }

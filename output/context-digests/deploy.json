@@ -3,16 +3,16 @@
   "stage": "DEPLOY",
   "source": {
     "path": "output/deploy-output.md",
-    "sourceHash": "8f7393d12d5754fe4ab7816d6a794ade8d09ab495094fe123ae195ec4bdb105a",
-    "artifactSize": 6681,
-    "updatedAt": "2026-04-29T15:41:14.138Z"
+    "sourceHash": "ff928661b440d7cec5300dfa9bf44993ecf82ddb3468afa75b80615837a727fe",
+    "artifactSize": 6656,
+    "updatedAt": "2026-04-30T02:57:05.884Z"
   },
   "scope": {
-    "session": "wf-20260429132738.",
-    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
+    "session": "wf-20260430013937.",
+    "requirementFingerprint": "commit deploy 指引 用户 终局归档 阶段"
   },
   "content": {
-    "summary": "# F 阶段 · Deploy Output\r\n\r\n> Session: wf-20260429132738. · 基线 e12560f → F 阶段末\r\n\r\n## 变更清单（53 git 变更）\r\n\r\n### 新建目录 + 文件（9）\r\n\r\n| # | 路径 | 作用 |\r\n|---|------|------|\r\n| 1 | `src/lib/framework/contracts/` | 🔒 硬边界 type-dominant 层（9 文件 + index.ts）|\r\n| 2 | `src/lib/framework/runtime/` | 🟡 impl-dominant 层（5 文件 + index.ts）|\r\n| 3 | `src/lib/framework/builders/` | 🟢 user-facing DSL 层（1 文件 + index.ts）|\r\n| 4 | `scripts/arch-audit.sh` | 硬约束守护脚本（零依赖 · 60 行）|\r\n| 5 | `.workflow/skills/framework-boundary.md` | 项目级",
+    "summary": "# G 阶段 · DEPLOY · 终局归档 + Commit 指引\r\n\r\n> **Session**: `wf-20260430013937.` · **终端**: 40 files · +1775/-2727 · net **-952 行**\r\n\r\n## 终局状态\r\n\r\n| 维度 | 值 |\r\n|------|-----|\r\n| TSC errors | 0 |\r\n| Playwright cases | 8（4 compute + 4 migration）|\r\n| arch-audit checks | 5/5 exit 0 |\r\n| physics-core 残余 | 0 |\r\n| 新底座模板数 | 24/24 |\r\n| 防复发层数 | 4（物理 + 机器 + 流程 + Agent skill）|\r\n\r\n## 用户 Commit 指引（4 批分 track）\r\n\r\n用户在本地执行（推荐顺序）：\r\n\r\n### Batch 1 · Track-B · `feat(e2e)`: Playwright 基础 + compute smoke\r\n\r\n```bash\r\ngit add pac",
     "outline": [
       "Deploy Output · D 阶段 · UX 细节优化包",
       "部署概述",
@@ -49,7 +49,19 @@
       "回滚方案（如需）",
       "Runbook（部署流程）",
       "硬约束兑现四件套状态",
-      "F+1 路线图建议（非本轮）"
+      "F+1 路线图建议（非本轮）",
+      "G 阶段 · DEPLOY · 终局归档 + Commit 指引",
+      "终局状态",
+      "用户 Commit 指引（4 批分 track）",
+      "Batch 1 · Track-B · `feat(e2e)`: Playwright 基础 + compute smoke",
+      "Batch 2 · Track-A · `refactor(templates)`: physics-core → experiment-core 底座统一",
+      "Batch 3 · Track-A 守护 · `feat(arch-guard)`: arch-audit +check-5",
+      "Batch 4 · Track-C 防复发 · `docs/feat(workflow)`: 路线图 + C-5 + skill + 注册",
+      "Batch 5 (optional) · `chore(workflow)`: 归档 G 阶段 output/",
+      "Push",
+      "验证用户本地做的事（可选）",
+      "1 · dev server 起来",
+      "2 · 在另一个终端运行 e2e（~2-3min · 8 case · 含截图）"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -85,7 +97,18 @@
       "$ npx jest --no-colors       # ✅ Test Suites: 28/28 · Tests: 563/563",
       "$ bash scripts/arch-audit.sh # ✅ contracts/ 10 files / runtime/ 6 files / builders/ 2 files / external 122 files - all clean",
       "$ npx eslint src/lib/{editor,engines} src/components  # ✅ 0 errors, 0 warnings",
-      "```"
+      "```",
+      "完成 commit + push 后，用户可在本地做这些运行时验证：",
+      "# 1 · dev server 起来",
+      "bash ./scripts/dev.sh   # :5000",
+      "# 2 · 在另一个终端运行 e2e（~2-3min · 8 case · 含截图）",
+      "npm run test:e2e",
+      "# 期望: 8 passed · __screenshots__/ 里生成 8 PNG",
+      "# 3 · 打开浏览器肉眼抽检 Class A 4 实验和 Class B 迁移 4 采样",
+      "# http://localhost:5000/experiments/physics/circuit       · 电路闭环 + 指标数值",
+      "# http://localhost:5000/experiments/physics/buoyancy      · 浮力实验",
+      "# http://localhost:5000/experiments/chemistry/acid-base-titration · 滴定",
+      "# http://localhost:5000/experiments/physics/friction      · 摩擦（迁移后）"
     ],
     "affectedFiles": [
       "src/lib/editor/drawers/draw-helpers.ts",
@@ -159,21 +182,26 @@
       "builders/index.ts",
       "domains/chemistry/assembly/chemistry-spec.ts",
       "domains/circuit/assembly/circuit-spec.ts",
-      "framework/__tests__/assembly.test.ts"
+      "framework/__tests__/assembly.test.ts",
+      "tests/e2e/iframe-smoke/iframe-helpers.ts",
+      "public/templates/_shared/experiment-core.js",
+      "public/templates/_shared/physics-core.js",
+      "docs/roadmap-g.md",
+      "workflow/skills/iframe-rpc-safety.md"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "deploy-output.md",
       "outline": [
-        "F 阶段 · Deploy Output",
-        "变更清单（53 git 变更）",
-        "新建目录 + 文件（9）",
-        "git mv 迁移（15 核心文件）",
-        "删除目录（4 空目录）",
-        "内容修改（16 文件）",
-        "验证结果",
-        "commit 建议（推荐 Wave 粒度，3-4 commits）"
+        "G 阶段 · DEPLOY · 终局归档 + Commit 指引",
+        "终局状态",
+        "用户 Commit 指引（4 批分 track）",
+        "Batch 1 · Track-B · `feat(e2e)`: Playwright 基础 + compute smoke",
+        "Batch 2 · Track-A · `refactor(templates)`: physics-core → experiment-core 底座统一",
+        "Batch 3 · Track-A 守护 · `feat(arch-guard)`: arch-audit +check-5",
+        "Batch 4 · Track-C 防复发 · `docs/feat(workflow)`: 路线图 + C-5 + skill + 注册",
+        "Batch 5 (optional) · `chore(workflow)`: 归档 G 阶段 output/"
       ],
       "keyPoints": []
     }
@@ -194,273 +222,89 @@
   },
   "evidenceRefs": [
     {
-      "file": "workflow/skills/framework-boundary.md",
+      "file": "tests/e2e/iframe-smoke/iframe-helpers.ts",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "components/base.ts",
+      "file": "public/templates/_shared/experiment-core.js",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "contracts/component.ts",
+      "file": "public/templates/_shared/physics-core.js",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "components/graph.ts",
+      "file": "docs/roadmap-g.md",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "contracts/graph.ts",
+      "file": "docs/architecture-constraints.md",
       "artifact": "output/deploy-output.md"
     },
     {
-      "file": "components/port.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/port.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "components/union-find.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "runtime/union-find.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "components/registry.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "runtime/registry.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "solvers/base.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/solver.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "interactions/rule.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/rule.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "interactions/events.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/events.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "interactions/engine.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "runtime/engine.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "assembly/spec.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/assembly.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "assembly/layout.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/layout.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "assembly/errors.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/errors.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "assembly/validator.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "runtime/validator.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "assembly/assembler.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "runtime/assembler.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "assembly/fluent.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "builders/fluent.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "assembly/index.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "framework/index.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "contracts/index.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "runtime/index.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "builders/index.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "domains/chemistry/assembly/chemistry-spec.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "domains/circuit/assembly/circuit-spec.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "framework/__tests__/assembly.test.ts",
-      "artifact": "output/deploy-output.md"
-    },
-    {
-      "file": "framework/__tests__/layout-spec.test.ts",
+      "file": "workflow/skills/iframe-rpc-safety.md",
       "artifact": "output/deploy-output.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "framework",
-      "contracts",
-      "assembly",
-      "runtime",
-      "arch",
-      "audit",
-      "src",
-      "阶段",
-      "文件",
-      "lib",
-      "scripts",
-      "components",
-      "commit",
+      "physics",
+      "core",
       "git",
-      "index",
-      "builders",
-      "eslint",
-      "boundary",
-      "domains",
-      "barrel",
+      "iframe",
       "bash",
-      "interactions",
-      "errors",
-      "import",
-      "chemistry",
-      "相对路径跟随",
-      "test",
-      "docs",
-      "constraints",
-      "files",
-      "graph",
-      "spec",
-      "architecture",
-      "live",
+      "commit",
+      "track",
       "workflow",
-      "skills",
-      "未来",
-      "solvers",
-      "rule",
-      "layout"
+      "e2e",
+      "templates",
+      "阶段",
+      "playwright",
+      "test",
+      "http",
+      "localhost",
+      "experiments",
+      "arch",
+      "batch",
+      "experiment",
+      "public",
+      "docs",
+      "compute",
+      "feat",
+      "smoke",
+      "add",
+      "rpc",
+      "push",
+      "migration",
+      "audit",
+      "exit",
+      "config",
+      "新增",
+      "check",
+      "chemistry",
+      "safety",
+      "dev",
+      "coze",
+      "指引",
+      "tsc",
+      "skill"
     ],
     "files": [
-      "workflow/skills/framework-boundary.md",
-      "components/base.ts",
-      "contracts/component.ts",
-      "components/graph.ts",
-      "contracts/graph.ts",
-      "components/port.ts",
-      "contracts/port.ts",
-      "components/union-find.ts",
-      "runtime/union-find.ts",
-      "components/registry.ts",
-      "runtime/registry.ts",
-      "solvers/base.ts",
-      "contracts/solver.ts",
-      "interactions/rule.ts",
-      "contracts/rule.ts",
-      "interactions/events.ts",
-      "contracts/events.ts",
-      "interactions/engine.ts",
-      "runtime/engine.ts",
-      "assembly/spec.ts",
-      "contracts/assembly.ts",
-      "assembly/layout.ts",
-      "contracts/layout.ts",
-      "assembly/errors.ts",
-      "contracts/errors.ts",
-      "assembly/validator.ts",
-      "runtime/validator.ts",
-      "assembly/assembler.ts",
-      "runtime/assembler.ts",
-      "assembly/fluent.ts",
-      "builders/fluent.ts",
-      "assembly/index.ts",
-      "framework/index.ts",
-      "contracts/index.ts",
-      "runtime/index.ts",
-      "builders/index.ts",
-      "domains/chemistry/assembly/chemistry-spec.ts",
-      "domains/circuit/assembly/circuit-spec.ts",
-      "framework/__tests__/assembly.test.ts",
-      "framework/__tests__/layout-spec.test.ts"
+      "tests/e2e/iframe-smoke/iframe-helpers.ts",
+      "public/templates/_shared/experiment-core.js",
+      "public/templates/_shared/physics-core.js",
+      "docs/roadmap-g.md",
+      "docs/architecture-constraints.md",
+      "workflow/skills/iframe-rpc-safety.md"
     ],
     "modules": [
-      "workflow",
-      "components",
-      "contracts",
-      "components",
-      "contracts",
-      "components",
-      "contracts",
-      "components",
-      "runtime",
-      "components",
-      "runtime",
-      "solvers",
-      "contracts",
-      "interactions",
-      "contracts",
-      "interactions",
-      "contracts",
-      "interactions",
-      "runtime",
-      "assembly"
+      "tests",
+      "public",
+      "public",
+      "docs",
+      "docs",
+      "workflow"
     ]
   },
-  "generatedAt": "2026-04-29T15:41:30.069Z"
+  "generatedAt": "2026-04-30T02:57:13.596Z"
 }

@@ -1,1 +1,12 @@
-{}
+{
+  "activeWorkflow": {
+    "session": "wf-20260430013937.",
+    "startedAt": "2026-04-30T02:56:26.607Z",
+    "currentStage": "DEPLOY",
+    "completedStages": [],
+    "requirement": "G 阶段 DEPLOY · 终局归档 + 用户 commit 指引",
+    "requirementFingerprint": "commit deploy 指引 用户 终局归档 阶段",
+    "ttlExpiry": "2026-04-30T03:39:49.949Z",
+    "stageStartTime": 1777517786607
+  }
+}

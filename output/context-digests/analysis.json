@@ -3,16 +3,16 @@
   "stage": "ANALYSE",
   "source": {
     "path": "output/analysis.md",
-    "sourceHash": "1a8831cc7cb4ac87a4a136f2d6332a99c0e0a80033663cf869c8a8dbfebd26b6",
-    "artifactSize": 22217,
-    "updatedAt": "2026-04-29T13:31:22.282Z"
+    "sourceHash": "f4af787beeaac2da8da874cc997c627ee646499586075f2f84b5e58abc7144b5",
+    "artifactSize": 21617,
+    "updatedAt": "2026-04-30T01:44:06.036Z"
   },
   "scope": {
-    "session": "wf-20260429132738.",
-    "requirementFingerprint": "builders contracts domains framework proposal runtime 充分考虑 物理分层重构 阶段 风险"
+    "session": "wf-20260430013937.",
+    "requirementFingerprint": "core e2e experiment iframe js l4 physics playwright rpc smoke 协议 模板底座统一 测试 覆盖 视觉回归 路径 路线图防复发 阶段三轨合一"
   },
   "content": {
-    "summary": "# F 阶段 · framework 物理分层重构 · ANALYSE\r\n\r\n> Session: wf-20260429132738. · 基线: e12560f (TSC 0 + Jest 563) · 工作区 clean\r\n\r\n---\r\n\r\n## 根因 / Root Cause\r\n\r\n### 1. E 阶段留下的软债（Why F 必须做）\r\n\r\nE 阶段受控松动 `framework 零改` 硬约束——允许「Props 加 index signature / 类型别名复用 / 纯 bug 修复」三类变更。代价是**硬约束从字面规则降级为自然语言例外条款**（`docs/architecture-constraints.md` 3 句规则）。\r\n\r\n软约束在**单人/小团队项目**里必然腐烂（FM-1 破窗）：\r\n- 今天松一次 \"Props 加 index sig 是纯扩展\" → 正当\r\n- 明天松一次 \"改 interface 字段类型是 bug 修复\" → 边界糊化\r\n- 一年后 \"framework 零改\" 四字变讽刺\r\n\r\n**软约束的根本缺陷**：**靠人类阅读文档守护",
+    "summary": "# G 阶段 · ANALYSE · iframe e2e + 底座统一 + 防复发路线图\r\n\r\n> **Session**: `wf-20260430013937.`\r\n> **Requirement**: iframe e2e smoke 测试（Playwright 视觉回归）+ physics-core.js→experiment-core.js 模板底座统一 + G 阶段路线图（防复发 · 覆盖 L4 协议 RPC 路径）\r\n> **Baseline**: F 阶段 `6fe982a` · C/D/E/F + 4 个 bug fix 已全部 commit+push · 工作区 clean · TSC 0 · Jest 563/563\r\n\r\n---\r\n\r\n## 思考摘要\r\n\r\n**一句话**：G 阶段是对 F 阶段尾声暴露的**两个结构性缺口**（iframe 层零测试 + 底座分叉）做**系统性兑现**——同时推进测试、底座、文档三轨才能真正防复发。\r\n\r\n**三轨内在因果**：\r\n1. **底座不统一 → 未来再改 experiment-core 修的 bug 在 physi",
     "outline": [
       "需求分析 · D 阶段 · UX 细节优化包",
       "根因 / Root Cause",
@@ -45,7 +45,15 @@
       "6. 测试文件的路径脆弱性",
       "7.1 一定会改的文件（F 阶段核心）",
       "7.2 下游可能触及",
-      "7.3 配套新建"
+      "7.3 配套新建",
+      "G 阶段 · ANALYSE · iframe e2e + 底座统一 + 防复发路线图",
+      "动机：F 阶段尾声暴露的两个结构性缺口",
+      "统一根因：**Host 边界层的协议演化未完成 + 无测试守护**",
+      "文件清单（G 阶段要接触的范围）",
+      "规模估计",
+      "范围 1 · iframe 底座统一（Track-A）",
+      "范围 2 · Playwright 视觉回归（Track-B）",
+      "范围 3 · 防复发路线图（Track-C）"
     ],
     "keyPoints": [],
     "rootCause": [
@@ -60,7 +68,18 @@
       "实际代码审计（本次真实度量，非推测）：",
       "**framework/index.ts 流出 symbol ~50 个，每个文件都是「type + impl 混居」**：",
       "| 文件 | 纯 type (contracts) | 运行时实现 (runtime) | 性质 |",
-      "| `components/base.ts` | 7 types (Domain/Kind/Anchor/Stamp/DTO/IExperimentComponent/SolvedValues) | 1 class (AbstractComponent) | **混居** |"
+      "| `components/base.ts` | 7 types (Domain/Kind/Anchor/Stamp/DTO/IExperimentComponent/SolvedValues) | 1 class (AbstractComponent) | **混居** |",
+      "### 动机：F 阶段尾声暴露的两个结构性缺口",
+      "F 阶段刚完成物理分层后，用户在 Coze 预览里报了 **circuit 实验 compute timeout + 连线无闭环** 两重 bug。深入排查 (`80ce8f8` / `afd1a92` / `6fe982a`) 后发现**两个长期存在但一直未被发现的架构级缺陷**：",
+      "#### 缺陷 1 · iframe 层零测试覆盖（R-FM）",
+      "**证据**：",
+      "- `public/templates/_shared/*.js` （13 个底座 / drawer / builder 文件）**jest 零测试覆盖**",
+      "- `experiment-core.js` 的 `compute_result` listener 只在 `EurekaHost.onHostCommand(cb)` 被调用时才挂载——这个架构 bug **从 L4 协议 v1.0 设计之初就存在**，4 个生产模板（physics/circuit · buoyancy · chemistry/acid-base-titration · metal-acid-reaction）**长期 timeout 无人发现**",
+      "- `jest.config.js` 的测试范围只覆盖 `src/**/*.ts`，**不扫 public/templates**",
+      "- L4 协议（iframe ↔ host postMessage）的 **RPC 路径**从未有过端到端验证",
+      "**后果**：同类 bug 可以在几个月内沉睡，只有用户亲眼打开特定页面才能发现。这是**纯用户报告驱动**的 QA 模式——不可扩展，不可预防。",
+      "#### 缺陷 2 · 底座分叉（R-FB）",
+      "- 24 iframe 模板被**两套互斥底座**切分：13 用 `experiment-core.js` (L4 v1.0 · 含 RPC 协议)，11 用 `physics-core.js` (更老版本 · 无 RPC 协议)"
     ],
     "decisions": [
       "给 ARCHITECT 阶段留的 5 个待决策点：",
@@ -74,7 +93,19 @@
       "> - 真实代码审计揭示 \"文件级 type/impl 拆分\" 不现实 → **目录级分层，文件级 co-location** 是正确策略",
       "> - 下游 import 改动规模比想象小（19 文件中仅 2 文件 bypass）→ P-strict 可行",
       "> - 86% 测试 import 会被动，但 barrel 化是一劳永逸的解法",
-      "> - 0 循环依赖基线健康，F 阶段任务是**守护** 不是**修复**"
+      "> - 0 循环依赖基线健康，F 阶段任务是**守护** 不是**修复**",
+      "留给 ARCHITECT 回答的 5 个关键决策点：",
+      "### D-G1 · physics-core.js 退役方式（A-3）",
+      "- **方案 B1**: 完全删除 · 好处简洁 · 坏处若外部 HTML（非当前代码库）引用会 404",
+      "- **方案 B2**: 改为 thin shim（`<script>` 加载后转发 window.EurekaHost = window.EurekaHost · 或直接加载 experiment-core 再 alias）· 好处向后兼容 · 坏处保留分叉符号",
+      "- **推荐**：**B1 删除** + arch-audit 强制检查 · 因为：(a) 全项目扫过没外部引用；(b) 保留 shim 违反 C-3 精神\"单一底座\"",
+      "### D-G2 · Playwright smoke 的覆盖范围",
+      "- **方案 C1**: 只测 4 个 compute-using 实验（最小必要）· 估 3h",
+      "- **方案 C2**: 4 + 4 个采样 physics-core 老模板（验迁移不破）· 估 4h",
+      "- **方案 C3**: 24 个全覆盖 · 估 8h · 基线维护成本高",
+      "- **推荐**：**C2** · 对 4 compute 深度测 + 4 迁移模板浅测 \"页面能打开+canvas 可见\" · 对迁移最有保护意义",
+      "### D-G3 · 视觉基线策略",
+      "- **方案 V1**: 纯结构断言（DOM 存在 / canvas 非空 / 无 error 元素）· 无 pixel diff"
     ],
     "risks": [
       "| # | 风险 | Sev | 缓解 |",
@@ -106,7 +137,17 @@
       "- 19 个下游文件，其中 **17 个用 barrel**（不受内部分层影响）",
       "- **只有 2 个 bypass 文件**真的需要改 path",
       "**缓解**：",
-      "- 选 **P-strict**，但 P-strict 的成本**远低于 E 阶段讨论时的想象**（只需改 2 个文件 + 加 ESLint 规则）"
+      "- 选 **P-strict**，但 P-strict 的成本**远低于 E 阶段讨论时的想象**（只需改 2 个文件 + 加 ESLint 规则）",
+      "### R-G1 · 底座合并可能破坏 EurekaCanvas/EurekaHints 行为 · **P0**",
+      "**量化**：11 个 physics-core 模板全部用 `EurekaCanvas`（最多 friction.html 5 次调用）· 7/11 用 `EurekaHints`（首次 tooltip）。任一行为回归都会让该模板无法正确显示。",
+      "1. ARCHITECT 方案: **不修改 physics-core 里的 EurekaCanvas/EurekaHints 代码 · 原样复制**到 experiment-core.js",
+      "2. 逐个迁移 + 浏览器目视确认（Coze 预览或本地 dev server）",
+      "3. Playwright smoke 测试**应该先写**（Track-B）· 再迁移（Track-A）—— 用测试守护迁移",
+      "### R-G2 · Playwright 在 Windows/Coze 环境的兼容性 · **P1**",
+      "**量化**：项目 `.coze` 配置 `requires = [\"nodejs-24\"]` · Playwright 浏览器下载需要 ~300MB · Coze 环境是否允许？",
+      "1. 优先本地跑通（Windows PowerShell）· 再考虑 Coze/CI 集成",
+      "2. 如果 Coze 环境装不上，**至少保证本地能跑** · 本地测试产物（截图基线）提交到 git · Coze 跳过",
+      "3. 测试用 Chromium only（不装 Firefox/WebKit）· 减小依赖"
     ],
     "downstreamConsumers": [
       "本轮交付的产物由以下**消费者**使用，各自需要什么变更：",
@@ -140,7 +181,19 @@
       "| `framework/domains/chemistry/**`（~15 文件）| 相对路径 `../../` | 继续用相对（内部依赖）| ⚠️ 路径跟随分层调整 |",
       "| `framework/domains/circuit/**`（~10 文件）| 同上 | 同上 | ⚠️ 路径跟随 |",
       "| `public/templates/**` | 不 import framework | 零影响 | ❌ 零改（硬约束）|",
-      "| `tsconfig.json` | 已有 `@/*` alias | 可选新增 `@framework/*` alias | ⚠️ 看 ARCHITECT 决策 |"
+      "| `tsconfig.json` | 已有 `@/*` alias | 可选新增 `@framework/*` alias | ⚠️ 看 ARCHITECT 决策 |",
+      "| 消费者 | 当前状态 | G 阶段后 | 必须改动？ |",
+      "| 13 个用 experiment-core 的模板 | barrel import 方式 · 正常 | 继续正常工作 · 底座变成唯一标准 | ❌ 无需改 |",
+      "| 11 个用 physics-core 的模板 | 加载 `physics-core.js` | **加载 `experiment-core.js`** · 可能需改 helper 调用（若 A-3 完全删除 physics-core）| ✅ Script 引用必改 |",
+      "| `src/components/IframeExperiment.tsx` | 处理 L4 v2 协议（compute_request → compute_result）| 协议不变 · 只是 iframe 端底座统一 | ❌ 无需改 |",
+      "| `src/lib/experiment-message-schema.ts` | L4 消息 validate schema | 不变 | ❌ 无需改 |",
+      "| Jest 测试套 (563 个) | 覆盖 src/**/*.ts | **继续通过** · 不受 iframe 层影响 | ❌ 无需改 |",
+      "| Playwright e2e 测试（新建）| 不存在 | 4 个 compute 实验 smoke + 视觉基线 | ✅ 新建 |",
+      "| `scripts/check.sh` | lint+tsc+jest 三件套 | 新增 playwright smoke 段（可选）| ⚠️ 看 ARCHITECT 决策 |",
+      "| `docs/architecture-constraints.md` | C-1 物理边界 · C-2 老模板零改 | 新增 **C-3 iframe 底座单一化** | ✅ 追加 |",
+      "| 未来 /wf Agent | 读 constraints.md + skills | 读**新版 C-3** + 新 skill · 禁止再造第二底座 | ✅ 元契约更新 |",
+      "| 未来新 iframe 实验 | 可能误选 physics-core | ESLint/audit 阻止（新增规则）| ✅ 守护机制 |",
+      "### 契约要点"
     ],
     "tasks": [],
     "acceptanceCriteria": [
@@ -155,7 +208,19 @@
       "| **AC-F8** | 下游 2 个 bypass 文件清理完成（engines/chemistry/reaction.ts + engines/physics/circuit.ts 改用 barrel）| `grep -r \"@/lib/framework/domains\" src/lib/engines` = 0 |",
       "| **AC-F9** | 测试 import 路径全部 barrel 化或同级相对路径（无跨层 `../../..`）| grep `from '../../../'` in `framework/**/*.test.ts` = 0 |",
       "| **AC-F10** | E 阶段受控松动条款归档；新增 F 阶段物理边界说明 | `docs/architecture-constraints.md` 更新记录 |",
-      "| **AC-F11** | `scripts/arch-audit.sh` 退出码 0（CI 可直接接入）| 执行成功 |"
+      "| **AC-F11** | `scripts/arch-audit.sh` 退出码 0（CI 可直接接入）| 执行成功 |",
+      "以下是 ANALYSE 识别出的可量化终态指标 · ARCHITECT 会转为技术决策 · PLAN 会拆成带 acceptance 的任务。本小节仅列**概念性终态**：",
+      "| # | 概念终态 | 验证手段（PLAN 细化）|",
+      "| G-Goal-1 | Playwright 可用 | `npx playwright --version` |",
+      "| G-Goal-2 | 4 个 compute iframe 实验 smoke 通过 | `npm run test:e2e` 全绿 |",
+      "| G-Goal-3 | 11 模板迁移完成 · physics-core 引用清零 | `rg 'physics-core\\.js' public/templates` 空 |",
+      "| G-Goal-4 | experiment-core 含 EurekaCanvas+EurekaHints | 浏览器无 ReferenceError |",
+      "| G-Goal-5 | physics-core.js 删除/退役 | 文件不存在或 ≤50 行 shim |",
+      "| G-Goal-6 | TSC 0 + Jest 563+ 保持 | check.sh 三件套 |",
+      "| G-Goal-7 | arch-audit 新增\"底座单一\"check 通过 | `bash scripts/arch-audit.sh` exit 0 |",
+      "| G-Goal-8 | roadmap-g.md 存在且结构完整 | 文件存在 + 字数 >2500 |",
+      "| G-Goal-9 | constraints.md 含 C-3 + 记录 #8 | grep 匹配 |",
+      "| G-Goal-10 | iframe-rpc-safety.md skill 注册 | 文件存在 + workflow.config.js 引用 |"
     ],
     "testEvidence": [],
     "affectedFiles": [
@@ -229,21 +294,31 @@
       "chemistry/__tests__/type-guards.test.ts",
       "chemistry/type-guards.ts",
       "src/lib/engines/physics/buoyancy.ts",
-      "chemistry/titration.ts"
+      "chemistry/titration.ts",
+      "public/templates/_shared/experiment-core.js",
+      "public/templates/_shared/physics-core.js",
+      "docs/roadmap-g.md",
+      "workflow/skills/iframe-rpc-safety.md",
+      "templates/_shared/physics-core.js",
+      "templates/_shared/experiment-core.js",
+      "tests/e2e/iframe-smoke/compute.spec.ts",
+      "src/components/IframeExperiment.tsx",
+      "src/lib/experiment-message-schema.ts",
+      "workflow/skills/tsc-workflow-gate.md"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "analysis.md",
       "outline": [
-        "F 阶段 · framework 物理分层重构 · ANALYSE",
+        "G 阶段 · ANALYSE · iframe e2e + 底座统一 + 防复发路线图",
+        "思考摘要",
         "根因 / Root Cause",
-        "1. E 阶段留下的软债（Why F 必须做）",
-        "2. 本项目的具体混居病灶（证据驱动）",
-        "3. 这个发现如何改变 F 阶段策略",
-        "4. 下游依赖的真实形状",
-        "5. 循环引用健康度",
-        "6. 测试文件的路径脆弱性"
+        "动机：F 阶段尾声暴露的两个结构性缺口",
+        "统一根因：**Host 边界层的协议演化未完成 + 无测试守护**",
+        "受影响位置",
+        "文件清单（G 阶段要接触的范围）",
+        "规模估计"
       ],
       "keyPoints": []
     }
@@ -264,103 +339,15 @@
   },
   "evidenceRefs": [
     {
-      "file": "docs/architecture-constraints.md",
+      "file": "public/templates/_shared/experiment-core.js",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "framework/index.ts",
+      "file": "public/templates/_shared/physics-core.js",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "components/base.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "components/graph.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "components/port.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "components/registry.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "components/union-find.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "solvers/base.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "interactions/engine.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "interactions/rule.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "interactions/events.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "assembly/spec.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "assembly/layout.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "assembly/errors.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "assembly/validator.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "assembly/assembler.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "assembly/fluent.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "engines/chemistry/reaction.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "engines/physics/circuit.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "framework/__tests__/framework.test.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "framework/__tests__/assembly.test.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "framework/__tests__/layout-spec.test.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "src/lib/engines/chemistry/reaction.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "src/lib/engines/physics/circuit.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "workflow/skills/framework-boundary.md",
+      "file": "docs/roadmap-g.md",
       "artifact": "output/analysis.md"
     },
     {
@@ -368,144 +355,109 @@
       "artifact": "output/analysis.md"
     },
     {
-      "file": "contracts/index.ts",
+      "file": "docs/architecture-constraints.md",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "runtime/index.ts",
+      "file": "workflow/skills/iframe-rpc-safety.md",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "spec.ts/layout.ts",
+      "file": "templates/_shared/physics-core.js",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "contracts/layout.ts",
+      "file": "templates/_shared/experiment-core.js",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "contracts/spec.ts",
+      "file": "tests/e2e/iframe-smoke/compute.spec.ts",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "chemistry/__tests__/type-guards.test.ts",
+      "file": "src/components/IframeExperiment.tsx",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "chemistry/type-guards.ts",
+      "file": "src/lib/experiment-message-schema.ts",
       "artifact": "output/analysis.md"
     },
     {
-      "file": "src/lib/engines/physics/buoyancy.ts",
-      "artifact": "output/analysis.md"
-    },
-    {
-      "file": "chemistry/titration.ts",
+      "file": "workflow/skills/tsc-workflow-gate.md",
       "artifact": "output/analysis.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "framework",
-      "import",
-      "domains",
-      "barrel",
-      "lib",
-      "contracts",
-      "runtime",
-      "type",
-      "chemistry",
+      "core",
+      "iframe",
+      "physics",
+      "playwright",
+      "experiment",
+      "smoke",
+      "coze",
+      "oos",
+      "e2e",
+      "rpc",
+      "方案",
+      "compute",
+      "新增",
+      "goal",
+      "测试",
+      "diff",
+      "eurekahost",
+      "templates",
+      "jest",
+      "新建",
+      "scripts",
+      "track",
+      "协议",
+      "script",
       "src",
-      "文件",
-      "types",
-      "engines",
-      "eslint",
-      "混居",
-      "components",
-      "assembly",
-      "index",
-      "bypass",
-      "__tests__",
-      "class",
-      "circuit",
-      "arch",
-      "audit",
-      "builders",
-      "layout",
-      "architect",
-      "路径跟随",
-      "interface",
-      "spec",
-      "location",
-      "editor",
-      "strict",
-      "madge",
-      "同上",
-      "impl",
-      "assemblyspec",
-      "保持",
+      "eurekacanvas",
+      "eurekahints",
+      "public",
+      "docs",
+      "bug",
+      "window",
       "test",
-      "场景"
+      "canvas",
+      "阶段",
+      "_shared",
+      "check",
+      "architect",
+      "量化",
+      "缓解",
+      "pixel"
     ],
     "files": [
-      "docs/architecture-constraints.md",
-      "framework/index.ts",
-      "components/base.ts",
-      "components/graph.ts",
-      "components/port.ts",
-      "components/registry.ts",
-      "components/union-find.ts",
-      "solvers/base.ts",
-      "interactions/engine.ts",
-      "interactions/rule.ts",
-      "interactions/events.ts",
-      "assembly/spec.ts",
-      "assembly/layout.ts",
-      "assembly/errors.ts",
-      "assembly/validator.ts",
-      "assembly/assembler.ts",
-      "assembly/fluent.ts",
-      "engines/chemistry/reaction.ts",
-      "engines/physics/circuit.ts",
-      "framework/__tests__/framework.test.ts",
-      "framework/__tests__/assembly.test.ts",
-      "framework/__tests__/layout-spec.test.ts",
-      "src/lib/engines/chemistry/reaction.ts",
-      "src/lib/engines/physics/circuit.ts",
-      "workflow/skills/framework-boundary.md",
+      "public/templates/_shared/experiment-core.js",
+      "public/templates/_shared/physics-core.js",
+      "docs/roadmap-g.md",
       "docs/editor-framework.md",
-      "contracts/index.ts",
-      "runtime/index.ts",
-      "spec.ts/layout.ts",
-      "contracts/layout.ts",
-      "contracts/spec.ts",
-      "chemistry/__tests__/type-guards.test.ts",
-      "chemistry/type-guards.ts",
-      "src/lib/engines/physics/buoyancy.ts",
-      "chemistry/titration.ts"
+      "docs/architecture-constraints.md",
+      "workflow/skills/iframe-rpc-safety.md",
+      "templates/_shared/physics-core.js",
+      "templates/_shared/experiment-core.js",
+      "tests/e2e/iframe-smoke/compute.spec.ts",
+      "src/components/IframeExperiment.tsx",
+      "src/lib/experiment-message-schema.ts",
+      "workflow/skills/tsc-workflow-gate.md"
     ],
     "modules": [
+      "public",
+      "public",
       "docs",
-      "framework",
-      "components",
-      "components",
-      "components",
-      "components",
-      "components",
-      "solvers",
-      "interactions",
-      "interactions",
-      "interactions",
-      "assembly",
-      "assembly",
-      "assembly",
-      "assembly",
-      "assembly",
-      "assembly",
-      "engines",
-      "engines",
-      "framework"
+      "docs",
+      "docs",
+      "workflow",
+      "templates",
+      "templates",
+      "tests",
+      "src",
+      "src",
+      "workflow"
     ]
   },
-  "generatedAt": "2026-04-29T13:31:31.979Z"
+  "generatedAt": "2026-04-30T01:44:16.366Z"
 }

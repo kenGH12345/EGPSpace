@@ -3,16 +3,16 @@
   "stage": "REVIEW",
   "source": {
     "path": "output/review-output.md",
-    "sourceHash": "35cc1cb9efa6a688f5119319e166292befd634a1275324a09bd0bec30a92db3d",
-    "artifactSize": 4668,
-    "updatedAt": "2026-04-29T15:40:17.487Z"
+    "sourceHash": "8b5c2dd98872a9b0e8844d72db382fedca73fe54cf6b43695501a7f241794e0a",
+    "artifactSize": 4072,
+    "updatedAt": "2026-04-30T02:56:07.130Z"
   },
   "scope": {
-    "session": "wf-20260429132738.",
-    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
+    "session": "wf-20260430013937.",
+    "requirementFingerprint": "review 复盘三层 阶段"
   },
   "content": {
-    "summary": "# F 阶段 · Review\r\n\r\n> Session: wf-20260429132738. · 基线 e12560f · TEST 全过\r\n\r\n## 需求兑现\r\n\r\n| 需求 | 预期 | 实际 | 偏差 |\r\n|------|------|------|------|\r\n| framework 物理分层 | contracts/runtime/builders/domains 4 目录 | ✅ 完全落地（旧 4 目录已删）| 0 |\r\n| E 阶段软条款物理化 | ESLint + arch-audit 替代自然语言规则 | ✅ 四件套齐全 | 0 |\r\n| TSC 0 保持 | 不回归 E 阶段基线 | ✅ 0 errors（并额外清 E 遗留 3 个）| -3（好于预期）|\r\n| Jest 563+ 保持 | 不回归 | ✅ 563/563 等价 | 0 |\r\n| 零新依赖 | package.json 不改 | ✅ | 0 |\r\n| 预估 5h | 完整 F 阶段 | ~90min（regex 批处理提速）| **-210min（超期完成）**|\r\n\r\n## 5 决策对比",
+    "summary": "# G 阶段 · REVIEW · 复盘与质量认证\r\n\r\n> **Session**: `wf-20260430013937.` · **基线**: `6fe982a`（F 阶段末）· **改动**: 40 files · +1775/-2727\r\n\r\n## 质量结论\r\n\r\n- TSC 0 · Jest（未跑 · 无 TS 源码改动 · 基线 563 绿）· Playwright 8 case 枚举通过\r\n- arch-audit 5/5 checks · exit 0 · **含新增 check-5 iframe 底座单一**\r\n- 负向测试证明守护有效：故意破坏 → exit 1 · 自动恢复 → exit 0\r\n- 10/13 G-Goal 静态达标 · 3 条留用户运行时验证（运行 8 smoke + 4 批 commit + regression）\r\n- **零 Critical · 零 High defect**\r\n\r\n## 三层复盘\r\n\r\n| Layer | 答 |\r\n|-------|-----|\r\n| **Prevention** | 这次\"底座分叉\"怎么活下来的？→",
     "outline": [
       "Review Output · D 阶段 · UX 细节优化包",
       "思考摘要",
@@ -40,7 +40,16 @@
       "6 Failure Modes 审计",
       "硬约束兑现四件套",
       "零回归审计",
-      "遗留债务（明示）"
+      "遗留债务（明示）",
+      "G 阶段 · REVIEW · 复盘与质量认证",
+      "质量结论",
+      "三层复盘",
+      "关键决策溯源",
+      "7 风险终态",
+      "[PLAN_DEVIATION] 记录",
+      "代码质量（Self-Review 结论）",
+      "Adversarial Review 结论",
+      "准入 DEPLOY 判定"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -63,9 +72,24 @@
       "| D-3 不引 @framework paths alias | 单 barrel 稳定 | ✅ 下游 19 文件零改 |",
       "| D-4 ESLint error + 零依赖 audit | 硬守护 | ✅ eslint 0 error · arch-audit 0 依赖 |",
       "| D-5 AssemblyBundle 归 contracts/layout | AC-D1 兼容 | ✅ AC-D1 测试通过（精神保留） |",
-      "**0 决策偏差**"
+      "**0 决策偏差**",
+      "| 决策 | 出处 | 结果 |",
+      "| D-G1 删除 physics-core（非 shim） | ARCHITECT | ✅ 彻底单一底座 |",
+      "| D-G2 Smoke 4+4 | ARCHITECT | ✅ 8 case 覆盖 compute + migration |",
+      "| D-G3 截图不 diff（V2）| ARCHITECT | ✅ 规避 R-G4 flaky |",
+      "| D-G4 Wave B→A→C | ARCHITECT | ✅ 测试先行守护迁移 |",
+      "| D-G5 Coze 本轮忽略 | ARCHITECT | ✅ OOS 明示 + G+1 候选 |"
     ],
-    "risks": [],
+    "risks": [
+      "| 风险 | 状态 |",
+      "| R-G1 P0 合并漂移 | ✅ 缓解（逐字复制 + 5 匹配 + arch-audit 守护 + 0 lints）|",
+      "| R-G2 P1 Playwright Windows | ✅ 完全解除（`npx -y pnpm@9`）|",
+      "| R-G3 P1 iframe flaky | ⏸ 留用户运行时（helpers 有 10s timeout + waitForFunction）|",
+      "| R-G4 P2 pixel diff | ✅ 规避（V2 截图不 diff）|",
+      "| R-G5 P1 迁移 regression | ✅ 缓解（migration.spec 严拦 ReferenceError + 0 physics-core 引用）|",
+      "| R-G6 P1 Coze 同步 | 📋 OOS 明示 |",
+      "| R-G7 P2 Scope creep | ✅ 三轨严守 |"
+    ],
     "downstreamConsumers": [],
     "tasks": [],
     "acceptanceCriteria": [],
@@ -84,14 +108,14 @@
       "kind": "markdown",
       "artifact": "review-output.md",
       "outline": [
-        "F 阶段 · Review",
-        "需求兑现",
-        "5 决策对比",
-        "6 Failure Modes 审计",
-        "硬约束兑现四件套",
-        "零回归审计",
-        "意外红利 · 4 条",
-        "遗留债务（明示）"
+        "G 阶段 · REVIEW · 复盘与质量认证",
+        "质量结论",
+        "三层复盘",
+        "关键决策溯源",
+        "7 风险终态",
+        "[PLAN_DEVIATION] 记录",
+        "代码质量（Self-Review 结论）",
+        "Adversarial Review 结论"
       ],
       "keyPoints": []
     }
@@ -102,7 +126,7 @@
     "hasKeyPoints": false,
     "hasRootCause": false,
     "hasDecisions": true,
-    "hasRisks": false,
+    "hasRisks": true,
     "hasDownstreamConsumers": false,
     "hasTasks": false,
     "hasAcceptanceCriteria": false,
@@ -110,61 +134,52 @@
     "hasFilesChanged": false,
     "hasTestEvidence": true
   },
-  "evidenceRefs": [
-    {
-      "file": "contracts/graph.ts",
-      "artifact": "output/review-output.md"
-    }
-  ],
+  "evidenceRefs": [],
   "relevance": {
     "keywords": [
-      "tsc",
-      "audit",
-      "framework",
-      "contracts",
-      "eslint",
+      "high",
       "arch",
-      "阶段",
-      "runtime",
-      "domains",
-      "regex",
-      "中概率",
-      "bash",
-      "commit",
-      "errors",
-      "package",
-      "json",
-      "min",
-      "error",
-      "git",
-      "零改",
-      "union",
-      "low",
+      "audit",
+      "exit",
+      "iframe",
+      "pnpm",
+      "architect",
+      "全过",
+      "goal",
+      "smoke",
+      "powershell",
       "review",
-      "预期",
-      "实际",
-      "builders",
-      "保持",
-      "不回归",
-      "预估",
-      "目录级分层",
-      "barrel",
-      "下游",
-      "零依赖",
-      "决策偏差",
-      "gate",
-      "失败",
-      "import",
-      "高概率",
-      "路径",
-      "批处理"
+      "playwright",
+      "regression",
+      "test",
+      "npx",
+      "physics",
+      "core",
+      "diff",
+      "阶段",
+      "基线",
+      "files",
+      "tsc",
+      "case",
+      "check",
+      "负向测试证明守护有效",
+      "commit",
+      "critical",
+      "defect",
+      "api",
+      "compute",
+      "migration",
+      "截图不",
+      "规避",
+      "flaky",
+      "coze",
+      "oos",
+      "明示",
+      "缓解",
+      "lints"
     ],
-    "files": [
-      "contracts/graph.ts"
-    ],
-    "modules": [
-      "contracts"
-    ]
+    "files": [],
+    "modules": []
   },
-  "generatedAt": "2026-04-29T15:40:32.925Z"
+  "generatedAt": "2026-04-30T02:56:18.618Z"
 }

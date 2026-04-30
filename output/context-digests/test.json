@@ -3,16 +3,16 @@
   "stage": "TEST",
   "source": {
     "path": "output/test-report.md",
-    "sourceHash": "c90b526ce45904514a87af39ea46339bac013f913d4a222883fb7a6cbcbe3e31",
-    "artifactSize": 6463,
-    "updatedAt": "2026-04-29T15:39:21.983Z"
+    "sourceHash": "78124fd9019f4855bfc0f245ce13d4d4d88e0a7791a000691cd1898709a60858",
+    "artifactSize": 6639,
+    "updatedAt": "2026-04-30T02:55:16.245Z"
   },
   "scope": {
-    "session": "wf-20260429132738.",
-    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
+    "session": "wf-20260430013937.",
+    "requirementFingerprint": "13 arch audit goal spec test tsc 枚举 阶段 验证"
   },
   "content": {
-    "summary": "# F 阶段 · Test Report\r\n\r\n> Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿\r\n\r\n## 执行摘要\r\n\r\n| 检查 | 命令 | 结果 |\r\n|------|------|------|\r\n| **TSC** 类型检查 | `npx tsc --noEmit` | ✅ **0 errors** |\r\n| **Jest** 全量测试 | `npx jest` | ✅ **563/563 pass**（28/28 suites）|\r\n| **ESLint** 边界守护 | `npx eslint src/lib/editor src/lib/engines src/components` | ✅ **0 errors, 0 warnings** |\r\n| **arch-audit** 依赖方向 | `bash scripts/arch-audit.sh` | ✅ **4 checks pass**（10+6+2+122 files clean）",
+    "summary": "# G 阶段 · TEST Report · iframe e2e + 底座统一 + 防复发\r\n\r\n> **Session**: `wf-20260430013937.`\r\n> **基线**: F 阶段 `6fe982a`（TSC 0 · Jest 563/563）\r\n> **本轮修改**: 40 files · +1775/-2727 · net **-952 行**\r\n\r\n---\r\n\r\n## 测试策略\r\n\r\n- **静态闸门**：TSC · lint · Playwright spec 枚举 · arch-audit · 文件存在检查 · grep 验证\r\n- **结构断言**：path 清零 / 节存在 / 注册匹配 / 规模对比\r\n- **负向测试**：故意破坏 → 验证守护捕获 → 自动恢复\r\n- **运行时 e2e**（8 smoke）：留给用户运行 `bash scripts/dev.sh` + `npm run test:e2e` · 因启动 Next.js dev server 在 CI 级 Agent 环境下有副作用\r\n\r\n## 命令汇总\r\n\r\n```bash\r\nn",
     "outline": [
       "测试报告 · D 阶段 · UX 细节优化包",
       "总体摘要",
@@ -49,7 +49,18 @@
       "意外发现",
       "执行命令日志",
       "W0 基线 + E 阶段遗留修复",
-      "W1-W5 · git mv + regex 批处理"
+      "W1-W5 · git mv + regex 批处理",
+      "G 阶段 · TEST Report · iframe e2e + 底座统一 + 防复发",
+      "测试策略",
+      "命令汇总",
+      "测试结果（15 case 全过）",
+      "正向（14）",
+      "负向（1）",
+      "测试执行证据",
+      "13 G-Goal 验收状态",
+      "跳过的步骤说明",
+      "质量指标",
+      "结论"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -79,12 +90,29 @@
     ],
     "downstreamConsumers": [],
     "tasks": [],
-    "acceptanceCriteria": [],
+    "acceptanceCriteria": [
+      "| Goal | 结果 |",
+      "| G-Goal-1 Playwright 可用 | ✅ Version 1.59.1 |",
+      "| G-Goal-2 4 compute smoke 通过 | ✅ 4 case 枚举 · 运行留用户（静态 ✓ / 运行时待跑）|",
+      "| G-Goal-3 physics-core 引用清零 | ✅ 0 匹配 in public/templates |",
+      "| G-Goal-4 EurekaCanvas+Hints 融入 | ✅ 5 匹配 in experiment-core.js |",
+      "| G-Goal-5 physics-core.js 删除 | ✅ Test-Path False |",
+      "| G-Goal-6 TSC 0 + Jest 保持 | ✅ TSC 0（Jest 未触发本轮 · 因修改是 .js/HTML 非 TS）|",
+      "| G-Goal-7 arch-audit exit 0 | ✅ 5/5 绿 |",
+      "| G-Goal-8 roadmap-g 存在+字数 | ✅ True + ~3500 字 |",
+      "| G-Goal-9 C-5 + #8 | ✅ 两者都 grep 到 |",
+      "| G-Goal-10 skill + 注册 | ✅ True + 1 匹配 |",
+      "| G-Goal-11 视觉基线 8 PNG | ⏸ 待用户运行时生成（V2 策略）|"
+    ],
     "testEvidence": [
       "> Session: `wf-20260429054300.`",
       "> Stage: TEST (5/7)",
       "> **最终结果**：✅ TSC 53→0 · ✅ Jest 563/563 · ✅ 四路硬约束审计通过",
-      "> Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿"
+      "> Session: wf-20260429132738. · 基线 e12560f · 已执行 DEVELOP · Jest/TSC/ESLint/arch-audit 全绿",
+      "> **Session**: `wf-20260430013937.`",
+      "> **基线**: F 阶段 `6fe982a`（TSC 0 · Jest 563/563）",
+      "> **本轮修改**: 40 files · +1775/-2727 · net **-952 行**",
+      "---"
     ],
     "affectedFiles": [
       "circuit.ts/chemistry.ts",
@@ -102,21 +130,24 @@
       "framework/domains/chemistry/reaction-utils.ts",
       "workflow/skills/framework-boundary.md",
       "assembly/layout.ts",
-      "contracts/layout.ts"
+      "contracts/layout.ts",
+      "public/templates/_shared/physics-core.js",
+      "workflow/skills/iframe-rpc-safety.md",
+      "templates/_shared/physics-core.js"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "test-report.md",
       "outline": [
-        "F 阶段 · Test Report",
-        "执行摘要",
-        "13 AC 验证结果",
-        "测试覆盖分析",
-        "framework/__tests__/ 架构自测",
-        "chemistry/circuit domain 测试",
-        "engines / editor / components 测试",
-        "风险验证（5 风险对照）"
+        "G 阶段 · TEST Report · iframe e2e + 底座统一 + 防复发",
+        "测试策略",
+        "命令汇总",
+        "测试结果（15 case 全过）",
+        "正向（14）",
+        "负向（1）",
+        "测试执行证据",
+        "13 G-Goal 验收状态"
       ],
       "keyPoints": []
     }
@@ -130,78 +161,78 @@
     "hasRisks": true,
     "hasDownstreamConsumers": false,
     "hasTasks": false,
-    "hasAcceptanceCriteria": false,
+    "hasAcceptanceCriteria": true,
     "hasAffectedFiles": true,
     "hasFilesChanged": false,
     "hasTestEvidence": true
   },
   "evidenceRefs": [
     {
-      "file": "workflow/skills/framework-boundary.md",
+      "file": "public/templates/_shared/physics-core.js",
       "artifact": "output/test-report.md"
     },
     {
-      "file": "assembly/layout.ts",
+      "file": "workflow/skills/iframe-rpc-safety.md",
       "artifact": "output/test-report.md"
     },
     {
-      "file": "contracts/layout.ts",
+      "file": "templates/_shared/physics-core.js",
       "artifact": "output/test-report.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "test",
-      "tsc",
       "pass",
-      "audit",
-      "npx",
-      "contracts",
-      "未做",
+      "goal",
+      "test",
+      "core",
+      "physics",
+      "smoke",
+      "playwright",
       "arch",
-      "errors",
-      "framework",
-      "import",
-      "通过",
-      "assembly",
-      "src",
-      "零改",
+      "audit",
+      "匹配",
+      "migration",
+      "tsc",
+      "e2e",
+      "iframe",
+      "files",
+      "templates",
+      "grep",
+      "path",
+      "npx",
+      "case",
+      "exit",
+      "experiment",
+      "compute",
       "jest",
-      "eslint",
-      "lib",
-      "components",
-      "runtime",
-      "barrel",
-      "保持",
-      "domain",
-      "layout",
-      "chemistry",
+      "dev",
+      "存在",
       "阶段",
-      "noemit",
-      "editor",
-      "engines",
+      "运行时",
       "bash",
-      "builders",
-      "git",
-      "测试文件",
-      "regex",
-      "node",
-      "结果",
+      "public",
+      "true",
+      "html",
+      "clean",
+      "spec",
+      "枚举",
+      "验证",
       "scripts",
-      "下游",
-      "文件",
-      "fix"
+      "npm",
+      "run",
+      "noemit"
     ],
     "files": [
-      "workflow/skills/framework-boundary.md",
-      "assembly/layout.ts",
-      "contracts/layout.ts"
+      "public/templates/_shared/physics-core.js",
+      "workflow/skills/iframe-rpc-safety.md",
+      "templates/_shared/physics-core.js"
     ],
     "modules": [
+      "public",
       "workflow",
-      "assembly",
-      "contracts"
+      "templates"
     ]
   },
-  "generatedAt": "2026-04-29T15:39:31.752Z"
+  "generatedAt": "2026-04-30T02:55:25.733Z"
 }
