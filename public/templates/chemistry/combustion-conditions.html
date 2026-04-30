@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -26,7 +26,7 @@
     {"id": "burning", "label": "是否燃烧", "unit": ""},
     {"id": "missing", "label": "缺少条件", "unit": ""}
   ],
-  "dependencies": ["../_shared/physics-core.js"]
+  "dependencies": ["../_shared/experiment-core.js"]
 }
 </template-metadata>
 
@@ -59,7 +59,7 @@
 </template-body>
 
 <script type="module">
-  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/physics-core.js';
+  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/experiment-core.js';
 
   const state = {
     temperature: 25,

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -29,7 +29,7 @@
     {"id": "rustWater", "label": "水试管", "unit": "%"},
     {"id": "rustSalt", "label": "盐水试管", "unit": "%"}
   ],
-  "dependencies": ["../_shared/physics-core.js"]
+  "dependencies": ["../_shared/experiment-core.js"]
 }
 </template-metadata>
 
@@ -62,7 +62,7 @@
 </template-body>
 
 <script type="module">
-  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/physics-core.js';
+  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/experiment-core.js';
 
   const state = {
     days: 7,

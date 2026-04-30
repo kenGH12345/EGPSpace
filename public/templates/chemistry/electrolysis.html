@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -27,7 +27,7 @@
     {"id": "o2Volume", "label": "氧气体积", "unit": "mL"},
     {"id": "ratio", "label": "体积比 H₂:O₂", "unit": ""}
   ],
-  "dependencies": ["../_shared/physics-core.js"]
+  "dependencies": ["../_shared/experiment-core.js"]
 }
 </template-metadata>
 
@@ -66,7 +66,7 @@
 </template-body>
 
 <script type="module">
-  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/physics-core.js';
+  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/experiment-core.js';
 
   const state = {
     current: 0.5,

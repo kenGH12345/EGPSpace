@@ -146,14 +146,17 @@ TEST('coulomb(Q=1e-6, r=0.1) ≈ 0.9', () => {
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// T-3: Backward compatibility — old templates keep physics-core.js
+// T-3: Foundation unification (updated at G 阶段 W6)
+// Previously asserted old templates kept physics-core.js; after the G-stage
+// foundation unification, ALL templates must use experiment-core.js. Assertion
+// is inverted to guard against physics-core.js being reintroduced.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-console.log('\n🧪 T-3: Backward Compatibility');
+console.log('\n🧪 T-3: Foundation unification (experiment-core.js single source)');
 for (const old of ['buoyancy', 'lever', 'circuit', 'refraction']) {
-  TEST(`Old template ${old} still uses physics-core.js`, () => {
+  TEST(`Template ${old} uses experiment-core.js (not legacy physics-core.js)`, () => {
     const content = fs.readFileSync(path.join(__dirname, `public/templates/physics/${old}.html`), 'utf-8');
-    assert(content.includes('/_shared/physics-core.js'), `Missing physics-core.js in ${old}`);
-    assert(!content.includes('/_shared/experiment-core.js'), `Unexpected experiment-core.js in ${old}`);
+    assert(content.includes('/_shared/experiment-core.js'), `Missing experiment-core.js in ${old}`);
+    assert(!content.includes('/_shared/physics-core.js'), `Unexpected physics-core.js in ${old} — foundation unification was reverted?`);
   });
 }
 

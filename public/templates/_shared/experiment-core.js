@@ -385,4 +385,104 @@
     },
     clamp,
   };
+
+  // ─────────────────────────────────────────────────────────────────────
+  // EurekaCanvas & EurekaHints — merged from legacy physics-core.js (G 阶段 W3).
+  // Ported verbatim to preserve 11 migrated templates' behavior. Together with
+  // EurekaHost/EurekaFormat, these form the single-source iframe foundation.
+  // ─────────────────────────────────────────────────────────────────────
+  const EurekaCanvas = {
+    setupHiDPI(canvas, cssWidth, cssHeight) {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = cssWidth * dpr;
+      canvas.height = cssHeight * dpr;
+      canvas.style.width = cssWidth + 'px';
+      canvas.style.height = cssHeight + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return ctx;
+    },
+
+    clear(ctx, cssWidth, cssHeight, color) {
+      if (color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, cssWidth, cssHeight);
+      } else {
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+      }
+    },
+
+    drawArrow(ctx, x1, y1, x2, y2, color, label) {
+      const headLen = 10;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const angle = Math.atan2(dy, dx);
+
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(
+        x2 - headLen * Math.cos(angle - Math.PI / 6),
+        y2 - headLen * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        x2 - headLen * Math.cos(angle + Math.PI / 6),
+        y2 - headLen * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fill();
+
+      if (label) {
+        ctx.font = 'bold 13px system-ui';
+        ctx.fillStyle = color;
+        ctx.fillText(label, x2 + 6, y2 - 4);
+      }
+    },
+  };
+
+  const EurekaHints = {
+    _shown: false,
+
+    show(targetElement, text, timeoutMs) {
+      if (this._shown) return;
+      this._shown = true;
+      const timeout = typeof timeoutMs === 'number' ? timeoutMs : 6000;
+
+      const hint = document.createElement('div');
+      hint.className = 'eureka-hint';
+      hint.textContent = text;
+      document.body.appendChild(hint);
+
+      const rect = targetElement.getBoundingClientRect();
+      hint.style.left = rect.left + rect.width / 2 - 80 + 'px';
+      hint.style.top = rect.top - 48 + window.scrollY + 'px';
+      hint.style.width = '160px';
+
+      requestAnimationFrame(() => {
+        hint.classList.add('visible');
+      });
+
+      const dismiss = () => {
+        hint.classList.remove('visible');
+        setTimeout(() => hint.remove(), 200);
+        window.removeEventListener('click', dismiss);
+        window.removeEventListener('input', dismiss);
+      };
+
+      setTimeout(dismiss, timeout);
+      window.addEventListener('click', dismiss, { once: true });
+      window.addEventListener('input', dismiss, { once: true });
+    },
+  };
+
+  window.EurekaCanvas = EurekaCanvas;
+  window.EurekaHints = EurekaHints;
 })();
