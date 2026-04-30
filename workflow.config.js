@@ -131,6 +131,27 @@ module.exports = {
     ".tsx": "typescript-dev"
 },
 
+  // ─── Project-Specific Skills (auto-loaded in ANALYSE context) ─────────────
+  // These live under .workflow/skills/ and are injected when their domains
+  // match the current /wf requirement. All future /wf Agents MUST load them.
+  projectSkills: [
+    {
+      name: "framework-boundary",
+      description: "F 阶段 framework 物理分层边界 · 未来 /wf 必读",
+      domains: ["framework", "refactor", "architecture", "import", "boundary"],
+    },
+    {
+      name: "iframe-rpc-safety",
+      description: "G 阶段 iframe 模板底座 + compute RPC 安全契约 · 涉及 public/templates/ 时必读",
+      domains: ["iframe", "template", "rpc", "compute", "experiment-core", "physics-core"],
+    },
+    {
+      name: "project-standards",
+      description: "项目包管理器 + 端口 + 测试规约",
+      domains: ["pnpm", "port", "dev-server"],
+    },
+  ],
+
   // ─── Classification Rules ─────────────────────────────────────────────────
   classificationRules: [],
 

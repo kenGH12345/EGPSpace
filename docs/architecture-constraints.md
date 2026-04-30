@@ -66,6 +66,27 @@ src/lib/framework/
 
 ---
 
+### C-5 · iframe 模板底座单一（G 阶段兑现）
+
+**约束**：`public/templates/` 下所有 iframe 实验 HTML **只能加载 `_shared/experiment-core.js`**，**禁止引入任何第二个 host 通信底座**（包括已退役的 `physics-core.js`）。
+
+**背景**：F 阶段尾声发现 `physics-core.js`（11 模板）和 `experiment-core.js`（13 模板）两套底座并存 → 某次 compute RPC bug 修在 `experiment-core` 一侧，另一侧继续带 bug → 4 个 iframe 实验同时 timeout。G 阶段统一底座 + 加机器守护，防止此类分叉复发。
+
+**物理边界**：
+- ✅ 唯一底座：`public/templates/_shared/experiment-core.js`
+- ❌ 已删除：`public/templates/_shared/physics-core.js`（勿重新创建）
+- 🔒 若需新增共享能力（如 `EurekaAudio`、`EurekaChart`），**必须** merge 进 `experiment-core.js` · 不得立第二个 IIFE 文件
+
+**机器守护**：
+```
+scripts/arch-audit.sh check-5:
+  扫描 public/templates/ 下所有 HTML · 任何 physics-core.js 引用 → fail
+```
+
+**必读文档**：`.workflow/skills/iframe-rpc-safety.md` · 未来 /wf Agent 在 ANALYSE 阶段必 load。
+
+---
+
 ## 受控松动条款（E 阶段历史记录 · F 阶段后已归档）
 
 > ⚠️ **F 阶段后本小节不再是现行规则**——E 阶段的"允许 3 类 / 禁 3 类"自然语言软条款已由 F 阶段的**物理分层 + ESLint + arch-audit**机器守护替代。本小节保留仅为历史追溯。新约束见上方 C-1 · Framework 物理分层边界。
@@ -110,6 +131,7 @@ src/lib/framework/
 | 5 | 2026-04-29 | **E 阶段** | 新建 `framework/domains/chemistry/type-guards.ts`（discriminated union helper）| 1 扩展 | 用户批准 B-plus |
 | 6 | 2026-04-29 | **E 阶段** | 更新 `layout-spec.test.ts` 的 AC-D1 测试（精神不变，字面放宽）| 2 别名复用关联 | 用户批准 B-plus |
 | 7 | 2026-04-29 | **F 阶段** | 一次性 framework 物理分层重构：15 核心文件从 `components/solvers/interactions/assembly/` 迁移到 `contracts/runtime/builders/`；删除 4 旧目录；barrel 兼容保持；新增 ESLint + arch-audit 守护；E 阶段软条款由物理边界替代 | 一次性物理兑现 | 用户批准 F-plus |
+| 8 | 2026-04-30 | **G 阶段** | iframe 底座统一：删除 `public/templates/_shared/physics-core.js`（200 行），11 模板迁移到 `experiment-core.js`，合并 `EurekaCanvas/EurekaHints`；新增 `arch-audit check-5` 机器守护；新增 `C-5 iframe 底座单一`；新增 8 个 Playwright e2e smoke 测试；新增 `iframe-rpc-safety` skill | 一次性物理兑现 + 测试基础设施 | 用户批准 G-plus |
 
 ---
 
@@ -117,8 +139,9 @@ src/lib/framework/
 
 ### ANALYSE 阶段
 
-- **必读**本文件的 C-1 ~ C-4
+- **必读**本文件的 C-1 ~ C-5
 - 若变更涉及 framework，判断是否属于 3 类允许（若不属于 → 必须走专项讨论）
+- 若变更涉及 iframe 模板或 `public/templates/_shared/`，**必读** `.workflow/skills/iframe-rpc-safety.md`
 - 在 `analysis.md` 的「硬约束延续」章节明确引用本文件
 
 ### ARCHITECT 阶段
