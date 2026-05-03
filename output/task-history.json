@@ -1,311 +1,5 @@
 [
   {
-    "id": "TH-1776921826714-77DT0",
-    "timestamp": "2026-04-23T05:23:46.714Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现验证层：在LLM生成和渲染之间加参数范围/现象合理性/公式验证/量纲检查4个检查器，CRITICAL时fallback到规则库",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现验证层：在LLM生成和渲染之间加参数范围/现象合理性/公式验证/量纲检查4个检查器，CRITICAL时fallback到规则库 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1776928684593-JH8GB",
-    "timestamp": "2026-04-23T07:18:04.593Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现组件化渲染引擎：ElementType扩展到21种，新增13种渲染器，buildPresetElements替代drawXxx命令式函数，293/293测试通过",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现组件化渲染引擎：ElementType扩展到21种，新增13种渲染器，buildPresetElements替代drawXxx命令式函数，293/293测试通过 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777018838671-IYOPE",
-    "timestamp": "2026-04-24T08:20:38.671Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "参考EurekaFinder行为规范，在声明式架构中补齐动力学/动画/环境/引导4项运行时能力+数据层精细化+全学科扩展+LLM对话模式对齐，共13个任务",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "参考EurekaFinder行为规范，在声明式架构中补齐动力学/动画/环境/引导4项运行时能力+数据层精细化+全学科扩展+LLM对话模式对齐，共13个任务 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777026416565-PA6E6",
-    "timestamp": "2026-04-24T10:26:56.565Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "Implement Triple-Lock architecture + migrate 4 physics experiments (buoyancy, lever, refraction, circuit) to HTML template system with iframe sandbox and postMessage security",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "Implement Triple-Lock architecture + migrate 4 physics experiments (buoyancy, lever, refraction, cir — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777034657221-ABD7P",
-    "timestamp": "2026-04-24T12:44:17.221Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "集成 audit-triple-lock 前端渲染层 Phase 2：创建 experiment-core.js + physics-utils.js + 4个物理实验模板 + 注册表/概念路由更新 + 4份审计文档 + 自动化测试套件",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "集成 audit-triple-lock 前端渲染层 Phase 2：创建 experiment-core.js + physics-utils.js + 4个物理实验模板 + 注册表/概念路由更新  — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777098695231-SJHYC",
-    "timestamp": "2026-04-25T06:31:35.231Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "为sound.html和motion.html添加介质选择和运动类型选择功能",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "为sound.html和motion.html添加介质选择和运动类型选择功能 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777136883288-SW430",
-    "timestamp": "2026-04-25T17:08:03.288Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "补全初中物理缺失的实验模板：压强、密度、功与功率、摩擦力、物态变化",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "补全初中物理缺失的实验模板：压强、密度、功与功率、摩擦力、物态变化 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777181348435-B9FSH",
-    "timestamp": "2026-04-26T05:29:08.435Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "集成 flamingo-phproll-4 化学实验模拟引擎：5个HTML交互模板(acid-base-titration/iron-rusting/electrolysis/reaction-rate/combustion-conditions) + 3个TypeScript计算引擎(iron-rusting/electrolysis/reaction-rate)，注册到template-registry和chemistry/index.ts",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "集成 flamingo-phproll-4 化学实验模拟引擎：5个HTML交互模板(acid-base-titration/iron-rusting/electrolysis/reaction-rat — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777216040076-K19JD",
-    "timestamp": "2026-04-26T15:07:20.076Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "将化学实验迁移到统一声明式框架：创建5个HTML模板、注册到模板注册表、重构page.tsx拆分组件、修复TypeScript/eslint错误",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "将化学实验迁移到统一声明式框架：创建5个HTML模板、注册到模板注册表、重构page.tsx拆分组件、修复TypeScript/eslint错误 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777363567193-K6IE6",
-    "timestamp": "2026-04-28T08:06:07.193Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "Perform capability atomization refactoring: extract 4 engines, 4 validators, and create unified Capability registry while maintaining 100% API compatibility",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "Perform capability atomization refactoring: extract 4 engines, 4 validators, and create unified Capa — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777371653539-UQNKK",
-    "timestamp": "2026-04-28T10:20:53.539Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "L2 Schema/L4 HTML 模板按原子化 组合化方向重构",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "L2 Schema/L4 HTML 模板按原子化 组合化方向重构 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777377181032-DT7OI",
-    "timestamp": "2026-04-28T11:53:01.032Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "电路元件原子化+跨学科通用框架+组件交互产生新组件",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "电路元件原子化+跨学科通用框架+组件交互产生新组件 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777382036852-F9GFK",
-    "timestamp": "2026-04-28T13:13:56.852Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "装配层框架化+电路集成（通用化/结构化/可扩展/可维护/可配置·全学科靶向）",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "装配层框架化+电路集成（通用化/结构化/可扩展/可维护/可配置·全学科靶向） — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777389969110-9ZORK",
-    "timestamp": "2026-04-28T15:26:09.110Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "Chemistry 域三层落地（components/graph/solver/reactions/assembly + engine v2 dual-path + metal-acid 示例实验）",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "Chemistry 域三层落地（components/graph/solver/reactions/assembly + engine v2 dual-path + metal-acid 示例实验） — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777397642891-PXY1O",
-    "timestamp": "2026-04-28T17:34:02.891Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "anchor-LayoutSpec 解耦（D）· Spec/Layout 分离 · 为 B 编辑器做架构前置清理",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "anchor-LayoutSpec 解耦（D）· Spec/Layout 分离 · 为 B 编辑器做架构前置清理 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777422298288-A63SR",
-    "timestamp": "2026-04-29T00:24:58.288Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "B 阶段 · 交互式编辑器 framework（/editor 路由 · 拖拽 + 端口连线 + localStorage 持久化 + JSON 导入导出）",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "B 阶段 · 交互式编辑器 framework（/editor 路由 · 拖拽 + 端口连线 + localStorage 持久化 + JSON 导入导出） — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777434136906-HQBRS",
-    "timestamp": "2026-04-29T03:42:16.906Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "C 阶段 · 撤销重做 (withHistory) + 自动布局 (Grid + Force FR)",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "C 阶段 · 撤销重做 (withHistory) + 自动布局 (Grid + Force FR) — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777441232027-AHK4N",
-    "timestamp": "2026-04-29T05:40:32.027Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "D 阶段 · UX 细节优化包（hit-test 修复 + snap + hover + drawer 一致性）",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "D 阶段 · UX 细节优化包（hit-test 修复 + snap + hover + drawer 一致性） — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
     "id": "TH-1777462144988-QBCSI",
     "timestamp": "2026-04-29T11:29:04.988Z",
     "mode": "sequential",
@@ -332,6 +26,312 @@
     "taskTitles": [],
     "outcome": "success",
     "summary": "F 阶段 · framework 物理分层重构（Proposal B' 目录分层 + 文件 co-location · 15 文件 mv · 硬约束四件套兑现 · 防 R-F7 假兑现） — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777523051191-SDZQU",
+    "timestamp": "2026-04-30T04:24:11.192Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现预置实验的编辑态交互与元件清单列表",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现预置实验的编辑态交互与元件清单列表 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777525735457-MOU16",
+    "timestamp": "2026-04-30T05:08:55.457Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "修复电路预置实验中开关断开时不中断的Bug",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "修复电路预置实验中开关断开时不中断的Bug — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777533862029-47ARI",
+    "timestamp": "2026-04-30T07:24:22.029Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现 AI 拓扑实验生成与全新机制扩展",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现 AI 拓扑实验生成与全新机制扩展 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777539958279-WY0XP",
+    "timestamp": "2026-04-30T09:05:58.279Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "引入dagre算法自动计算AI生成实验排版",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "引入dagre算法自动计算AI生成实验排版 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777543334465-FPD7W",
+    "timestamp": "2026-04-30T10:02:14.465Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现通用化的组件端口连线验证逻辑和磁吸效果",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现通用化的组件端口连线验证逻辑和磁吸效果 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777544624210-BEFUB",
+    "timestamp": "2026-04-30T10:23:44.210Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现 Canvas 线路渲染与 SVG 拖拽连线预览的正交（Orthogonal）折线算法",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现 Canvas 线路渲染与 SVG 拖拽连线预览的正交（Orthogonal）折线算法 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777559779475-1WGLZ",
+    "timestamp": "2026-04-30T14:36:19.475Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现空间布局层的原子组件旋转功能与端口坐标动态映射",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现空间布局层的原子组件旋转功能与端口坐标动态映射 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777593109889-P15MD",
+    "timestamp": "2026-04-30T23:51:49.889Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "把所有学科所有实验元件底层都修改为原子化组件化元件积木化的底层 不要用预先写好的html模板",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "把所有学科所有实验元件底层都修改为原子化组件化元件积木化的底层 不要用预先写好的html模板 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777595698636-VG4HM",
+    "timestamp": "2026-05-01T00:34:58.636Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现化学实验中对添加液体、加热、燃烧等反应的支持",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现化学实验中对添加液体、加热、燃烧等反应的支持 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777597957896-QGTZO",
+    "timestamp": "2026-05-01T01:12:37.896Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现支持自由组合的宏组件(CompositeComponent)及打平算法",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现支持自由组合的宏组件(CompositeComponent)及打平算法 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777716215957-EZX9D",
+    "timestamp": "2026-05-02T10:03:35.957Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "初高中物理化学生物元件原子化架构基建与MVP",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "初高中物理化学生物元件原子化架构基建与MVP — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777717769988-6C38R",
+    "timestamp": "2026-05-02T10:29:29.988Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现 EventBus 与 TickEngine 并通过测试",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现 EventBus 与 TickEngine 并通过测试 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777725232282-HA1S5",
+    "timestamp": "2026-05-02T12:33:52.282Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "接入现有元件到 Engine，验证多域联调模拟",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "接入现有元件到 Engine，验证多域联调模拟 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777734361920-G2OUL",
+    "timestamp": "2026-05-02T15:06:01.920Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "P0: 统一 solver 契约并类型化 EventBus",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "P0: 统一 solver 契约并类型化 EventBus — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777736359699-IYR3S",
+    "timestamp": "2026-05-02T15:39:19.699Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "Implement fixed timestep and max substeps for TickEngine, synchronize physical demo rAF loop, and verify behavior",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "Implement fixed timestep and max substeps for TickEngine, synchronize physical demo rAF loop, and ve — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777771423482-A6CB7",
+    "timestamp": "2026-05-03T01:23:43.482Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "分析补齐 Mechanics Optics Biology solver 的作用与收益（不进行开发）",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "分析补齐 Mechanics Optics Biology solver 的作用与收益（不进行开发） — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777772939839-AUM2Z",
+    "timestamp": "2026-05-03T01:48:59.839Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "升级TickEngine并实现力学、光学、生物Solver MVP",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "升级TickEngine并实现力学、光学、生物Solver MVP — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777773145195-9LYMA",
+    "timestamp": "2026-05-03T01:52:25.195Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现真实 Mechanics/Optics/Biology Solver MVP",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现真实 Mechanics/Optics/Biology Solver MVP — completed",
     "metrics": {
       "durationMs": null,
       "errorCount": 0,

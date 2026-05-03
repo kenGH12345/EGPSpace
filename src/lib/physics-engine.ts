@@ -166,6 +166,7 @@ const ENGINES: Record<PhysicsEngineType, PhysicsEngine> = {
   lever: new LeverEngine(),
   refraction: new RefractionEngine(),
   circuit: new CircuitEngine(),
+  'quantum-entanglement': new GenericEngine(),
   generic: new GenericEngine(),
   pendulum: new GenericEngine(),
   wave: new GenericEngine(),

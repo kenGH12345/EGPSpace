@@ -97,3 +97,12 @@ export type {
   HistoryOptions,
 } from './history';
 export { emptyHistory, withHistory, canUndo, canRedo } from './history';
+
+// ── Macro composition (E 阶段 · 组件自由组合) ─────────────────────────────
+export type { MacroDefinition, MacroResolver } from '@/lib/framework/macro/flattener';
+export type { ConnectionClassification } from './macro-utils';
+export {
+  classifyConnections,
+  remapBoundaryToComposite,
+  buildDefaultExportPortMap,
+} from './macro-utils';

@@ -21,11 +21,15 @@ import {
   Bubble,
   Solid,
   Thermometer,
+  AlcoholLamp,
+  Igniter,
   type FlaskProps,
   type ReagentProps,
   type BubbleProps,
   type SolidProps,
   type ThermometerProps,
+  type AlcoholLampProps,
+  type IgniterProps,
 } from './components';
 
 // ── Components ────────────────────────────────────────────────────────────
@@ -35,11 +39,15 @@ export {
   Bubble,
   Solid,
   Thermometer,
+  AlcoholLamp,
+  Igniter,
   createFlask,
   createReagent,
   createBubble,
   createSolid,
   createThermometer,
+  createAlcoholLamp,
+  createIgniter,
 } from './components';
 export type {
   ChemistryComponent,
@@ -51,6 +59,8 @@ export type {
   BubbleProps,
   SolidProps,
   ThermometerProps,
+  AlcoholLampProps,
+  IgniterProps,
 } from './components';
 
 // ── Graph ─────────────────────────────────────────────────────────────────
@@ -120,4 +130,10 @@ componentRegistry.register('chemistry', 'solid', (dto: ComponentDTO) => {
 });
 componentRegistry.register('chemistry', 'thermometer', (dto: ComponentDTO) => {
   return new Thermometer(dto.id, dto.props as unknown as ThermometerProps, dto.anchor);
+});
+componentRegistry.register('chemistry', 'alcohol-lamp', (dto: ComponentDTO) => {
+  return new AlcoholLamp(dto.id, dto.props as unknown as AlcoholLampProps, dto.anchor);
+});
+componentRegistry.register('chemistry', 'igniter', (dto: ComponentDTO) => {
+  return new Igniter(dto.id, dto.props as unknown as IgniterProps, dto.anchor);
 });

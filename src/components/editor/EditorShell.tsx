@@ -15,14 +15,19 @@ import {
   type HistoryState,
   type HistoryAction,
 } from '@/lib/editor';
-import type { ComponentDomain } from '@/lib/framework';
+import { mergeConfigWithMacros } from '@/lib/editor/macro-config';
+import type { ComponentDomain, AssemblyBundle } from '@/lib/framework';
 import { ComponentPalette } from './ComponentPalette';
 import { EditorCanvas } from './EditorCanvas';
 import { PropertyPanel } from './PropertyPanel';
 import { RunControls } from './RunControls';
+import { SelectionToolbar } from './SelectionToolbar';
+import { MacroEncapsulateDialog } from './MacroEncapsulateDialog';
+import { useAutoRun } from './useAutoRun';
 
 export interface EditorShellProps {
   initialDomain?: ComponentDomain;
+  initialBundle?: AssemblyBundle;
 }
 
 // Squash: 连续 moveComponent / updateProp / updateWireCursor 合并为一条历史
@@ -48,7 +53,7 @@ type HEditorAction = HistoryAction<EditorAction, EditorState>;
  *
  * C 阶段：引入 withHistory 包装，支持撤销/重做
  */
-export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
+export function EditorShell({ initialDomain = 'circuit', initialBundle }: EditorShellProps) {
   // 用 useMemo 保证 reducer 稳定引用（withHistory 内部有 squash meta 状态，不能每次 render 新建）
   const historyReducer = useMemo(
     () =>
@@ -62,7 +67,13 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
   const [historyState, hDispatch] = useReducer(
     historyReducer as (s: HEditorState, a: HEditorAction) => HEditorState,
     initialDomain,
-    (d) => emptyHistory(emptyEditorState(d)),
+    (d) => {
+      const emptyState = emptyEditorState(initialBundle ? initialBundle.spec.domain : d);
+      const state = initialBundle
+        ? applyEditorAction(emptyState, { type: 'loadBundle', bundle: initialBundle })
+        : emptyState;
+      return emptyHistory(state);
+    }
   );
 
   const state = historyState.present;
@@ -74,13 +85,52 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
     hDispatch(action as HEditorAction);
   }, []);
 
+  // 提取 AI 生成的 Schema 并进行布局
+  useEffect(() => {
+    const aiSchemaStr = sessionStorage.getItem('ai-generated-schema');
+    if (aiSchemaStr) {
+      try {
+        const schema = JSON.parse(aiSchemaStr);
+        if (schema.components && schema.components.length > 0) {
+          // Wrap into an AssemblyBundle format
+          const bundle: AssemblyBundle = {
+            spec: {
+              domain: schema.domain || initialDomain,
+              components: schema.components,
+              connections: schema.connections || [],
+            },
+          };
+          // 清除标志，避免刷新重复加载
+          sessionStorage.removeItem('ai-generated-schema');
+          dispatch({ type: 'loadBundle', bundle });
+        }
+      } catch (e) {
+        console.error('Failed to load AI generated schema', e);
+      }
+    }
+  }, [dispatch, initialDomain]);
+
   const undo = useCallback(() => hDispatch({ type: '__UNDO__' }), []);
   const redo = useCallback(() => hDispatch({ type: '__REDO__' }), []);
 
   const [runResult, setRunResult] = useState<Record<string, Record<string, unknown>> | undefined>(undefined);
   const [statusMsg, setStatusMsg] = useState<string>('');
+  const [encapsulateOpen, setEncapsulateOpen] = useState(false);
+
+  useAutoRun(
+    state,
+    (perC, msg) => {
+      setRunResult(perC);
+      setStatusMsg(msg);
+    },
+    setStatusMsg
+  );
 
   const config = getDomainConfig(state.domain);
+  const mergedConfig = useMemo(
+    () => mergeConfigWithMacros(config, state.macros),
+    [config, state.macros],
+  );
   const availableDomains = getAvailableDomains();
 
   const onDomainSwitch = useCallback(
@@ -150,16 +200,12 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
 
         <RunControls
           state={state}
-          config={config}
+          config={mergedConfig}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={undo}
           onRedo={redo}
           onAutoLayout={(algorithm) => dispatch({ type: 'autoLayout', algorithm })}
-          onResult={(r, msg) => {
-            setRunResult(r);
-            setStatusMsg(msg);
-          }}
           onStatus={setStatusMsg}
           onLoadState={(bundle) => {
             dispatch({ type: 'loadBundle', bundle });
@@ -176,15 +222,39 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-48 border-r bg-white overflow-y-auto">
-          <ComponentPalette config={config} />
+          <ComponentPalette
+            config={mergedConfig}
+            onRemoveMacro={(kind) => dispatch({ type: 'removeMacro', key: kind })}
+          />
         </aside>
 
         <main className="flex-1 relative overflow-hidden">
-          <EditorCanvas state={state} config={config} dispatch={dispatch} runResult={runResult} />
+          <EditorCanvas state={state} config={mergedConfig} dispatch={dispatch} runResult={runResult} />
+          {(() => {
+            const sel = state.selection;
+            const showToolbar =
+              sel.kind === 'multi' ||
+              (sel.kind === 'component' &&
+                state.placed.find((p) => p.id === sel.id)?.kind.startsWith('macro:'));
+            if (!showToolbar) return null;
+            return (
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
+                <SelectionToolbar
+                  state={state}
+                  onEncapsulate={() => setEncapsulateOpen(true)}
+                  onClearSelection={() => dispatch({ type: 'selectComponent', id: null })}
+                  onUnpack={(id) => {
+                    dispatch({ type: 'unpackMacro', id });
+                    setStatusMsg('🔓 元件已解散');
+                  }}
+                />
+              </div>
+            );
+          })()}
         </main>
 
         <aside className="w-64 border-l bg-white overflow-y-auto">
-          <PropertyPanel state={state} config={config} dispatch={dispatch} runResult={runResult} />
+          <PropertyPanel state={state} config={mergedConfig} dispatch={dispatch} runResult={runResult} />
         </aside>
       </div>
 
@@ -195,10 +265,26 @@ export function EditorShell({ initialDomain = 'circuit' }: EditorShellProps) {
         <span>
           {state.selection.kind === 'component' && `选中: ${state.selection.id}`}
           {state.selection.kind === 'connection' && `选中连线 #${state.selection.index}`}
+          {state.selection.kind === 'multi' && `已选 ${state.selection.ids.length} 个组件`}
           {state.selection.kind === 'none' && '未选中'}
         </span>
-        <span className="flex-1 text-right">Ctrl+Z 撤销 · Ctrl+Y 重做 · Esc 取消连线 · Delete 删除选中</span>
+        <span className="flex-1 text-right">Ctrl+Z 撤销 · Ctrl+Y 重做 · Esc 取消连线 · Delete 删除选中 · Shift+点击 多选</span>
       </footer>
+
+      <MacroEncapsulateDialog
+        state={state}
+        open={encapsulateOpen}
+        onCancel={() => setEncapsulateOpen(false)}
+        onConfirm={({ kind, name, description }) => {
+          dispatch({
+            type: 'encapsulateSelection',
+            kind,
+            metadata: { name, description },
+          });
+          setEncapsulateOpen(false);
+          setStatusMsg(`✅ 已封装: ${name}`);
+        }}
+      />
     </div>
   );
 }

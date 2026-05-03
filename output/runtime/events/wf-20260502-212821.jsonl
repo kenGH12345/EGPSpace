@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-212821","createdAt":"2026-05-02T13:28:22.060Z"}
+{"seq":1,"ts":"2026-05-02T13:28:22.060Z","sessionId":"wf-20260502-212821","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"solver.ts, TickEngine.ts, AbstractSolver.ts, runtime engine, domain solvers, EventBus.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

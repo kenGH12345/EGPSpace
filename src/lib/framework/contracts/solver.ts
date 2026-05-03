@@ -1,51 +1,54 @@
-/**
- * Domain Solver Contract — framework L0
- *
- * Every domain (circuit, optics, mechanics, ...) provides a solver implementing this
- * interface. Kept deliberately minimal: the framework doesn't assume matrix algebra
- * (optics might be ray-tracing, mechanics might be ODE integration).
- */
-
-import type { DomainGraph } from './graph';
 import type { ComponentDomain } from './component';
 
-/** Summary of solver state for UI badges / logging. */
-export type SolveState = 'normal' | 'short' | 'open' | 'overload' | 'invalid';
+export type SolverDomain = ComponentDomain | string;
 
-/** Result of pre-solve quick check; may short-circuit full solve. */
+export type SolveState = 'normal' | 'open' | 'short' | 'invalid' | 'error';
+
 export interface PreCheckResult {
   state: SolveState;
   reason?: string;
 }
 
-/** Generic solver result. Domain specialises the `perComponent` payload shape. */
-export interface SolveResult<PerComponent extends object = Record<string, unknown>> {
+export interface SolveContext {
+  signal?: AbortSignal;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TickContext extends SolveContext {
+  elapsedTime?: number;
+  tickIndex?: number;
+}
+
+export interface SolverBase {
+  readonly domain: SolverDomain;
+}
+
+export interface SolveResult<
+  TPerComponent extends Record<string, unknown> = Record<string, unknown>,
+  TAggregates extends Record<string, unknown> = Record<string, unknown>,
+> {
   state: SolveState;
   explanation?: string;
-  /** Per-component solved values, keyed by componentId. */
-  perComponent: Record<string, PerComponent>;
-  /** Domain-level aggregates (total current, total intensity, total energy...). */
-  aggregates?: Record<string, number | string>;
+  perComponent: Record<string, TPerComponent>;
+  aggregates?: TAggregates;
 }
 
-/**
- * Pluggable domain solver. Implementations live in
- * `src/lib/framework/domains/<domain>/solver.ts`.
- */
-export interface IDomainSolver<TGraph extends DomainGraph = DomainGraph, TResult extends SolveResult = SolveResult> {
-  readonly domain: ComponentDomain;
-
-  /** Fast check for degenerate cases (short/open/invalid topology). */
-  preCheck(graph: TGraph): PreCheckResult;
-
-  /** Full solve. MUST throw a typed error (e.g. SolverError) on numerical failure. */
-  solve(graph: TGraph): TResult;
+export interface IDomainSolver<TGraph = unknown, TResult extends SolveResult = SolveResult>
+  extends SolverBase {
+  preCheck?(graph: TGraph, context?: SolveContext): PreCheckResult;
+  solve(graph: TGraph, context?: SolveContext): TResult;
 }
+
+export interface ITickSolver<TResult = void> extends SolverBase {
+  update(deltaTime: number, context?: TickContext): TResult;
+}
+
+export type ISolver<TResult = void> = ITickSolver<TResult>;
 
 export class SolverError extends Error {
   constructor(
     message: string,
-    public readonly code: 'singular' | 'oscillation' | 'invalid_topology' | 'unknown',
+    public readonly code: string = 'solver_error',
   ) {
     super(message);
     this.name = 'SolverError';

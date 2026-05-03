@@ -54,7 +54,7 @@ interface ExperimentCanvasProps {
   onParamChange: (key: string, value: number) => void;
   onStart: () => void;
   onReset: () => void;
-  onUpdate: () => void;
+  onUpdate: (deltaTime: number) => void;
 }
 
 const ExperimentCanvas: React.FC<ExperimentCanvasProps> = ({
@@ -201,24 +201,33 @@ const ExperimentCanvas: React.FC<ExperimentCanvasProps> = ({
     }
 
     let lastTime = 0;
+    let accumulator = 0;
+    const fixedDeltaTime = 1 / 60;
+    const maxSubsteps = 5;
+    const maxFrameDeltaTime = 0.25;
+
     const animate = (timestamp: number) => {
       if (!lastTime) lastTime = timestamp;
-      const dt = (timestamp - lastTime) / 1000;
+      const frameDeltaTime = Math.min(Math.max((timestamp - lastTime) / 1000, 0), maxFrameDeltaTime);
       lastTime = timestamp;
+      accumulator += frameDeltaTime;
 
       const g = params.gravity;
       const h0 = params.height;
       const t = Math.sqrt((2 * h0) / g);
 
-      setTime((prev) => {
-        const newTime = prev + dt;
-        if (newTime >= t) {
-          return t;
-        }
-        return newTime;
-      });
+      let substepCount = 0;
+      while (accumulator >= fixedDeltaTime && substepCount < maxSubsteps) {
+        setTime((prev) => Math.min(prev + fixedDeltaTime, t));
+        onUpdate(fixedDeltaTime);
+        accumulator -= fixedDeltaTime;
+        substepCount += 1;
+      }
 
-      onUpdate();
+      if (substepCount === maxSubsteps && accumulator >= fixedDeltaTime) {
+        accumulator = 0;
+      }
+
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -352,21 +361,23 @@ export default function UniversalExperimentDemo() {
     setComputed({ currentHeight: params.height, velocity: 0, time: 0 });
   }, [params.height]);
 
-  const handleUpdate = useCallback(() => {
+  const handleUpdate = useCallback((deltaTime: number) => {
     const g = params.gravity;
     const h0 = params.height;
-    const t = Math.sqrt((2 * h0) / g);
-    const currentTime = computed.time;
+    const maxTime = Math.sqrt((2 * h0) / g);
     
-    const newHeight = Math.max(0, h0 - 0.5 * g * currentTime * currentTime);
-    const newVelocity = g * currentTime;
-    
-    setComputed({
-      currentHeight: newHeight,
-      velocity: newVelocity,
-      time: currentTime,
+    setComputed((prev) => {
+      const currentTime = Math.min(prev.time + deltaTime, maxTime);
+      const newHeight = Math.max(0, h0 - 0.5 * g * currentTime * currentTime);
+      const newVelocity = g * currentTime;
+      
+      return {
+        currentHeight: newHeight,
+        velocity: newVelocity,
+        time: currentTime,
+      };
     });
-  }, [params, computed.time]);
+  }, [params]);
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + demoConcepts.length) % demoConcepts.length);

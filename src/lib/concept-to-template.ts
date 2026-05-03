@@ -9,12 +9,12 @@
  * before "光" alone matches a generic optics template).
  *
  * Flow:
- *   user input / LLM concept → conceptToTemplateId() → whitelist check → render
+ *   user input / LLM concept → conceptToTemplateId() → registry metadata guard → render
  *
  * If no mapping found, returns null. Callers should degrade gracefully
  * (e.g. show text-only lesson without experiment visualization).
  *
- * See: src/lib/template-registry.ts (Lock 3: Whitelist)
+ * See: src/lib/template-registry.ts (Lock 3: metadata approval guard)
  *      output/architecture.md (Triple-Lock design)
  */
 

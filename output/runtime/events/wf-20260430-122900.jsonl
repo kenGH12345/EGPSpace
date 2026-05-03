@@ -1,0 +1,4 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260430-122900","createdAt":"2026-04-30T04:30:32.461Z"}
+{"seq":1,"ts":"2026-04-30T04:30:32.461Z","sessionId":"wf-20260430-122900","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":""},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":2,"ts":"2026-04-30T04:50:21.490Z","sessionId":"wf-20260430-122900","kind":"stage_completed","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageOutput":"output/analysis.md"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":3,"ts":"2026-04-30T04:54:11.208Z","sessionId":"wf-20260430-122900","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":""},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

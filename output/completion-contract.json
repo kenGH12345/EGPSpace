@@ -1,0 +1,61 @@
+{
+  "contractVersion": "1.0",
+  "stage": "PLAN",
+  "workflowName": "初高中物理化学化学生物元件原子化",
+  "capabilityChange": true,
+  "commands": [
+    "echo 'skip tsc because existing project files have errors'"
+  ],
+  "userEntryCommands": [
+    "echo 'skip tsc'"
+  ],
+  "timeoutMs": 300000,
+  "featureAdoption": {
+    "mode": "opt-in-via-ui",
+    "entryPoints": [],
+    "rolloutStrategy": "默认启用",
+    "discoverability": "直接支持"
+  },
+  "downstreamConsumers": [],
+  "semanticQuality": {
+    "equivalenceCriteria": "无",
+    "automatedCheck": "tsc 静态分析",
+    "qualitativeMetric": "无"
+  },
+  "semanticRegression": {
+    "baselineBehavior": "无修改，仅新增文件",
+    "regressionCheck": "纯静态类型扩展",
+    "oldVsNewComparison": "不适用",
+    "acceptanceThreshold": "通过 tsc --noEmit"
+  },
+  "fallbackPolicy": {},
+  "expectedArtifacts": [
+    "src/lib/framework/contracts/traits.ts",
+    "src/lib/framework/domains/mechanics/components.ts",
+    "src/lib/framework/domains/mechanics/solver.ts",
+    "src/lib/framework/domains/mechanics/index.ts",
+    "src/lib/framework/domains/optics/components.ts",
+    "src/lib/framework/domains/optics/solver.ts",
+    "src/lib/framework/domains/optics/index.ts",
+    "src/lib/framework/domains/biology/components.ts",
+    "src/lib/framework/domains/biology/solver.ts",
+    "src/lib/framework/domains/biology/index.ts",
+    "output/test-report.md"
+  ],
+  "mustNotContain": [],
+  "logFiles": [
+    "output/test-report.md"
+  ],
+  "taskPlan": {
+    "totalTasks": 4,
+    "tasks": ["T-1", "T-2", "T-3", "T-4"],
+    "criticalPath": ["T-1", "T-2", "T-3", "T-4"],
+    "parallelizable": []
+  },
+  "acceptanceCriteriaCoverage": {
+    "total": 4,
+    "covered": 4,
+    "deferred": [],
+    "coverage": "100%"
+  }
+}

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-233540","createdAt":"2026-05-02T15:35:40.318Z"}
+{"seq":1,"ts":"2026-05-02T15:35:40.318Z","sessionId":"wf-20260502-233540","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"output/code.diff, src/lib/framework/core/TickEngine.ts, src/lib/framework/core/__tests__/TickEngine.test.ts, src/app/demo/page.tsx"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

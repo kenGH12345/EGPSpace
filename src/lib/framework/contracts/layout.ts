@@ -105,6 +105,32 @@ export function layoutLookup<D extends ComponentDomain>(
 
 // ── AssemblyBundle ────────────────────────────────────────────────────────
 
+export interface MacroPortRef {
+  componentId: string;
+  portName: string;
+}
+
+export type MacroExportPortMap = Record<string, MacroPortRef>;
+
+/**
+ * A user-defined macro ("custom component") — reusable subgraph that can be
+ * referenced by `kind` in a parent AssemblySpec. The SpecFlattener expands
+ * every macro kind into its inner components at engine-run time.
+ *
+ * Defined at the contracts layer (not in macro/flattener.ts) so that
+ * AssemblyBundle can reference it without creating a contracts ↔ macro import
+ * cycle — both Bundle persistence and the flattener share this single type.
+ *
+ *   - spec: inner components + internal connections (domain-typed sub-graph)
+ *   - exportPortMap: maps external port names (the "black-box face" of the
+ *     macro) to structured internal port references.
+ *     Example: { IN: { componentId: 'r1', portName: 'a' } }
+ */
+export interface MacroDefinition<D extends ComponentDomain = ComponentDomain> {
+  spec: AssemblySpec<D>;
+  exportPortMap: MacroExportPortMap;
+}
+
 /**
  * Optional organising container that carries both an AssemblySpec and a
  * LayoutSpec together. Useful for persistence (save the whole experiment state)
@@ -115,21 +141,29 @@ export function layoutLookup<D extends ComponentDomain>(
  * AssemblyBundle is the organisational layer — it's fine for it to see both.
  *
  * Use `assembleBundle({spec, layout})` on Assembler to build a graph from a bundle.
+ *
+ * The optional `macros` field persists user-defined macros alongside the
+ * topology so that loading a bundle fully restores the "我的元件" palette
+ * entries. Old bundles without this field load as `{}` (see loadBundle reducer).
  */
 export interface AssemblyBundle<D extends ComponentDomain = ComponentDomain> {
   spec: AssemblySpec<D>;
   layout?: LayoutSpec<D>;
   metadata?: Record<string, unknown>;
+  macros?: Record<string, MacroDefinition>;
 }
 
 /**
  * Runtime type guard for AssemblyBundle. Checks that spec exists and is object;
- * delegates layout shape to isLayoutSpec when present.
+ * delegates layout shape to isLayoutSpec when present. `macros` is tolerated
+ * as either absent or any object shape (defensive — downstream code treats
+ * malformed entries as missing).
  */
 export function isAssemblyBundle(value: unknown): value is AssemblyBundle {
   if (!value || typeof value !== 'object') return false;
   const v = value as Record<string, unknown>;
   if (!v.spec || typeof v.spec !== 'object') return false;
   if (v.layout !== undefined && !isLayoutSpec(v.layout)) return false;
+  if (v.macros !== undefined && (typeof v.macros !== 'object' || v.macros === null)) return false;
   return true;
 }

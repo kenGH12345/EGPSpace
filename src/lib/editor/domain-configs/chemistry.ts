@@ -13,6 +13,8 @@ import {
   bubbleDrawer,
   solidDrawer,
   indicatorDrawer,
+  alcoholLampDrawer,
+  igniterDrawer,
 } from '../drawers/chemistry-drawers';
 
 const TOP_CENTER = { dx: 30, dy: 0 };
@@ -24,6 +26,8 @@ const portLayout: PortLayoutTable = {
   bubble: { in: TOP_CENTER },
   solid: { in: TOP_CENTER },
   indicator: { in: TOP_CENTER },
+  'alcohol-lamp': { in: TOP_CENTER },
+  igniter: { in: TOP_CENTER },
 };
 
 export const chemistryEditorConfig: EditorDomainConfig<'chemistry'> = {
@@ -49,6 +53,24 @@ export const chemistryEditorConfig: EditorDomainConfig<'chemistry'> = {
           ],
         },
       ],
+      hintSize: { width: 60, height: 60 },
+    },
+    {
+      kind: 'alcohol-lamp',
+      displayName: '酒精灯',
+      icon: '🔥',
+      defaultProps: { isLit: false },
+      propSchema: [
+        { key: 'isLit', label: '已点燃', type: 'boolean' },
+      ],
+      hintSize: { width: 60, height: 60 },
+    },
+    {
+      kind: 'igniter',
+      displayName: '点火器',
+      icon: '🧨',
+      defaultProps: {},
+      propSchema: [],
       hintSize: { width: 60, height: 60 },
     },
     {
@@ -121,6 +143,8 @@ export const chemistryEditorConfig: EditorDomainConfig<'chemistry'> = {
     bubble: bubbleDrawer,
     solid: solidDrawer,
     indicator: indicatorDrawer,
+    'alcohol-lamp': alcoholLampDrawer,
+    igniter: igniterDrawer,
   },
   connection: {
     stroke: '#0369A1',

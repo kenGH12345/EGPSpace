@@ -7,6 +7,7 @@
 import type { LayoutInput, LayoutOutput, LayoutAlgorithm } from './types';
 import { gridLayout } from './grid-layout';
 import { forceLayout } from './force-layout';
+import { dagreLayout } from './dagre-layout';
 
 export function autoLayout(
   input: LayoutInput,
@@ -17,6 +18,8 @@ export function autoLayout(
       return gridLayout(input);
     case 'force':
       return forceLayout(input);
+    case 'dagre':
+      return dagreLayout(input);
     default:
       // 静态枚举完整性保护
       return gridLayout(input);

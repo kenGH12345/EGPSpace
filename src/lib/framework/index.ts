@@ -35,10 +35,16 @@ export type { ComponentFactory } from './runtime/registry';
 
 // ── Solvers ──────────────────────────────────────────────────────────────
 export type {
+  SolverDomain,
+  SolverBase,
   IDomainSolver,
+  ITickSolver,
+  ISolver,
   PreCheckResult,
   SolveResult,
   SolveState,
+  SolveContext,
+  TickContext,
 } from './contracts/solver';
 export { SolverError } from './contracts/solver';
 
@@ -84,6 +90,8 @@ export type {
   LayoutSpec,
   LayoutMetadata,
   AssemblyBundle,
+  MacroPortRef,
+  MacroExportPortMap,
 } from './contracts/layout';
 export {
   isLayoutSpec,
@@ -91,3 +99,10 @@ export {
   layoutLookup,
   isAssemblyBundle,
 } from './contracts/layout';
+
+// ── Macro / Composite (nested sub-graphs) ──────────────────────────────
+export type { CompositeComponentProps } from './macro/composite-component';
+export { CompositeComponent } from './macro/composite-component';
+export type { MacroDefinition, MacroResolver } from './macro/flattener';
+export { SpecFlattener } from './macro/flattener';
+export { macroPortRefKey } from './macro/port-map';

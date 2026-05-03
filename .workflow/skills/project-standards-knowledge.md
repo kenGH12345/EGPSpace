@@ -16,7 +16,7 @@ triggers:
     - architect
 load_level: session
 max_tokens: 1200
-generatedAt: 2026-04-30T01:39:49.885Z
+generatedAt: 2026-05-03T02:18:11.083Z
 project: egpspace
 sources:
   - skill-discovery
@@ -40,7 +40,7 @@ _No conventions detected._
 
 ## Directory Structure
 - Project has documented directory structure in AGENTS.md _(from AGENTS.md)_
-- Top-level directories: analysis, assets, coverage, docs, experiment-design-skill, physics-experiment-design, public, scripts, src _(from directory-scan)_
+- Top-level directories: analysis, assets, coverage, docs, experiment-design-skill, physics-experiment-design, public, scripts, src, tests _(from directory-scan)_
 
 ## Toolchain
 - npm script "build": bash ./scripts/build.sh _(from package.json)_

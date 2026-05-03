@@ -183,3 +183,55 @@ export const indicatorDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
   label(ctx, ax + 15, ay + 70, c.id, '#64748B');
   ctx.restore();
 };
+
+export const alcoholLampDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
+  const ax = c.anchor.x;
+  const ay = c.anchor.y;
+  const isLit = (c.props.isLit as boolean) || false;
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
+  ctx.save();
+  // base
+  ctx.fillStyle = '#E2E8F0';
+  ctx.strokeStyle = STROKE;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(ax + 10, ay + 50);
+  ctx.lineTo(ax + 20, ay + 30);
+  ctx.lineTo(ax + 40, ay + 30);
+  ctx.lineTo(ax + 50, ay + 50);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // wick
+  ctx.fillStyle = '#64748B';
+  ctx.fillRect(ax + 28, ay + 20, 4, 10);
+  
+  if (isLit) {
+    // flame
+    ctx.fillStyle = '#F97316';
+    ctx.beginPath();
+    ctx.moveTo(ax + 30, ay + 5);
+    ctx.quadraticCurveTo(ax + 40, ay + 15, ax + 30, ay + 20);
+    ctx.quadraticCurveTo(ax + 20, ay + 15, ax + 30, ay + 5);
+    ctx.fill();
+  }
+  label(ctx, ax + 15, ay + 70, c.id, '#64748B');
+  ctx.restore();
+};
+
+export const igniterDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
+  const ax = c.anchor.x;
+  const ay = c.anchor.y;
+  drawInteractionFrame(ctx, ax, ay, selected, hovered);
+  ctx.save();
+  // stick
+  ctx.fillStyle = '#D97706';
+  ctx.fillRect(ax + 28, ay + 15, 4, 30);
+  // head
+  ctx.fillStyle = '#DC2626';
+  ctx.beginPath();
+  ctx.arc(ax + 30, ay + 10, 6, 0, Math.PI * 2);
+  ctx.fill();
+  label(ctx, ax + 15, ay + 65, c.id, '#64748B');
+  ctx.restore();
+};

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-230106","createdAt":"2026-05-02T15:01:06.745Z"}
+{"seq":1,"ts":"2026-05-02T15:01:06.744Z","sessionId":"wf-20260502-230106","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"output/code.diff; output/execution-plan.md; modified framework core files; targeted test results"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

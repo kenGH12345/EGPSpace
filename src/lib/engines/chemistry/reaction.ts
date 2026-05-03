@@ -100,12 +100,22 @@ export class ChemistryReactionEngine implements IExperimentEngine {
     const useReactions = payload.reactions !== false;
     const maxIter = payload.maxIter ?? 8;
 
-    let perComponentOut: Record<string, Record<string, number | string>> = {};
+    // Detect heat sources
+    const isHeating = spec.components.some(
+      (c) => c.kind === 'alcohol-lamp' && c.props.isLit === true
+    );
+    const hasIgniter = spec.components.some((c) => c.kind === 'igniter');
+
+    let perComponentOut: Record<string, Record<string, number | string | boolean>> = {};
     let events: ReturnType<InteractionEngine<typeof graph, ReturnType<typeof solver.solve>>['tick']>['events'] = [];
     let iterations = 1;
     let unstable = false;
 
     if (useReactions) {
+      // Pass heating/igniter context to rules if they need it (currently via solver or engine meta, here we can attach to graph)
+      (graph as any).isHeating = isHeating;
+      (graph as any).hasIgniter = hasIgniter;
+
       const engine = new InteractionEngine(solver, maxIter).registerAll(CHEMISTRY_REACTIONS);
       const tick = engine.tick(graph);
       perComponentOut = this._formatPerComponent(tick.finalSolution.perComponent);
@@ -171,8 +181,8 @@ export class ChemistryReactionEngine implements IExperimentEngine {
 
   private _formatPerComponent(
     per: Record<string, { moles: number; phase: string; state: string; solidState?: string }>,
-  ): Record<string, Record<string, number | string>> {
-    const out: Record<string, Record<string, number | string>> = {};
+  ): Record<string, Record<string, number | string | boolean>> {
+    const out: Record<string, Record<string, number | string | boolean>> = {};
     for (const [id, v] of Object.entries(per)) {
       out[id] = {
         moles: v.moles,

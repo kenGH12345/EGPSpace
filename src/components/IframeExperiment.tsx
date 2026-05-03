@@ -4,7 +4,7 @@
  * IframeExperiment — Triple-Lock Architecture iframe container.
  *
  * Responsibilities:
- *  1. Load an approved HTML template by ID (whitelist enforced via getTemplate)
+ *  1. Load an approved HTML template by ID (registry metadata enforced via getTemplate)
  *  2. Provide a sandboxed iframe with origin-checked postMessage bus
  *  3. Expose param-sync + results callback API to parent React components
  *  4. Show skeleton UI during load and friendly fallback on error
@@ -31,7 +31,7 @@ import { registry } from '@/lib/engines/registry';
 import '@/lib/engines';
 
 export interface IframeExperimentProps {
-  /** Approved template ID — must be in the template registry whitelist. */
+  /** Approved template ID — must be approved in the template registry metadata. */
   templateId: string;
   /** Called when the iframe successfully loads AND template reports ready. */
   onReady?: (template: TemplateMetadata) => void;
@@ -62,7 +62,7 @@ export function IframeExperiment({
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Resolve template through the whitelist — if not approved, we fail fast.
+  // Resolve template through registry metadata — if not approved, we fail fast.
   const template = useMemo(() => getTemplate(templateId), [templateId]);
   const templateUrl = template ? `/templates/${template.templatePath}` : null;
 
@@ -258,7 +258,7 @@ export function IframeExperiment({
           <div style={{ fontSize: 32, marginBottom: 8 }}>🚫</div>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>实验模板未找到或尚未审核</div>
           <div style={{ fontSize: 13, color: '#B45309' }}>
-            模板 ID <code>{templateId}</code> 不在白名单中
+            模板 ID <code>{templateId}</code> 未在 registry metadata 中批准
           </div>
         </div>
       </div>

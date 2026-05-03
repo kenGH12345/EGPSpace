@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-213159","createdAt":"2026-05-02T13:31:59.993Z"}
+{"seq":1,"ts":"2026-05-02T13:31:59.993Z","sessionId":"wf-20260502-213159","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"output/analysis.md; contracts/solver.ts; core/EventBus.ts; core/TickEngine.ts; core/AbstractSolver.ts; runtime/engine.ts; framework/index.ts; domain solvers"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-235319","createdAt":"2026-05-02T15:53:19.497Z"}
+{"seq":1,"ts":"2026-05-02T15:53:19.497Z","sessionId":"wf-20260502-235319","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"output/requirement.md, src/lib/template-registry.ts, src/lib/framework/contracts/layout.ts, src/lib/framework/macro/flattener.ts, src/lib/editor/macro-utils.ts, src/lib/editor/editor-state-reducer.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

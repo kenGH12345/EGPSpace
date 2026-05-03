@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-204815","createdAt":"2026-05-02T12:48:15.499Z"}
+{"seq":1,"ts":"2026-05-02T12:48:15.499Z","sessionId":"wf-20260502-204815","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"IExperimentComponent, AbstractComponent, TemplateRegistry, Assembly, LayoutSpec, EventBus, TickEngine, solvers"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

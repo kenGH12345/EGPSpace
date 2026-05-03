@@ -20,6 +20,83 @@ const SELECTED_STROKE = '#2563EB';
 const COMPONENT_W = 50;
 const COMPONENT_H = 40;
 
+type PlacedComp = Parameters<CanvasDrawer>[1];
+
+export interface SvgPathDef {
+  d: string | ((c: PlacedComp, v: any) => string);
+  stroke?: string | ((c: PlacedComp, v: any) => string);
+  fill?: string | ((c: PlacedComp, v: any) => string);
+  lineWidth?: number;
+}
+
+export interface SvgTextDef {
+  x: number;
+  y: number;
+  text: string | ((c: PlacedComp, v: any) => string);
+  color?: string | ((c: PlacedComp, v: any) => string);
+  font?: string;
+  align?: CanvasTextAlign;
+}
+
+export interface SvgDrawerConfig {
+  width?: number;
+  height?: number;
+  paths?: SvgPathDef[];
+  texts?: SvgTextDef[];
+  customDraw?: CanvasDrawer;
+}
+
+export function createSvgDrawer(config: SvgDrawerConfig): CanvasDrawer {
+  return (ctx, c, v, selected, hovered) => {
+    const ax = c.anchor.x;
+    const ay = c.anchor.y;
+    drawInteractionFrame(ctx, ax, ay, selected, hovered);
+
+    ctx.save();
+    try {
+      ctx.translate(ax, ay);
+      if (config.paths) {
+        for (const p of config.paths) {
+          const d = typeof p.d === 'function' ? p.d(c, v) : p.d;
+          const stroke = typeof p.stroke === 'function' ? p.stroke(c, v) : p.stroke;
+          const fill = typeof p.fill === 'function' ? p.fill(c, v) : p.fill;
+
+          const path2d = new Path2D(d);
+          if (p.lineWidth) ctx.lineWidth = p.lineWidth;
+          else ctx.lineWidth = 1.5;
+
+          if (fill) {
+            ctx.fillStyle = fill;
+            ctx.fill(path2d);
+          }
+          if (stroke) {
+            ctx.strokeStyle = stroke;
+            ctx.stroke(path2d);
+          }
+        }
+      }
+
+      if (config.texts) {
+        for (const t of config.texts) {
+          const text = typeof t.text === 'function' ? t.text(c, v) : t.text;
+          const color = typeof t.color === 'function' ? t.color(c, v) : t.color;
+          ctx.fillStyle = color || LBL;
+          ctx.font = t.font || '11px sans-serif';
+          if (t.align) ctx.textAlign = t.align;
+          ctx.fillText(text, t.x, t.y);
+        }
+      }
+    } catch (e) {
+      console.error(`[SvgDrawer] failed to render component ${c.id}:`, e);
+    }
+    ctx.restore();
+
+    if (config.customDraw) {
+      config.customDraw(ctx, c, v, selected, hovered);
+    }
+  };
+}
+
 function drawLabel(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, color?: string): void {
   ctx.save();
   ctx.fillStyle = color || LBL;
@@ -54,199 +131,105 @@ function drawInteractionFrame(
   else if (hovered) drawHoverAt(ctx, ax, ay);
 }
 
-export const batteryDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
-  const ax = c.anchor.x;
-  const ay = c.anchor.y;
-  const voltage = (c.props.voltage as number) || 0;
-  drawInteractionFrame(ctx, ax, ay, selected, hovered);
-  ctx.save();
-  ctx.strokeStyle = '#DC2626';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(ax + 20, ay + 5);
-  ctx.lineTo(ax + 20, ay + 35);
-  ctx.stroke();
-  ctx.strokeStyle = '#1E3A8A';
-  ctx.beginPath();
-  ctx.moveTo(ax + 30, ay + 12);
-  ctx.lineTo(ax + 30, ay + 28);
-  ctx.stroke();
-  ctx.strokeStyle = STROKE;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay + 20);
-  ctx.lineTo(ax + 20, ay + 20);
-  ctx.moveTo(ax + 30, ay + 20);
-  ctx.lineTo(ax + 50, ay + 20);
-  ctx.stroke();
-  drawLabel(ctx, ax + 10, ay - 2, voltage.toFixed(1) + ' V');
-  drawLabel(ctx, ax + 15, ay + 50, c.id, '#64748B');
-  ctx.restore();
-};
+export const batteryDrawer: CanvasDrawer = createSvgDrawer({
+  paths: [
+    { d: 'M 20 5 L 20 35', stroke: '#DC2626', lineWidth: 3 },
+    { d: 'M 30 12 L 30 28', stroke: '#1E3A8A', lineWidth: 3 },
+    { d: 'M 0 20 L 20 20 M 30 20 L 50 20', stroke: STROKE }
+  ],
+  texts: [
+    { x: 10, y: -2, text: (c) => (((c.props.voltage as number) || 0).toFixed(1) + ' V') },
+    { x: 15, y: 50, text: (c) => c.id, color: '#64748B' }
+  ]
+});
 
-export const wireDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
-  const ax = c.anchor.x;
-  const ay = c.anchor.y;
-  drawInteractionFrame(ctx, ax, ay, selected, hovered);
-  ctx.save();
-  ctx.strokeStyle = STROKE;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay + 20);
-  ctx.lineTo(ax + 50, ay + 20);
-  ctx.stroke();
-  drawLabel(ctx, ax + 15, ay + 50, c.id, '#64748B');
-  ctx.restore();
-};
+export const switchDrawer: CanvasDrawer = createSvgDrawer({
+  paths: [
+    { d: 'M 0 20 L 15 20 M 35 20 L 50 20', stroke: STROKE },
+    { d: 'M 17.5 20 A 2.5 2.5 0 1 1 12.5 20 A 2.5 2.5 0 1 1 17.5 20', fill: STROKE },
+    { d: 'M 37.5 20 A 2.5 2.5 0 1 1 32.5 20 A 2.5 2.5 0 1 1 37.5 20', fill: STROKE },
+    {
+      d: (c) => c.props.closed ? 'M 15 20 L 35 20' : 'M 15 20 L 33 8',
+      stroke: (c) => c.props.closed ? '#16A34A' : '#DC2626',
+      lineWidth: 2
+    }
+  ],
+  texts: [
+    { x: 10, y: 50, text: (c) => c.id + (c.props.closed ? ' ✓' : ' ✗'), color: '#64748B' }
+  ]
+});
 
-export const switchDrawer: CanvasDrawer = (ctx, c, _v, selected, hovered) => {
-  const ax = c.anchor.x;
-  const ay = c.anchor.y;
-  const closed = !!c.props.closed;
-  drawInteractionFrame(ctx, ax, ay, selected, hovered);
-  ctx.save();
-  ctx.strokeStyle = STROKE;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay + 20);
-  ctx.lineTo(ax + 15, ay + 20);
-  ctx.moveTo(ax + 35, ay + 20);
-  ctx.lineTo(ax + 50, ay + 20);
-  ctx.stroke();
-  ctx.fillStyle = STROKE;
-  ctx.beginPath();
-  ctx.arc(ax + 15, ay + 20, 2.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(ax + 35, ay + 20, 2.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = closed ? '#16A34A' : '#DC2626';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  if (closed) {
-    ctx.moveTo(ax + 15, ay + 20);
-    ctx.lineTo(ax + 35, ay + 20);
-  } else {
-    ctx.moveTo(ax + 15, ay + 20);
-    ctx.lineTo(ax + 33, ay + 8);
+export const bulbDrawer: CanvasDrawer = createSvgDrawer({
+  paths: [
+    { d: 'M 0 20 L 15 20 M 35 20 L 50 20', stroke: STROKE },
+    { d: 'M 17 12 L 33 28 M 17 28 L 33 12', stroke: '#7C2D12', lineWidth: 1 }
+  ],
+  texts: [
+    { x: 15, y: 50, text: (c) => c.id, color: '#64748B' },
+    { x: 2, y: -4, text: (c, v) => v?.state === 'overload' ? '⚠ 过载' : '', color: '#DC2626' }
+  ],
+  customDraw: (ctx, c, v) => {
+    const ax = c.anchor.x;
+    const ay = c.anchor.y;
+    const glow = Math.max(0, Math.min(1.5, (v?.glow as number) || 0));
+    const state = (v?.state as string) || 'normal';
+    
+    ctx.save();
+    ctx.translate(ax, ay);
+    
+    const cx = 25;
+    const cy = 20;
+    const intensity = Math.min(1, glow);
+    ctx.fillStyle = `rgba(250, 204, 21, ${0.2 + intensity * 0.8})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = state === 'overload' ? '#DC2626' : STROKE;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.restore();
   }
-  ctx.stroke();
-  drawLabel(ctx, ax + 10, ay + 50, c.id + (closed ? ' ✓' : ' ✗'), '#64748B');
-  ctx.restore();
-};
+});
 
-export const resistorDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
-  const ax = c.anchor.x;
-  const ay = c.anchor.y;
-  const R = (c.props.resistance as number) || 0;
-  const I = (v?.current as number) || 0;
-  drawInteractionFrame(ctx, ax, ay, selected, hovered);
-  ctx.save();
-  ctx.strokeStyle = STROKE;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay + 20);
-  ctx.lineTo(ax + 10, ay + 20);
-  ctx.moveTo(ax + 40, ay + 20);
-  ctx.lineTo(ax + 50, ay + 20);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(ax + 10, ay + 20);
-  const xs = [13, 16, 19, 22, 25, 28, 31, 34, 37, 40];
-  const ys = [14, 26, 14, 26, 14, 26, 14, 26, 14, 20];
-  for (let i = 0; i < xs.length; i++) ctx.lineTo(ax + xs[i], ay + ys[i]);
-  ctx.stroke();
-  drawLabel(ctx, ax + 12, ay - 2, R.toFixed(1) + 'Ω');
-  drawLabel(ctx, ax + 10, ay + 50, `${c.id} · ${I.toFixed(3)}A`, '#64748B');
-  ctx.restore();
-};
+export const wireDrawer: CanvasDrawer = createSvgDrawer({
+  paths: [
+    { d: 'M 0 20 L 50 20', stroke: STROKE }
+  ],
+  texts: [
+    { x: 15, y: 50, text: (c) => c.id, color: '#64748B' }
+  ]
+});
 
-export const bulbDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
-  const ax = c.anchor.x;
-  const ay = c.anchor.y;
-  const glow = Math.max(0, Math.min(1.5, (v?.glow as number) || 0));
-  const state = (v?.state as string) || 'normal';
-  drawInteractionFrame(ctx, ax, ay, selected, hovered);
-  ctx.save();
-  ctx.strokeStyle = STROKE;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay + 20);
-  ctx.lineTo(ax + 15, ay + 20);
-  ctx.moveTo(ax + 35, ay + 20);
-  ctx.lineTo(ax + 50, ay + 20);
-  ctx.stroke();
-  const cx = ax + 25;
-  const cy = ay + 20;
-  const intensity = Math.min(1, glow);
-  ctx.fillStyle = `rgba(250, 204, 21, ${0.2 + intensity * 0.8})`;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = state === 'overload' ? '#DC2626' : STROKE;
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.strokeStyle = '#7C2D12';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(cx - 8, cy - 8);
-  ctx.lineTo(cx + 8, cy + 8);
-  ctx.moveTo(cx - 8, cy + 8);
-  ctx.lineTo(cx + 8, cy - 8);
-  ctx.stroke();
-  drawLabel(ctx, ax + 15, ay + 50, c.id, '#64748B');
-  if (state === 'overload') drawLabel(ctx, ax + 2, ay - 4, '⚠ 过载', '#DC2626');
-  ctx.restore();
-};
+export const ammeterDrawer: CanvasDrawer = createSvgDrawer({
+  paths: [
+    { d: 'M 0 20 L 13 20 M 37 20 L 50 20', stroke: STROKE },
+    { d: 'M 37 20 A 12 12 0 1 1 13 20 A 12 12 0 1 1 37 20', stroke: STROKE, fill: '#E0F2FE' }
+  ],
+  texts: [
+    { x: 22, y: 23, text: 'A', color: '#0369A1', font: 'bold 10px sans-serif' },
+    { x: 2, y: 50, text: (c, v) => `${c.id} · ${((v?.current as number) || 0).toFixed(3)}A`, color: '#64748B' }
+  ]
+});
 
-export const ammeterDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
-  const ax = c.anchor.x;
-  const ay = c.anchor.y;
-  const I = (v?.current as number) || 0;
-  drawInteractionFrame(ctx, ax, ay, selected, hovered);
-  ctx.save();
-  ctx.strokeStyle = STROKE;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay + 20);
-  ctx.lineTo(ax + 13, ay + 20);
-  ctx.moveTo(ax + 37, ay + 20);
-  ctx.lineTo(ax + 50, ay + 20);
-  ctx.stroke();
-  ctx.fillStyle = '#E0F2FE';
-  ctx.beginPath();
-  ctx.arc(ax + 25, ay + 20, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#0369A1';
-  ctx.font = 'bold 10px sans-serif';
-  ctx.fillText('A', ax + 22, ay + 23);
-  drawLabel(ctx, ax + 2, ay + 50, `${c.id} · ${I.toFixed(3)}A`, '#64748B');
-  ctx.restore();
-};
+export const voltmeterDrawer: CanvasDrawer = createSvgDrawer({
+  paths: [
+    { d: 'M 0 20 L 13 20 M 37 20 L 50 20', stroke: STROKE },
+    { d: 'M 37 20 A 12 12 0 1 1 13 20 A 12 12 0 1 1 37 20', stroke: STROKE, fill: '#FEF3C7' }
+  ],
+  texts: [
+    { x: 22, y: 23, text: 'V', color: '#92400E', font: 'bold 10px sans-serif' },
+    { x: 2, y: 50, text: (c, v) => `${c.id} · ${((v?.voltage as number) || 0).toFixed(2)}V`, color: '#64748B' }
+  ]
+});
 
-export const voltmeterDrawer: CanvasDrawer = (ctx, c, v, selected, hovered) => {
-  const ax = c.anchor.x;
-  const ay = c.anchor.y;
-  const U = (v?.voltage as number) || 0;
-  drawInteractionFrame(ctx, ax, ay, selected, hovered);
-  ctx.save();
-  ctx.strokeStyle = STROKE;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay + 20);
-  ctx.lineTo(ax + 13, ay + 20);
-  ctx.moveTo(ax + 37, ay + 20);
-  ctx.lineTo(ax + 50, ay + 20);
-  ctx.stroke();
-  ctx.fillStyle = '#FEF3C7';
-  ctx.beginPath();
-  ctx.arc(ax + 25, ay + 20, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#92400E';
-  ctx.font = 'bold 10px sans-serif';
-  ctx.fillText('V', ax + 22, ay + 23);
-  drawLabel(ctx, ax + 2, ay + 50, `${c.id} · ${U.toFixed(2)}V`, '#64748B');
-  ctx.restore();
-};
+export const resistorDrawer: CanvasDrawer = createSvgDrawer({
+  paths: [
+    { d: 'M 0 20 L 10 20 M 40 20 L 50 20', stroke: STROKE },
+    { d: 'M 10 20 L 13 14 L 16 26 L 19 14 L 22 26 L 25 14 L 28 26 L 31 14 L 34 26 L 37 14 L 40 20', stroke: STROKE }
+  ],
+  texts: [
+    { x: 12, y: -2, text: (c) => (((c.props.resistance as number) || 0).toFixed(1) + 'Ω') },
+    { x: 10, y: 50, text: (c, v) => `${c.id} · ${((v?.current as number) || 0).toFixed(3)}A`, color: '#64748B' }
+  ]
+});

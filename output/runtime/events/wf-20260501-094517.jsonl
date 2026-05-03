@@ -1,0 +1,3 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260501-094517","createdAt":"2026-05-01T01:45:17.547Z"}
+{"seq":1,"ts":"2026-05-01T01:45:17.547Z","sessionId":"wf-20260501-094517","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"output/analysis.md, src/lib/framework/macro/flattener.ts, src/lib/editor/editor-state.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":2,"ts":"2026-05-01T01:50:19.925Z","sessionId":"wf-20260501-094517","kind":"stage_completed","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageOutput":"architecture.md 6 slots + 14文件 + 决策4条 + 序列图 + UI草图"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

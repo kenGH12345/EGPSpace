@@ -361,6 +361,7 @@ export const PARAM_RANGE_RULES: Record<PhysicsEngineType, ParamRangeRule[]> = {
   lever: LEVER_RULES,
   refraction: REFRACTION_RULES,
   circuit: CIRCUIT_RULES,
+  'quantum-entanglement': [],
   pendulum: [],
   wave: [],
   // Chemistry
@@ -401,6 +402,7 @@ export const FORMULA_KNOWLEDGE: Record<PhysicsEngineType, FormulaKnowledge[]> = 
     { name: '欧姆定律', keyVariables: ['voltage', 'resistance'], resultVariable: 'current', canonicalExpression: 'I = U / R' },
     { name: '功率公式', keyVariables: ['voltage', 'current'], resultVariable: 'power', canonicalExpression: 'P = U × I' },
   ],
+  'quantum-entanglement': [],
   pendulum: [],
   wave: [],
   // ── Chemistry ──

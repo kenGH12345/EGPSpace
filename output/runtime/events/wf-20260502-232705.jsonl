@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-232705","createdAt":"2026-05-02T15:27:06.025Z"}
+{"seq":1,"ts":"2026-05-02T15:27:06.025Z","sessionId":"wf-20260502-232705","kind":"stage_started","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageInput":"output/analysis.md, output/architecture.md, TickEngine, requestAnimationFrame call sites"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

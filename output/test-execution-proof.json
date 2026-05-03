@@ -1,5 +1,5 @@
 {
-  "executedAt": "2026-04-30T02:43:41.240Z",
+  "executedAt": "2026-05-03T01:49:18.013Z",
   "sessionId": "",
   "command": "npm test",
   "exitCode": 0,
@@ -7,7 +7,36 @@
   "totalTests": 0,
   "passedTests": 0,
   "failedTests": 0,
-  "durationMs": 5625,
+  "skippedTests": 0,
+  "durationMs": 5527,
   "passRate": 0,
-  "proofHash": "a4d28c75653bd594c1b5554208a79a33bb3fb0bc16654f20eef443b2e842ccf3"
+  "testStatus": {
+    "overallPassed": true,
+    "rootCause": "tests_passed",
+    "contradiction": false,
+    "countsKnown": false,
+    "countsPassed": false,
+    "processPassed": true,
+    "stderrPresent": false,
+    "stderrExcerpt": "",
+    "outputTail": "> projects@0.1.0 test\n> jest",
+    "reasons": [
+      {
+        "dimension": "test-counts",
+        "passed": null,
+        "totalTests": null,
+        "passedTests": null,
+        "failedTests": null,
+        "skippedTests": null,
+        "message": "No parseable test counts found in runner output"
+      },
+      {
+        "dimension": "process-exit",
+        "passed": true,
+        "exitCode": 0,
+        "message": "Process exited with code 0"
+      }
+    ]
+  },
+  "proofHash": "2aa3c6ea765b31c419101c3274b22a4c7aac8bd59e0dcb8f17eabdd38f0e81d5"
 }

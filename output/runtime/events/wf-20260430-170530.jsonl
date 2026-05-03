@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260430-170530","createdAt":"2026-04-30T09:05:30.438Z"}
+{"seq":1,"ts":"2026-04-30T09:05:30.438Z","sessionId":"wf-20260430-170530","kind":"stage_started","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageInput":"无"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

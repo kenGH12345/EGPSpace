@@ -6,6 +6,7 @@ import {
   screenToCanvas,
   canvasToScreen,
   getPortScreenPos,
+  getPortCanvasPos,
   componentBounds,
   isPointInBounds,
   type EditorAction,
@@ -62,66 +63,132 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
     return () => ro.disconnect();
   }, []);
 
-  // ── Paint ─────────────────────────────────────────────────────────
+  // ── Lerp State ────────────────────────────────────────────────────
+  const lerpStateRef = useRef<Record<string, Record<string, number>>>({});
+
+  // ── Paint Loop ────────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    // handle HiDPI
-    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    if (canvas.width !== canvasSize.width * dpr || canvas.height !== canvasSize.height * dpr) {
-      canvas.width = canvasSize.width * dpr;
-      canvas.height = canvasSize.height * dpr;
-    }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
 
-    // Grid background
-    drawGrid(ctx, canvasSize, state.camera);
+    let reqId: number;
 
-    // Apply camera transform for component drawing
-    ctx.save();
-    ctx.translate(state.camera.offset.x, state.camera.offset.y);
-    ctx.scale(state.camera.zoom, state.camera.zoom);
+    const tick = () => {
+      reqId = requestAnimationFrame(tick);
 
-    for (const p of state.placed) {
-      const drawer = config.drawers[p.kind];
-      if (!drawer) continue;
-      const selected = state.selection.kind === 'component' && state.selection.id === p.id;
-      const hovered = state.hoveredId === p.id;
-      drawer(ctx, p, runResult?.[p.id], selected, hovered);
-    }
-
-    // Connections: draw in canvas coords
-    ctx.strokeStyle = config.connection.stroke;
-    ctx.lineWidth = config.connection.strokeWidth;
-    if (config.connection.dash) ctx.setLineDash(config.connection.dash);
-    for (let i = 0; i < state.connections.length; i++) {
-      const conn = state.connections[i];
-      const fromComp = state.placed.find((pp) => pp.id === conn.from.componentId);
-      const toComp = state.placed.find((pp) => pp.id === conn.to.componentId);
-      if (!fromComp || !toComp) continue;
-      const fromOffset = config.portLayout[fromComp.kind]?.[conn.from.portName];
-      const toOffset = config.portLayout[toComp.kind]?.[conn.to.portName];
-      if (!fromOffset || !toOffset) continue;
-      const fx = fromComp.anchor.x + fromOffset.dx;
-      const fy = fromComp.anchor.y + fromOffset.dy;
-      const tx = toComp.anchor.x + toOffset.dx;
-      const ty = toComp.anchor.y + toOffset.dy;
-      const selected = state.selection.kind === 'connection' && state.selection.index === i;
-      ctx.save();
-      if (selected) {
-        ctx.strokeStyle = '#2563EB';
-        ctx.lineWidth = config.connection.strokeWidth + 1;
+      // handle HiDPI
+      const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+      if (canvas.width !== canvasSize.width * dpr || canvas.height !== canvasSize.height * dpr) {
+        canvas.width = canvasSize.width * dpr;
+        canvas.height = canvasSize.height * dpr;
       }
-      ctx.beginPath();
-      ctx.moveTo(fx, fy);
-      ctx.lineTo(tx, ty);
-      ctx.stroke();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+
+      // Grid background
+      drawGrid(ctx, canvasSize, state.camera);
+
+      // Apply camera transform for component drawing
+      ctx.save();
+      ctx.translate(state.camera.offset.x, state.camera.offset.y);
+      ctx.scale(state.camera.zoom, state.camera.zoom);
+
+      // ── Lerp Update & Component Draw ──
+      const alpha = 0.15;
+      for (const p of state.placed) {
+        if (!lerpStateRef.current[p.id]) {
+          lerpStateRef.current[p.id] = {};
+        }
+        const localLerp = lerpStateRef.current[p.id];
+        const target = runResult?.[p.id] as Record<string, unknown> | undefined;
+        
+        // 1. Target interpolation
+        if (target) {
+          for (const [k, v] of Object.entries(target)) {
+            if (typeof v === 'number') {
+              const curr = localLerp[k] ?? 0;
+              localLerp[k] = curr + (v - curr) * alpha;
+              if (Math.abs(localLerp[k] - v) < 0.001) localLerp[k] = v;
+            }
+          }
+        } else {
+          // Decay numeric properties to 0 if engine drops them (e.g. broken circuit -> no current)
+          for (const k of Object.keys(localLerp)) {
+            const curr = localLerp[k];
+            localLerp[k] = curr + (0 - curr) * alpha;
+            if (Math.abs(localLerp[k]) < 0.001) localLerp[k] = 0;
+          }
+        }
+
+        // 2. Mix results: Lerp values overwrite target raw values
+        const mixedResult: Record<string, unknown> = target ? { ...target } : {};
+        for (const [k, v] of Object.entries(localLerp)) {
+          mixedResult[k] = v;
+        }
+
+        const drawer = config.drawers[p.kind];
+        if (!drawer) continue;
+        const selected =
+          (state.selection.kind === 'component' && state.selection.id === p.id) ||
+          (state.selection.kind === 'multi' && state.selection.ids.includes(p.id));
+        const hovered = state.hoveredId === p.id;
+        
+        const rotation = p.anchor.rotation || 0;
+        if (rotation !== 0) {
+          ctx.save();
+          const entry = config.palette.find((x) => x.kind === p.kind);
+          const size = entry?.hintSize ?? { width: 50, height: 40 };
+          const cx = p.anchor.x + size.width / 2;
+          const cy = p.anchor.y + size.height / 2;
+          ctx.translate(cx, cy);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.translate(-cx, -cy);
+          drawer(ctx, p, mixedResult, selected, hovered);
+          ctx.restore();
+        } else {
+          drawer(ctx, p, mixedResult, selected, hovered);
+        }
+      }
+
+      // Connections: draw in canvas coords
+      ctx.strokeStyle = config.connection.stroke;
+      ctx.lineWidth = config.connection.strokeWidth;
+      if (config.connection.dash) ctx.setLineDash(config.connection.dash);
+      for (let i = 0; i < state.connections.length; i++) {
+        const conn = state.connections[i];
+        const fromComp = state.placed.find((pp) => pp.id === conn.from.componentId);
+        const toComp = state.placed.find((pp) => pp.id === conn.to.componentId);
+        if (!fromComp || !toComp) continue;
+        
+        const fromPos = getPortCanvasPos(fromComp, conn.from.portName, config.portLayout, config.palette);
+        const toPos = getPortCanvasPos(toComp, conn.to.portName, config.portLayout, config.palette);
+        const fx = fromPos.x;
+        const fy = fromPos.y;
+        const tx = toPos.x;
+        const ty = toPos.y;
+        
+        const selected = state.selection.kind === 'connection' && state.selection.index === i;
+        ctx.save();
+        if (selected) {
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = config.connection.strokeWidth + 1;
+        }
+        ctx.beginPath();
+        ctx.moveTo(fx, fy);
+        const midX = (fx + tx) / 2;
+        ctx.lineTo(midX, fy);
+        ctx.lineTo(midX, ty);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        ctx.restore();
+      }
       ctx.restore();
-    }
-    ctx.restore();
+    };
+
+    reqId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(reqId);
   }, [state, config, canvasSize, runResult]);
 
   // ── Event handlers ────────────────────────────────────────────────
@@ -146,14 +213,34 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
         config.portLayout,
         state.camera,
         PORT_HIT_RADIUS_PX,
+        config.palette,
       );
       if (portHit) {
         if (state.draftWire) {
-          dispatch({
-            type: 'finishWire',
-            componentId: portHit.componentId,
-            port: portHit.portName,
-          });
+          const fromComp = state.placed.find((p) => p.id === state.draftWire!.from.componentId);
+          const toComp = state.placed.find((p) => p.id === portHit.componentId);
+          
+          if (fromComp && toComp) {
+            const canConnect = config.validateConnection
+              ? config.validateConnection(
+                  { kind: fromComp.kind, port: state.draftWire.from.port },
+                  { kind: toComp.kind, port: portHit.portName }
+                )
+              : true;
+            
+            if (canConnect) {
+              dispatch({
+                type: 'finishWire',
+                componentId: portHit.componentId,
+                port: portHit.portName,
+              });
+            } else {
+              // 取消连线或给出反馈（这里选择取消连线）
+              dispatch({ type: 'cancelWire' });
+            }
+          } else {
+            dispatch({ type: 'cancelWire' });
+          }
         } else {
           dispatch({
             type: 'startWire',
@@ -173,6 +260,13 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
         return isPointInBounds(canvasPt, b);
       });
       if (hit) {
+        if (e.shiftKey) {
+          // Shift+Click toggles membership in multi-selection; do not start drag
+          dispatch({ type: 'toggleComponentSelection', id: hit.id });
+          e.stopPropagation();
+          e.preventDefault();
+          return;
+        }
         dispatch({ type: 'selectComponent', id: hit.id });
         dragRef.current = { kind: 'move', id: hit.id, lastCanvas: canvasPt };
         return;
@@ -242,8 +336,82 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
   );
 
   const onMouseUp = useCallback(() => {
+    if (dragRef.current && dragRef.current.kind === 'move') {
+      const movedId = dragRef.current.id;
+      const movedComp = state.placed.find((p) => p.id === movedId);
+      const movingPorts = movedComp ? config.portLayout[movedComp.kind] : null;
+
+      if (movedComp && movingPorts) {
+        let bestSnap: {
+          targetCompId: string;
+          targetPort: string;
+          myPort: string;
+          dist: number;
+          targetPos: { x: number; y: number };
+          myOffset: { dx: number; dy: number };
+        } | null = null;
+
+        const SNAP_RADIUS = 20; // 磁吸侦测半径 (Canvas坐标系单位)
+
+        for (const [myPortName] of Object.entries(movingPorts)) {
+          const myPos = getPortCanvasPos(movedComp, myPortName, config.portLayout, config.palette);
+
+          for (const other of state.placed) {
+            if (other.id === movedId) continue;
+            const otherPorts = config.portLayout[other.kind];
+            if (!otherPorts) continue;
+
+            for (const [otherPortName] of Object.entries(otherPorts)) {
+              const otherPos = getPortCanvasPos(other, otherPortName, config.portLayout, config.palette);
+              const dist = Math.hypot(myPos.x - otherPos.x, myPos.y - otherPos.y);
+
+              if (dist < SNAP_RADIUS) {
+                const canConnect = config.validateConnection
+                  ? config.validateConnection(
+                      { kind: movedComp.kind, port: myPortName },
+                      { kind: other.kind, port: otherPortName },
+                    )
+                  : true;
+
+                if (canConnect && (!bestSnap || dist < bestSnap.dist)) {
+                  bestSnap = {
+                    targetCompId: other.id,
+                    targetPort: otherPortName,
+                    myPort: myPortName,
+                    dist,
+                    targetPos: otherPos,
+                    myOffset: { dx: myPos.x - movedComp.anchor.x, dy: myPos.y - movedComp.anchor.y }
+                  };
+                }
+              }
+            }
+          }
+        }
+
+        if (bestSnap) {
+          // 对齐坐标：让移动元件的端口与目标端口精确重合
+          const newAnchor = {
+            x: bestSnap.targetPos.x - bestSnap.myOffset.dx,
+            y: bestSnap.targetPos.y - bestSnap.myOffset.dy,
+          };
+
+          // 批量派发：位置微调 + 建立连接
+          dispatch({
+            type: 'batch',
+            actions: [
+              { type: 'setComponentAnchor', id: movedId, anchor: newAnchor },
+              {
+                type: 'addConnection',
+                from: { componentId: movedId, portName: bestSnap.myPort },
+                to: { componentId: bestSnap.targetCompId, portName: bestSnap.targetPort },
+              },
+            ],
+          });
+        }
+      }
+    }
     dragRef.current = null;
-  }, []);
+  }, [state.placed, config.portLayout, config.palette, dispatch]);
 
   const onMouseLeave = useCallback(() => {
     dragRef.current = null;
@@ -255,14 +423,20 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
   // ── Keyboard ───────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Avoid intercepting input fields for any hotkey
+      const tag = (e.target as HTMLElement | null)?.tagName ?? '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
       if (e.key === 'Escape') {
         if (state.draftWire) dispatch({ type: 'cancelWire' });
         else dispatch({ type: 'selectComponent', id: null });
+      } else if (e.key === 'r' || e.key === 'R') {
+        if (state.selection.kind === 'component') {
+          e.preventDefault();
+          dispatch({ type: 'rotateComponent', id: state.selection.id, deltaDegrees: 90 });
+        }
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         if (state.selection.kind !== 'none') {
-          // Avoid intercepting input fields
-          const tag = (e.target as HTMLElement | null)?.tagName ?? '';
-          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
           e.preventDefault();
           dispatch({ type: 'deleteSelection' });
         }
@@ -336,15 +510,15 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
               state.camera,
             );
             const toScreen = canvasToScreen(state.draftWire.cursor, state.camera);
+            const midX = (fromScreen.x + toScreen.x) / 2;
+            const pathD = `M ${fromScreen.x} ${fromScreen.y} L ${midX} ${fromScreen.y} L ${midX} ${toScreen.y} L ${toScreen.x} ${toScreen.y}`;
             return (
-              <line
-                x1={fromScreen.x}
-                y1={fromScreen.y}
-                x2={toScreen.x}
-                y2={toScreen.y}
+              <path
+                d={pathD}
                 stroke="#2563EB"
                 strokeWidth={2}
                 strokeDasharray="5,3"
+                fill="none"
               />
             );
           })()}

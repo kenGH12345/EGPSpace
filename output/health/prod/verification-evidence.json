@@ -1,14 +1,14 @@
 {
   "protocolVersion": "evidence-v1",
-  "generatedAt": "2026-04-30T02:57:13.494Z",
-  "sessionId": "wf-20260430013937.",
+  "generatedAt": "2026-05-03T02:18:10.986Z",
+  "sessionId": "wf-202605031017",
   "runCategory": "prod",
   "traceFingerprint": {
     "exists": true,
     "path": "C:\\workspace\\EGPSpace\\output\\health\\prod\\workflow-trace.jsonl",
-    "size": 192687,
-    "mtime": "2026-04-30T02:57:13.434Z",
-    "hash": "3a9be076c1fea8ee4f75ee64ee1702c7e2430f5a655d13511a1912d9ba21780a"
+    "size": 3749,
+    "mtime": "2026-05-03T02:18:10.931Z",
+    "hash": "5a65d4b6ffe379161b22471cbf69cd56ce36edaf1b644dc7a988e311fb117f51"
   },
   "qualityReportFingerprint": {
     "exists": false,
@@ -29,46 +29,46 @@
       "stage": "ANALYSE",
       "exists": true,
       "path": "C:\\workspace\\EGPSpace\\output\\analysis.md",
-      "size": 21617,
-      "mtime": "2026-04-30T01:44:06.036Z",
-      "hash": "f4af787beeaac2da8da874cc997c627ee646499586075f2f84b5e58abc7144b5"
+      "size": 3079,
+      "mtime": "2026-05-03T02:13:36.717Z",
+      "hash": "06d4f24e6046488b9a673af006ce951468b6ee5d0ddc0460f14bc08b57d26670"
     },
     {
       "stage": "ARCHITECT",
       "exists": true,
       "path": "C:\\workspace\\EGPSpace\\output\\architecture.md",
-      "size": 23856,
-      "mtime": "2026-04-30T01:47:02.816Z",
-      "hash": "71336c1f93b1f56b483bee6106a1676afbdd0ff01a0104b3d04d1488147fadf7"
+      "size": 4784,
+      "mtime": "2026-05-03T02:13:36.718Z",
+      "hash": "25bc028817896874d17619800a4af8ed32a337d139bdba2e5c5c11cbb503157d"
     },
     {
       "stage": "PLAN",
       "exists": true,
       "path": "C:\\workspace\\EGPSpace\\output\\execution-plan.md",
-      "size": 16550,
-      "mtime": "2026-04-30T01:50:30.692Z",
-      "hash": "62baf56f4a4ad3b8f7f85fc701faa65446cf1b1b432d77758eb6b669cc8d098c"
+      "size": 3382,
+      "mtime": "2026-05-03T02:13:36.726Z",
+      "hash": "e98c830222dd29f7f8b54455e555c05c4df4699ad0e6780ced092926fbd7da48"
     },
     {
       "stage": "CODE",
       "exists": true,
       "path": "C:\\workspace\\EGPSpace\\output\\code.diff",
-      "size": 4698,
-      "mtime": "2026-04-29T15:38:12.051Z",
-      "hash": "554b20225b48a7647232cf3bf876acf474f8420d94844f13acc6282b075b5da7"
+      "size": 7574,
+      "mtime": "2026-05-03T02:13:36.719Z",
+      "hash": "954afaa43668109e3f049ab749dad2bb40011359a360b8f7f646033a80de195a"
     },
     {
       "stage": "TEST",
       "exists": true,
       "path": "C:\\workspace\\EGPSpace\\output\\test-report.md",
-      "size": 6639,
-      "mtime": "2026-04-30T02:55:16.245Z",
-      "hash": "78124fd9019f4855bfc0f245ce13d4d4d88e0a7791a000691cd1898709a60858"
+      "size": 6855,
+      "mtime": "2026-05-03T02:13:36.778Z",
+      "hash": "cfc0ca7d8208418b8cc6a76ee15947f0c670fc9701d7a9e84d1d70357986d041"
     }
   ],
   "verification": {
     "missingStageArtifacts": [],
     "stageCount": 5,
-    "completedStages": 4
+    "completedStages": 0
   }
 }

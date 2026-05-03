@@ -3,114 +3,33 @@
   "stage": "DEVELOP",
   "source": {
     "path": "output/code.diff",
-    "sourceHash": "554b20225b48a7647232cf3bf876acf474f8420d94844f13acc6282b075b5da7",
-    "artifactSize": 4698,
-    "updatedAt": "2026-04-29T15:38:12.051Z"
+    "sourceHash": "80b23f2907004c4a6fd989eaadc165e75eb75dbafc0bd355044066c3303de4a6",
+    "artifactSize": 2016,
+    "updatedAt": "2026-05-03T01:45:01.774Z"
   },
   "scope": {
-    "session": "wf-20260429132738.",
-    "requirementFingerprint": "framework 方案 物理分层重构 阶段"
+    "session": "wf-202605030940",
+    "requirementFingerprint": "wf 按这下面这三步顺序实现"
   },
   "content": {
-    "summary": "# F 阶段 · Code Diff 摘要\r\n\r\n> Session: wf-20260429132738. · 基线 e12560f\r\n\r\n## 核心变更（物理分层）\r\n\r\n### 新建目录\r\n- `src/lib/framework/contracts/`（9 文件 + index.ts）\r\n- `src/lib/framework/runtime/`（5 文件 + index.ts）\r\n- `src/lib/framework/builders/`（1 文件 + index.ts）\r\n\r\n### 删除目录\r\n- `src/lib/framework/components/`（5 文件迁走，目录删除）\r\n- `src/lib/framework/solvers/`（1 文件迁走，目录删除）\r\n- `src/lib/framework/interactions/`（3 文件迁走，目录删除）\r\n- `src/lib/framework/assembly/`（7 文件迁走，目录删除）\r\n\r\n### 15 核心文件迁移表（git mv）\r\n\r\n| 原位置 | 新位置 | 性质 |\r\n|--",
+    "summary": "��d\u0000i\u0000f\u0000f\u0000 \u0000-\u0000-\u0000g\u0000i\u0000t\u0000 \u0000a\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000 \u0000b\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000\r\u0000\n\u0000-\u0000-\u0000-\u0000 \u0000a\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000\r\u0000\n\u0000+\u0000+\u0000+\u0000 \u0000b\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000\r\u0000\n\u0000@\u0000@\u0000 \u0000-\u00001\u0000,\u00005\u0000 \u0000+\u00001\u0000,\u00006\u0000 \u0000@\u0000@\u0000\r\u0000\n\u0000+\u0000 \u0000/\u0000/\u0000 \u0000I\u0000m\u0000p\u0000l\u0000e\u0000m\u0000e\u0000n\u0000t\u0000e\u0000d\u0000 \u0000f\u0000a\u0000i\u0000r\u0000 \u0000s\u0000c\u0000h\u0000e\u0000d\u0000u\u0000l\u0000i\u0000n\u0000g\u0000 \u0000i\u0000n\u0000 \u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000\r\u0000\n\u0000d\u0000i\u0000f\u0000f\u0000 \u0000-\u0000",
     "outline": [],
     "keyPoints": [],
     "rootCause": [],
     "decisions": [],
-    "risks": [
-      "| R | 风险 | 缓解 | 证据 |",
-      "| R-A | hintSize 漏填 | fallback 50×40 | B-3/B-3b |",
-      "| R-B | snapGrid 异常值 | 守卫（grid>0 且 isFinite）| B-6/B-7 |",
-      "| R-C | hover 风暴 | ignoreActions 白名单 + 仅切换时 dispatch | H-18/H-19 + EditorCanvas |",
-      "| R-D | setComponentAnchor 被误 snap | 仅 moveComponent case | R-21/R-22 |",
-      "| R-E | drawer 签名 breaking | 可选参数 | 12 drawer 同步更新零 TSC 新错 |",
-      "---"
-    ],
+    "risks": [],
     "downstreamConsumers": [],
     "tasks": [],
     "acceptanceCriteria": [],
-    "testEvidence": [
-      "- `framework/__tests__/layout-spec.test.ts` · AC-D1 fs path `assembly/layout.ts` → `contracts/layout.ts`",
-      "- `framework/__tests__/assembly.test.ts` · AC-A/AC-D 扫描目录 `assembly/` → `{contracts, runtime, builders}`（AC-A 排除 contracts 合理豁免 ComponentDomain union）"
-    ],
-    "affectedFiles": [
-      "src/lib/editor/drawers/draw-helpers.ts",
-      "src/lib/editor/__tests__/editor-data-layer.test.ts",
-      "src/lib/editor/port-layout.ts",
-      "src/lib/editor/editor-config.ts",
-      "src/lib/editor/editor-state.ts",
-      "src/lib/editor/editor-state-reducer.ts",
-      "src/lib/editor/history.ts",
-      "src/lib/editor/index.ts",
-      "src/lib/editor/domain-configs/circuit.ts",
-      "src/lib/editor/domain-configs/chemistry.ts",
-      "src/lib/editor/drawers/circuit-drawers.ts",
-      "src/lib/editor/drawers/chemistry-drawers.ts",
-      "src/components/editor/EditorCanvas.tsx",
-      "src/components/editor/EditorShell.tsx",
-      "docs/editor-framework.md",
-      "chemistry/reaction.ts",
-      "src/lib/engines/chemistry/reaction.ts",
-      "src/lib/engines/index.ts",
-      "src/lib/framework/__tests__/layout-spec.test.ts",
-      "src/lib/framework/assembly/fluent.ts",
-      "docs/architecture-constraints.md",
-      "workflow/skills/tsc-workflow-gate.md",
-      "src/lib/framework/domains/chemistry/type-guards.ts",
-      "src/lib/framework/domains/chemistry/__tests__/type-guards.test.ts",
-      "src/lib/framework/domains/circuit/index.ts",
-      "src/lib/framework/assembly/layout.ts",
-      "src/lib/framework/domains/chemistry/components.ts",
-      "src/lib/framework/domains/chemistry/solver.ts",
-      "src/lib/framework/domains/chemistry/reactions/acid-base-neutralization.ts",
-      "src/lib/framework/domains/chemistry/reaction-utils.ts",
-      "src/lib/engines/__tests__/engines.test.ts",
-      "components/base.ts",
-      "contracts/component.ts",
-      "components/graph.ts",
-      "contracts/graph.ts",
-      "components/port.ts",
-      "contracts/port.ts",
-      "components/union-find.ts",
-      "runtime/union-find.ts",
-      "components/registry.ts",
-      "runtime/registry.ts",
-      "solvers/base.ts",
-      "contracts/solver.ts",
-      "interactions/rule.ts",
-      "contracts/rule.ts",
-      "interactions/events.ts",
-      "contracts/events.ts",
-      "interactions/engine.ts",
-      "runtime/engine.ts",
-      "assembly/spec.ts",
-      "contracts/assembly.ts",
-      "assembly/layout.ts",
-      "contracts/layout.ts",
-      "assembly/errors.ts",
-      "contracts/errors.ts",
-      "assembly/validator.ts",
-      "runtime/validator.ts",
-      "assembly/assembler.ts",
-      "runtime/assembler.ts",
-      "assembly/fluent.ts",
-      "builders/fluent.ts",
-      "src/lib/framework/index.ts",
-      "src/lib/framework/contracts/index.ts",
-      "src/lib/framework/runtime/index.ts",
-      "src/lib/framework/builders/index.ts",
-      "workflow/skills/framework-boundary.md",
-      "framework/__tests__/layout-spec.test.ts",
-      "framework/__tests__/assembly.test.ts",
-      "assembly/index.ts"
-    ],
+    "testEvidence": [],
+    "affectedFiles": [],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "diff",
       "artifact": "code.diff",
       "filesChanged": [],
       "additions": 0,
-      "deletions": 36
+      "deletions": 0
     }
   },
   "coverage": {
@@ -119,278 +38,19 @@
     "hasKeyPoints": false,
     "hasRootCause": false,
     "hasDecisions": false,
-    "hasRisks": true,
+    "hasRisks": false,
     "hasDownstreamConsumers": false,
     "hasTasks": false,
     "hasAcceptanceCriteria": false,
-    "hasAffectedFiles": true,
+    "hasAffectedFiles": false,
     "hasFilesChanged": false,
-    "hasTestEvidence": true
+    "hasTestEvidence": false
   },
-  "evidenceRefs": [
-    {
-      "file": "components/base.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/component.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "components/graph.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/graph.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "components/port.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/port.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "components/union-find.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "runtime/union-find.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "components/registry.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "runtime/registry.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "solvers/base.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/solver.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "interactions/rule.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/rule.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "interactions/events.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/events.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "interactions/engine.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "runtime/engine.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "assembly/spec.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/assembly.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "assembly/layout.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/layout.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "assembly/errors.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "contracts/errors.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "assembly/validator.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "runtime/validator.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "assembly/assembler.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "runtime/assembler.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "assembly/fluent.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "builders/fluent.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "src/lib/framework/index.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "src/lib/framework/contracts/index.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "src/lib/framework/runtime/index.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "src/lib/framework/builders/index.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "docs/architecture-constraints.md",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "workflow/skills/framework-boundary.md",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "framework/__tests__/layout-spec.test.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "framework/__tests__/assembly.test.ts",
-      "artifact": "output/code.diff"
-    },
-    {
-      "file": "assembly/index.ts",
-      "artifact": "output/code.diff"
-    }
-  ],
+  "evidenceRefs": [],
   "relevance": {
-    "keywords": [
-      "framework",
-      "contracts",
-      "assembly",
-      "src",
-      "lib",
-      "runtime",
-      "type",
-      "文件",
-      "index",
-      "components",
-      "dominant",
-      "layout",
-      "builders",
-      "interactions",
-      "union",
-      "errors",
-      "regex",
-      "文件迁走",
-      "目录删除",
-      "graph",
-      "find",
-      "impl",
-      "barrel",
-      "domains",
-      "arch",
-      "audit",
-      "test",
-      "solvers",
-      "rule",
-      "spec",
-      "更新",
-      "新建聚合",
-      "import",
-      "批处理",
-      "eslint",
-      "阶段",
-      "删除目录",
-      "base",
-      "located",
-      "class"
-    ],
-    "files": [
-      "components/base.ts",
-      "contracts/component.ts",
-      "components/graph.ts",
-      "contracts/graph.ts",
-      "components/port.ts",
-      "contracts/port.ts",
-      "components/union-find.ts",
-      "runtime/union-find.ts",
-      "components/registry.ts",
-      "runtime/registry.ts",
-      "solvers/base.ts",
-      "contracts/solver.ts",
-      "interactions/rule.ts",
-      "contracts/rule.ts",
-      "interactions/events.ts",
-      "contracts/events.ts",
-      "interactions/engine.ts",
-      "runtime/engine.ts",
-      "assembly/spec.ts",
-      "contracts/assembly.ts",
-      "assembly/layout.ts",
-      "contracts/layout.ts",
-      "assembly/errors.ts",
-      "contracts/errors.ts",
-      "assembly/validator.ts",
-      "runtime/validator.ts",
-      "assembly/assembler.ts",
-      "runtime/assembler.ts",
-      "assembly/fluent.ts",
-      "builders/fluent.ts",
-      "src/lib/framework/index.ts",
-      "src/lib/framework/contracts/index.ts",
-      "src/lib/framework/runtime/index.ts",
-      "src/lib/framework/builders/index.ts",
-      "docs/architecture-constraints.md",
-      "workflow/skills/framework-boundary.md",
-      "framework/__tests__/layout-spec.test.ts",
-      "framework/__tests__/assembly.test.ts",
-      "assembly/index.ts"
-    ],
-    "modules": [
-      "components",
-      "contracts",
-      "components",
-      "contracts",
-      "components",
-      "contracts",
-      "components",
-      "runtime",
-      "components",
-      "runtime",
-      "solvers",
-      "contracts",
-      "interactions",
-      "contracts",
-      "interactions",
-      "contracts",
-      "interactions",
-      "runtime",
-      "assembly",
-      "contracts"
-    ]
+    "keywords": [],
+    "files": [],
+    "modules": []
   },
-  "generatedAt": "2026-04-29T15:38:26.999Z"
+  "generatedAt": "2026-05-03T01:45:53.303Z"
 }

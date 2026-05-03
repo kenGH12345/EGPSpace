@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, useMemo } from 'react';
 import Link from 'next/link';
 import { ExperimentKnowledgePanel } from '@/components/ExperimentKnowledgePanel';
 import {
@@ -10,7 +10,10 @@ import {
   type GeneratedConfig,
 } from '@/components/ExperimentRenderer';
 import { ExperimentChatPanel } from '@/components/ExperimentChatPanel';
+import { EditorShell } from '@/components/editor/EditorShell';
+import { getPresetBundle } from '@/lib/editor/preset-bundles';
 import type { ExperimentSchema } from '@/lib/experiment-schema';
+import type { AssemblyBundle } from '@/lib/framework';
 
 // 实验配置映射
 const experiments: Record<string, PresetExperiment & { component: 'buoyancy' | 'lever' | 'refraction' | 'circuit' | 'acid-base' }> = {
@@ -92,6 +95,9 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [formulas, setFormulas] = useState<Array<{ title: string; expression: string; note?: string }> | undefined>(undefined);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const presetBundle = getPresetBundle(id);
 
   // 客户端挂载后从 sessionStorage 加载配置
   useEffect(() => {
@@ -164,6 +170,33 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
   const backendTid = (aiSchema as (ExperimentSchema & { _templateId?: string }) | null)?._templateId || null;
   const resolvedTemplateId = resolveTemplateId(aiSchema, aiConfig, exp, backendTid);
 
+  const activeBundle = useMemo(() => {
+    if (presetBundle) return presetBundle;
+    if (aiSchema?.components && aiSchema.components.length > 0) {
+      const domain = aiSchema.meta?.physicsType === 'circuit' 
+        ? 'circuit' 
+        : (aiSchema.meta?.physicsType as string) === 'chemistry' 
+          ? 'chemistry'
+          : (exp?.subject === '物理' && exp?.component === 'refraction')
+            ? 'optics'
+            : (exp?.subject === '物理') 
+              ? 'mechanics'
+              : 'chemistry';
+
+      return {
+        spec: {
+          domain: domain,
+          components: aiSchema.components,
+          connections: (aiSchema.connections || []).map(c => ({
+            from: { componentId: c.from, portName: c.fromPort },
+            to: { componentId: c.to, portName: c.toPort }
+          }))
+        }
+      } as unknown as AssemblyBundle;
+    }
+    return null;
+  }, [presetBundle, aiSchema, exp]);
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 100%)' }}>
@@ -208,6 +241,22 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
     );
   }
 
+  if (isEditing && activeBundle) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white">
+        <div className="absolute top-2 right-4 z-[60] flex items-center gap-2">
+          <button
+            onClick={() => setIsEditing(false)}
+            className="px-3 py-1.5 bg-slate-800 text-white text-sm rounded hover:bg-slate-700 transition shadow-md"
+          >
+            退出编辑模式
+          </button>
+        </div>
+        <EditorShell initialDomain={activeBundle.spec.domain as any} initialBundle={activeBundle as any} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF5E6 100%)' }}>
       {/* 顶部导航 */}
@@ -230,6 +279,20 @@ export default function ExperimentPage({ params }: { params: Promise<{ id: strin
                 <p className="text-sm text-gray-500">{aiConfig?.subject || exp?.subject}</p>
               </div>
             </div>
+          </div>
+          <div className="flex items-center">
+            <button
+              onClick={() => setIsEditing(true)}
+              disabled={!activeBundle}
+              className={`px-4 py-2 text-sm font-medium rounded-xl transition shadow-sm ${
+                activeBundle 
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:opacity-90' 
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+              title={activeBundle ? '进入高级编辑模式，自由调整底层元件' : '该实验暂不支持高级编辑'}
+            >
+              {activeBundle ? '进入编辑模式 🛠️' : '无编辑器支持'}
+            </button>
           </div>
         </div>
       </div>

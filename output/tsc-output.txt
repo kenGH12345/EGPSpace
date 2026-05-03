@@ -1,0 +1,19 @@
+﻿src/app/experiments/[id]/page.tsx(172,11): error TS2367: This comparison appears to be unintentional because the types '"buoyancy" | "lever" | "refraction" | "pendulum" | "wave" | "quantum-entanglement" | "acid_base" | "electrolysis" | "reaction_rate" | "titration" | "combustion" | "osmosis" | ... 7 more ... | "generic"' and '"chemistry"' have no overlap.
+src/components/ExperimentRenderer.tsx(49,7): error TS2367: This comparison appears to be unintentional because the types '"buoyancy" | "lever" | "refraction" | "pendulum" | "wave" | "quantum-entanglement" | "acid_base" | "electrolysis" | "reaction_rate" | "titration" | "combustion" | "osmosis" | ... 8 more ... | undefined' and '"chemistry"' have no overlap.
+src/components/ExperimentRenderer.tsx(51,54): error TS2339: Property 'component' does not exist on type 'PresetExperiment'.
+src/lib/editor/domain-configs/mechanics.tsx(70,16): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(70,22): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(75,15): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(75,21): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(80,21): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(80,27): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(85,15): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(85,21): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(90,14): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(90,20): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(95,16): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/mechanics.tsx(95,22): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/optics.tsx(31,15): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/optics.tsx(31,21): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/optics.tsx(37,21): error TS2339: Property 'comp' does not exist on type 'CanvasRenderingContext2D'.
+src/lib/editor/domain-configs/optics.tsx(37,27): error TS2339: Property 'isSelected' does not exist on type 'CanvasRenderingContext2D'.

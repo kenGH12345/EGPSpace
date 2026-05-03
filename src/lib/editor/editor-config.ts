@@ -86,6 +86,12 @@ export interface EditorDomainConfig<D extends ComponentDomain = ComponentDomain>
   /** Default connection style for this domain. */
   connection: ConnectionSpec;
   /**
+   * Optional custom validator to check if a connection is logically allowed.
+   * Useful for auto-snap filtering (e.g. wire can only snap to battery ports).
+   * Return true to allow, false to reject. If undefined, all ports can connect.
+   */
+  validateConnection?: (from: { kind: string; port: string }, to: { kind: string; port: string }) => boolean;
+  /**
    * Optional bundle validator run before Engine.compute. Return an array of
    * error messages (empty = valid).
    */

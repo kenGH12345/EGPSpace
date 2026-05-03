@@ -15,7 +15,7 @@
 export type SubjectDomain = 'physics' | 'chemistry' | 'biology' | 'geography' | 'math';
 
 // Physics engine types
-type PhysicsType = 'buoyancy' | 'lever' | 'refraction' | 'circuit' | 'pendulum' | 'wave';
+type PhysicsType = 'buoyancy' | 'lever' | 'refraction' | 'circuit' | 'pendulum' | 'wave' | 'quantum-entanglement';
 // Chemistry engine types
 type ChemistryType = 'acid_base' | 'electrolysis' | 'reaction_rate' | 'titration' | 'combustion';
 // Biology engine types
@@ -309,6 +309,19 @@ export interface ExperimentSchema {
   interactions?: InteractionConfig;
   teaching?: TeachingDesign;
   scenes?: ExperimentScene[];
+  // 拓扑组装数据支持
+  components?: Array<{
+    id: string;
+    kind: string;
+    props: Record<string, number | boolean>;
+    anchor?: { x: number; y: number };
+  }>;
+  connections?: Array<{
+    from: string;
+    fromPort: string;
+    to: string;
+    toPort: string;
+  }>;
 }
 
 // ============ Default Values ============

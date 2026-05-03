@@ -1,12 +1,12 @@
 {
   "activeWorkflow": {
-    "session": "wf-20260430013937.",
-    "startedAt": "2026-04-30T02:56:26.607Z",
-    "currentStage": "DEPLOY",
+    "session": "wf-202605031017",
+    "startedAt": "2026-05-03T02:18:11.120Z",
+    "currentStage": "ANALYSE",
     "completedStages": [],
-    "requirement": "G 阶段 DEPLOY · 终局归档 + 用户 commit 指引",
-    "requirementFingerprint": "commit deploy 指引 用户 终局归档 阶段",
-    "ttlExpiry": "2026-04-30T03:39:49.949Z",
-    "stageStartTime": 1777517786607
+    "requirement": "现在所有的实验室模板是通过元件原子化配置来实现的吗",
+    "requirementFingerprint": "现在所有的实验室模板是通过元件原子化配置来实现的吗",
+    "ttlExpiry": "2026-05-03T04:18:11.121Z",
+    "stageStartTime": 1777774691121
   }
 }

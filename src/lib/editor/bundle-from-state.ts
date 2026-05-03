@@ -8,7 +8,7 @@
  *     for the same logical input (AC-B4).
  */
 
-import type { ComponentDomain, AssemblyBundle } from '@/lib/framework';
+import type { ComponentDomain, AssemblyBundle, MacroExportPortMap } from '@/lib/framework';
 import type { EditorState } from './editor-state';
 
 /**
@@ -22,6 +22,8 @@ import type { EditorState } from './editor-state';
 export function bundleFromState<D extends ComponentDomain>(
   state: EditorState<D>,
 ): AssemblyBundle<D> {
+  const macroKinds = Object.keys(state.macros);
+  const hasMacros = macroKinds.length > 0;
   return {
     spec: {
       domain: state.domain,
@@ -43,5 +45,37 @@ export function bundleFromState<D extends ComponentDomain>(
         anchor: { ...p.anchor },
       })),
     },
+    // T-6: persist user-defined macros so "我的元件" survives reload.
+    // Omit the field entirely when no macros exist, so bundles from plain
+    // experiments stay byte-identical to pre-T-6 output (AC-B4 hash stability).
+    ...(hasMacros
+      ? {
+          macros: macroKinds.reduce<Record<string, (typeof state.macros)[string]>>((acc, k) => {
+            const def = state.macros[k];
+            acc[k] = {
+              spec: {
+                ...def.spec,
+                components: def.spec.components.map((c) => ({
+                  id: c.id,
+                  kind: c.kind,
+                  props: { ...c.props },
+                })),
+                connections: def.spec.connections.map((c) => ({
+                  from: { ...c.from },
+                  to: { ...c.to },
+                  ...(c.kind !== undefined ? { kind: c.kind } : {}),
+                })),
+                ...(def.spec.metadata ? { metadata: { ...def.spec.metadata } } : {}),
+              },
+              exportPortMap: Object.keys(def.exportPortMap).reduce<MacroExportPortMap>((map, portName) => {
+                const ref = def.exportPortMap[portName];
+                map[portName] = { componentId: ref.componentId, portName: ref.portName };
+                return map;
+              }, {}),
+            };
+            return acc;
+          }, {}),
+        }
+      : {}),
   };
 }

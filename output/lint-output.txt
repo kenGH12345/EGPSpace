@@ -1,0 +1,298 @@
+﻿
+> projects@0.1.0 lint
+> eslint
+
+
+C:\workspace\EGPSpace\public\templates\_shared\circuit-draw.js
+  39:54  warning  'v' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\public\templates\_shared\component-mirror.js
+  67:9  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\workspace\EGPSpace\public\templates\_shared\physics-draw.js
+  192:11  warning  'padY' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\app\api\generate\route.ts
+    6:26  warning  'createDefaultSchema' is defined but never used    @typescript-eslint/no-unused-vars
+   82:5   warning  'skillContent' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  488:35  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  489:37  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\app\demo\page.tsx
+    5:3   warning  'Sparkles' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   12:3   warning  'FlaskConical' is defined but never used                                                                 @typescript-eslint/no-unused-vars
+   19:3   warning  'generationRules' is defined but never used                                                              @typescript-eslint/no-unused-vars
+   23:3   warning  'qualityCriteria' is defined but never used                                                              @typescript-eslint/no-unused-vars
+   66:3   warning  'onStart' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+   67:3   warning  'onReset' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+  229:6   warning  React Hook useEffect has a missing dependency: 'draw'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  358:11  warning  't' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\app\experiments\[id]\page.tsx
+  249:65   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  249:101  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\app\page.tsx
+  3:35  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\components\AIGeneratorDialog.tsx
+  50:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\components\DynamicExperiment.tsx
+  3:77   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3:96   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  5:105  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  6:42   warning  'props' is defined but never used         @typescript-eslint/no-unused-vars
+  6:49   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\components\ExperimentRenderer.tsx
+  36:14  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  37:16  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  43:3   warning  'aiConfig' is defined but never used            @typescript-eslint/no-unused-vars
+  44:3   warning  'resolvedTemplateId' is defined but never used  @typescript-eslint/no-unused-vars
+  62:25  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  69:8   error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  73:45  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  73:75  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  80:3   warning  'aiSchema' is defined but never used            @typescript-eslint/no-unused-vars
+  81:3   warning  'aiConfig' is defined but never used            @typescript-eslint/no-unused-vars
+  82:3   warning  'experiment' is defined but never used          @typescript-eslint/no-unused-vars
+  83:3   warning  'backendTid' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\components\connection-line.tsx
+  22:3  warning  'scale' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+  53:6  warning  React Hook useMemo has a missing dependency: 'connection.id'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\workspace\EGPSpace\src\components\editor\EditorCanvas.tsx
+  338:33  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `config`, but the source dependencies were [state.placed, config.portLayout, config.palette, dispatch]. Inferred less specific property than source.
+
+C:\workspace\EGPSpace\src\components\editor\EditorCanvas.tsx:338:33
+  336 |   );
+  337 |
+> 338 |   const onMouseUp = useCallback(() => {
+      |                                 ^^^^^^^
+> 339 |     if (dragRef.current && dragRef.current.kind === 'move') {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 340 |       const movedId = dragRef.current.id;
+      鈥?      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 413 |     dragRef.current = null;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 414 |   }, [state.placed, config.portLayout, config.palette, dispatch]);
+      | ^^^^ Could not preserve existing manual memoization
+  415 |
+  416 |   const onMouseLeave = useCallback(() => {
+  417 |     dragRef.current = null;  react-hooks/preserve-manual-memoization
+  414:6   warning  React Hook useCallback has a missing dependency: 'config'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+
+C:\workspace\EGPSpace\src\components\editor\RunControls.tsx
+  11:3  warning  'extractPerComponent' is defined but never used  @typescript-eslint/no-unused-vars
+  36:3  warning  'config' is defined but never used               @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\components\experiment-canvas.tsx
+    10:10  warning  'computePhysics' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+    12:10  warning  'calculateValue' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+    64:3   warning  'onInteraction' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+    68:9   warning  'normalizedExperiment' is assigned a value but never used                                                         @typescript-eslint/no-unused-vars
+    73:10  warning  'animationTime' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+   115:11  warning  'showImage' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+   336:15  warning  'incidentY' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+   401:11  warning  'isTotalReflection' is assigned a value but never used                                                            @typescript-eslint/no-unused-vars
+   488:15  warning  'gravity' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+   631:15  warning  'springWidth' is assigned a value but never used                                                                  @typescript-eslint/no-unused-vars
+   633:15  warning  'coilHeight' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+   834:15  warning  'resultAngle' is assigned a value but never used                                                                  @typescript-eslint/no-unused-vars
+  1001:6   warning  React Hook useCallback has an unnecessary dependency: 'params'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\workspace\EGPSpace\src\components\experiment-layout.tsx
+   10:10  warning  'experimentSchemaToLegacy' is defined but never used  @typescript-eslint/no-unused-vars
+   26:3   warning  'Play' is defined but never used                      @typescript-eslint/no-unused-vars
+   27:3   warning  'Pause' is defined but never used                     @typescript-eslint/no-unused-vars
+   81:10  warning  'isPlaying' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   81:21  warning  'setIsPlaying' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  203:11  warning  'gestureParam' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\components\infinite-canvas.tsx
+  22:10  warning  'isDragging' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\components\interactive-experiment-canvas.tsx
+   6:3   warning  'ExperimentParameter' is defined but never used      @typescript-eslint/no-unused-vars
+  54:10  warning  'animationFrame' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\components\knowledge-node.tsx
+  88:6  warning  React Hook useEffect has missing dependencies: 'handleMouseMove' and 'handleMouseUp'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\workspace\EGPSpace\src\hooks\useMediaPipeHands.ts
+   74:9   warning  'pip' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  179:29  warning  'drawingUtils' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\__tests__\schema-validator.test.ts
+  13:10  warning  'makeSchema' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\ambient-animations.ts
+  198:5  warning  'vars' is defined but never used  @typescript-eslint/no-unused-vars
+  218:5  warning  'vars' is defined but never used  @typescript-eslint/no-unused-vars
+  237:5  warning  'vars' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\calculations-browser.ts
+  601:30  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\workspace\EGPSpace\src\lib\calculations.ts
+  6:10  warning  'CalculationResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\editor\domain-configs\mechanics.tsx
+  70:16  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+  75:15  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+  80:21  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+  85:15  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+  90:14  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+  95:16  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\editor\domain-configs\optics.tsx
+  31:15  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+  37:21  warning  'comp' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\editor\drawers\circuit-drawers.ts
+   26:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   27:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   28:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   35:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   36:40  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:10  warning  'drawLabel' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\engines\biology\enzyme.ts
+  101:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\biology\osmosis.ts
+  102:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\biology\population.ts
+  96:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\chemistry\reaction.ts
+   63:12  warning  '_params' is defined but never used       @typescript-eslint/no-unused-vars
+  116:17  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  117:17  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\src\lib\engines\generic.ts
+  33:12  warning  '_params' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\engines\geography\ocean-current.ts
+  148:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\geography\plate-tectonics.ts
+  127:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\geography\seismic-wave.ts
+  104:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\knowledge-graph\renderer.ts
+  37:7  warning  'STATUS_LABELS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\engines\math\function-graph.ts
+  119:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\math\geometry.ts
+  156:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\math\probability.ts
+  177:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\physics\buoyancy.ts
+  120:1  warning  Assign instance to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\engines\physics\circuit.ts
+  220:9  error  'message' is never reassigned. Use 'const' instead  prefer-const
+
+C:\workspace\EGPSpace\src\lib\experiment-generation-prompts.ts
+   11:10  warning  'ExperimentConfig' is defined but never used                    @typescript-eslint/no-unused-vars
+  407:1   warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\experiment-prompts.ts
+  523:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\lib\framework\__tests__\assembly.test.ts
+  25:3  warning  'DomainGraph' is defined but never used           @typescript-eslint/no-unused-vars
+  29:8  warning  'IExperimentComponent' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\framework\__tests__\layout-spec.test.ts
+  18:3  warning  'emptySpec' is defined but never used        @typescript-eslint/no-unused-vars
+  20:3  warning  'FluentAssembly' is defined but never used   @typescript-eslint/no-unused-vars
+  22:3  warning  'Assembler' is defined but never used        @typescript-eslint/no-unused-vars
+  23:8  warning  'ComponentDomain' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\framework\domains\circuit\__tests__\circuit-assembly.test.ts
+  21:3  warning  'validateSpec' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\framework\macro\composite-component.ts
+  2:32  warning  'ComponentDTO' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\framework\macro\flattener.ts
+  19:18  warning  'D' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\framework\runtime\assembler.ts
+  159:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\workspace\EGPSpace\src\lib\framework\runtime\engine.ts
+  14:15  warning  'IExperimentComponent' is defined but never used                               @typescript-eslint/no-unused-vars
+  74:11  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  92:7   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\workspace\EGPSpace\src\lib\framework\runtime\registry.ts
+  34:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\workspace\EGPSpace\src\lib\optimized-renderer.ts
+  240:9  warning  'commonValues' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
+  284:3  error    Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+  311:3  error    Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+
+C:\workspace\EGPSpace\src\lib\preset-templates.ts
+   618:18  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   624:9   warning  'n_acid' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   625:9   warning  'n_base' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   807:18  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  1001:18  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  1125:18  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\schema-enricher.ts
+  14:3  warning  'PhysicsEngineType' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\lib\universal-prompts.ts
+  410:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\workspace\EGPSpace\src\workflow\engine.ts
+  143:11  warning  '_context' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  167:23  warning  '_workflowId' is defined but never used        @typescript-eslint/no-unused-vars
+  167:44  warning  '_currentStepId' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\src\workflow\storage.ts
+  352:23  warning  '_execution' is defined but never used        @typescript-eslint/no-unused-vars
+  356:22  warning  '_executionId' is defined but never used      @typescript-eslint/no-unused-vars
+  360:25  warning  '_execution' is defined but never used        @typescript-eslint/no-unused-vars
+  364:25  warning  '_executionId' is defined but never used      @typescript-eslint/no-unused-vars
+  370:5   warning  '_limit' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  371:5   warning  '_offset' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\test-circuit-bug.ts
+  20:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  22:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  23:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\workspace\EGPSpace\test-phase2.js
+    6:16  error    A `require()` style import is forbidden            @typescript-eslint/no-require-imports
+    7:12  error    A `require()` style import is forbidden            @typescript-eslint/no-require-imports
+    8:14  error    A `require()` style import is forbidden            @typescript-eslint/no-require-imports
+   15:7   warning  'formulaMatch' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   17:5   warning  'formulas' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  117:21  warning  'prev' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  122:22  warning  'prev' is assigned a value but never used          @typescript-eslint/no-unused-vars
+
+C:\workspace\EGPSpace\test-switch.ts
+  18:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+鉁?153 problems (36 errors, 117 warnings)
+  1 error and 5 warnings potentially fixable with the `--fix` option.
+

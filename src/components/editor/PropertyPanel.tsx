@@ -121,11 +121,52 @@ export function PropertyPanel({ state, config, dispatch, runResult }: PropertyPa
         palette={config.palette}
         placed={state.placed}
       />
+      <ComponentBOMList 
+        palette={config.palette} 
+        placed={state.placed} 
+        dispatch={dispatch} 
+      />
     </div>
   );
 }
 
 // ── Sub-components ────────────────────────────────────────────────────
+
+function ComponentBOMList({
+  palette,
+  placed,
+  dispatch,
+}: {
+  palette: PaletteEntry[];
+  placed: EditorState['placed'];
+  dispatch: React.Dispatch<EditorAction>;
+}) {
+  if (placed.length === 0) return null;
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-200">
+      <div className="text-xs uppercase font-semibold text-slate-500 mb-2">已放置元件清单 (BOM)</div>
+      <div className="space-y-1 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+        {placed.map((comp) => {
+          const entry = palette.find(e => e.kind === comp.kind);
+          return (
+            <div 
+              key={comp.id}
+              className="flex items-center justify-between text-xs p-1.5 hover:bg-slate-100 rounded cursor-pointer group"
+              onClick={() => dispatch({ type: 'selectComponent', id: comp.id })}
+            >
+              <div className="flex items-center gap-2">
+                <span>{entry?.icon || '📦'}</span>
+                <span className="font-medium text-slate-700">{entry?.displayName || comp.kind}</span>
+              </div>
+              <span className="font-mono text-slate-400 group-hover:text-blue-500 transition-colors">{comp.id}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function PropInput({
   schema,

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260503-094912","createdAt":"2026-05-03T01:49:12.438Z"}
+{"seq":1,"ts":"2026-05-03T01:49:12.438Z","sessionId":"wf-20260503-094912","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"output/code.diff, src/lib/framework/contracts/component.ts, src/lib/framework/domains/*/solver.ts, src/lib/framework/domains/solver-mvp.test.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

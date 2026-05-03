@@ -1,5 +1,5 @@
 /**
- * Template Registry — Triple-Lock Architecture (Lock 3: Whitelist)
+ * Template Registry — metadata approval guard.
  *
  * Central registry of HTML experiment templates approved for production use.
  * LLM-returned templateIds MUST pass through getTemplate() validation —
@@ -7,7 +7,7 @@
  * from reaching the rendering layer.
  *
  * See: docs/external-reference-policy.md
- *      output/architecture.md (Triple-Lock design)
+ *      output/architecture.md (TemplateRegistry metadata guard)
  */
 
 export type AuditStatus = 'pending' | 'approved' | 'deprecated';
@@ -225,6 +225,21 @@ const REGISTRY: Record<string, TemplateMetadata> = {
     auditDocPath: 'docs/audits/physics-circuit.md',
     lastAuditedAt: '2026-04-24',
     tags: ['electricity', 'ohm', 'circuit'],
+  },
+  'physics/quantum-entanglement': {
+    id: 'physics/quantum-entanglement',
+    subject: 'physics',
+    title: '量子纠缠',
+    description: '演示量子态叠加与波函数坍缩',
+    icon: '🌀',
+    gradient: 'from-purple-500 to-indigo-600',
+    templatePath: 'physics/quantum-entanglement.html',
+    parameters: [
+      { name: 'probability', label: '自旋向上概率', unit: '%', min: 0, max: 100, defaultValue: 50, step: 1 }
+    ],
+    auditStatus: 'approved',
+    auditDocPath: 'docs/audits/physics-quantum.md',
+    tags: ['quantum', 'entanglement', 'spin'],
   },
   'physics/motion': {
     id: 'physics/motion',
@@ -492,36 +507,6 @@ export function getTemplate(id: string | null | undefined): TemplateMetadata | n
   const entry = REGISTRY[id];
   if (!entry) return null;
   if (entry.auditStatus !== 'approved') return null;
-  const whitelist = new Set([
-    // existing paths
-    "physics/ohms-law",
-    "physics/lever",
-    "physics/refraction",
-    "physics/pulley",
-    "physics/convex-lens",
-    "physics/force-composition",
-    "physics/buoyancy",
-    "physics/circuit",
-    "chemistry/acid-base-titration",
-    "chemistry/iron-rusting",
-    "biology/photosynthesis",
-    "biology/stomatal-movement",
-    "geography/solar-term",
-    // newly added
-    "physics/pressure",
-    "physics/density",
-    "physics/work-power",
-    "physics/friction",
-    "physics/phase-change",
-    // chemistry templates
-    "chemistry/acid-base-titration",
-    "chemistry/iron-rusting",
-    "chemistry/metal-acid-reaction",
-    "chemistry/electrolysis",
-    "chemistry/reaction-rate",
-    "chemistry/combustion-conditions",
-  ]);
-  if (!whitelist.has(id)) return null;
   return entry;
 }
 
@@ -562,7 +547,7 @@ export function getTemplateUrl(id: string): string | null {
 }
 
 /**
- * Check if a template ID is in the approved whitelist.
+ * Check if a template ID is approved by registry metadata.
  * Convenience helper for validation paths.
  */
 export function isApprovedTemplate(id: string | null | undefined): boolean {
@@ -633,43 +618,6 @@ export function validateTemplateFile(content: string): string[] {
 
   return errors;
 }
-
-// Helper to register approved templates (creates a minimal registry entry for ExperimentSchema-based templates)
-function addApprovedTemplate(
-  templateId: string,
-  meta: { auditStatus: AuditStatus; reviewer: string; deploymentDate: string }
-): void {
-  if (!REGISTRY[templateId]) {
-    REGISTRY[templateId] = {
-      id: templateId,
-      subject: 'chemistry',
-      title: templateId,
-      description: '化学实验模板',
-      icon: '🧪',
-      gradient: 'from-blue-400 to-cyan-500',
-      templatePath: `chemistry/${templateId}.html`,
-      parameters: [],
-      auditStatus: meta.auditStatus,
-      lastAuditedAt: meta.deploymentDate,
-      tags: ['chemistry', templateId],
-    };
-  }
-  // Update audit status
-  REGISTRY[templateId].auditStatus = meta.auditStatus;
-  REGISTRY[templateId].lastAuditedAt = meta.deploymentDate;
-}
-
-// 物理实验（已验证查重）
-addApprovedTemplate('buoyancy', { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
-addApprovedTemplate('lever',    { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
-addApprovedTemplate('refraction',{ auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
-addApprovedTemplate('circuit',  { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-22' });
-
-// === 物理 + 化学实验（Phase 2 — 统一框架迁移） ===
-addApprovedTemplate('acid-base-titration', { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
-addApprovedTemplate('electrolysis',        { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
-addApprovedTemplate('reaction-rate',       { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
-addApprovedTemplate('combustion',          { auditStatus: 'approved', reviewer: 'system', deploymentDate: '2026-04-26' });
 
 // ── Subject-level registry exports (T-3: capability atomization) ────────────
 /** Extract physics templates from the unified registry */

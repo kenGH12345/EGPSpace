@@ -1,0 +1,3 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260501-095845","createdAt":"2026-05-01T01:58:45.578Z"}
+{"seq":1,"ts":"2026-05-01T01:58:45.578Z","sessionId":"wf-20260501-095845","kind":"stage_started","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageInput":"output/architecture.md 已批准；默认采用推荐值：A=AC-7延后v2, B=EditorSelection扩展multi, C=macro写入localStorage"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":2,"ts":"2026-05-01T02:06:22.093Z","sessionId":"wf-20260501-095845","kind":"stage_completed","stage":"PLAN","taskId":null,"attempt":null,"payload":{"stageOutput":"execution-plan.md + output/completion-contract.json"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

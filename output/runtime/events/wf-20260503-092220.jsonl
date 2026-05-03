@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260503-092220","createdAt":"2026-05-03T01:22:21.196Z"}
+{"seq":1,"ts":"2026-05-03T01:22:21.196Z","sessionId":"wf-20260503-092220","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"CODE implemented structured MacroExportPortMap and TemplateRegistry metadata guard; targeted tests and ts-check passed; full lint has pre-existing failures outside touched files."},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

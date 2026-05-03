@@ -7,7 +7,9 @@
  *   async so that Next.js can code-split them.
  */
 
-import type { AssemblyBundle, ComponentDomain } from '@/lib/framework';
+import type { AssemblyBundle, ComponentDomain, AssemblySpec } from '@/lib/framework';
+import { SpecFlattener, type MacroDefinition } from '@/lib/framework/macro/flattener';
+import { makeResolverFromState, specReferencesMacros } from './macro-resolver';
 
 /** Generic shape returned by any engine.compute(). */
 export interface EngineComputeResult {
@@ -20,6 +22,12 @@ export interface RunBundleResult {
   ok: boolean;
   result?: EngineComputeResult;
   error?: string;
+  /**
+   * Phase at which failure occurred (when ok === false). Exposed for diagnostics.
+   * - "flatten": macro expansion failed (circular dep, missing port, etc.)
+   * - "compute": engine-side failure
+   */
+  failedPhase?: 'flatten' | 'compute';
 }
 
 /** Registry of per-domain dynamic engine loaders. */
@@ -43,22 +51,54 @@ const ENGINE_LOADERS: Partial<Record<
 
 /**
  * Run an AssemblyBundle through the appropriate engine.
+ *
+ * When `macros` is provided and the bundle's spec (or any nested spec) references
+ * a macro kind, SpecFlattener is invoked to expand all macros into atomic
+ * components before engines see the spec. Engines remain macro-unaware.
+ *
+ * Zero-overhead short-circuit: when no macro is referenced, `finalSpec` is the
+ * same reference as `bundle.spec` — no allocation, no flatten pass.
+ *
  * Never throws — always returns a result object.
  */
 export async function runEditorBundle<D extends ComponentDomain>(
   domain: D,
   bundle: AssemblyBundle<D>,
+  macros?: Readonly<Record<string, MacroDefinition>>,
 ): Promise<RunBundleResult> {
   const loader = ENGINE_LOADERS[domain];
   if (!loader) {
     return { ok: false, error: `no engine registered for domain "${domain}"` };
   }
+
+  let finalSpec: AssemblySpec = bundle.spec;
+  const hasMacros =
+    (macros && Object.keys(macros).length > 0) ||
+    specReferencesMacros(bundle.spec.components);
+
+  if (hasMacros) {
+    try {
+      const resolver = makeResolverFromState(macros ?? {});
+      finalSpec = new SpecFlattener(resolver).flatten(bundle.spec);
+    } catch (e) {
+      return {
+        ok: false,
+        error: e instanceof Error ? e.message : String(e),
+        failedPhase: 'flatten',
+      };
+    }
+  }
+
   try {
     const engine = await loader();
-    const result = engine.compute({ graph: bundle.spec });
+    const result = engine.compute({ graph: finalSpec });
     return { ok: true, result };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+      failedPhase: 'compute',
+    };
   }
 }
 

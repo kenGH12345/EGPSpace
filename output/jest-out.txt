@@ -1,0 +1,57 @@
+﻿node.exe : FAIL src/lib/editor/__tests__/macro-unpack-and-nesting.test.ts
+所在位置 行:1 字符: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL src/lib/ed...nesting.test.ts:String) [], RemoteEx 
+   ception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  unpackMacro reducer
+    鈭?no-ops on non-existent id (3 ms)
+    鈭?no-ops when id refers to a non-macro atomic component (1 ms)
+    鈭?expands a single-macro instance into its inner components (1 ms)
+    脳 rewrites boundary connections via exportPortMap when composite has external wires (4 ms)
+    鈭?prevents id collisions when idPrefix conflicts with existing ids (1 ms)
+    鈭?encapsulate 鈫?unpack preserves topology shape (semantic inverse)
+  Nested encapsulation (macro within macro)
+    鈭?allows encapsulating an existing macro instance together with atomic components
+    鈭?SpecFlattener resolves nested macros recursively into atomic components (1 ms)
+    鈭?nested macros survive save/load round-trip (1 ms)
+
+  鈼?unpackMacro reducer 鈥?rewrites boundary connections via exportPortMap when composite has externa
+l wires
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+    +   "ext",
+        "macro:pair-1:r1",
+        "macro:pair-1:r2",
+    -   "ext",
+      ]
+
+    [0m [90m 102 |[39m
+     [90m 103 |[39m     [90m// ext remains + 2 inner comps; boundary wire now points at the corre
+ct inner port[39m
+    [31m[1m>[22m[39m[90m 104 |[39m     expect(s[33m.[39mplaced[33m.[39mmap((p) [33m=>[39
+m p[33m.[39mid)[33m.[39msort())[33m.[39mtoEqual([[32m`${compositeId}:r1`[39m[33m,[39m [32
+m`${compositeId}:r2`[39m[33m,[39m [32m'ext'[39m])[33m;[39m
+     [90m     |[39m                                              [31m[1m^[22m[39m
+     [90m 105 |[39m     expect(s[33m.[39mconnections)[33m.[39mtoHaveLength([35m2[39m)[33m;
+[39m [90m// 1 ext鈫攊nner + 1 internal[39m
+     [90m 106 |[39m     [36mconst[39m boundary [33m=[39m s[33m.[39mconnections[33m.[39mfin
+d(
+     [90m 107 |[39m       (c) [33m=>[39m c[33m.[39m[36mfrom[39m[33m.[39mcomponentId [33m=
+==[39m [32m'ext'[39m [33m||[39m c[33m.[39mto[33m.[39mcomponentId [33m===[39m [32m'ext'[
+39m[33m,[39m[0m
+
+      at Object.<anonymous> (src/lib/editor/__tests__/macro-unpack-and-nesting.test.ts:104:46)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 8 passed, 9 total
+Snapshots:   0 total
+Time:        0.514 s, estimated 1 s
+Ran all test suites matching src/lib/editor/__tests__/macro-unpack-and-nesting.test.ts.

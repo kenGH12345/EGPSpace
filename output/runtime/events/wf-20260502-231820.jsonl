@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-231820","createdAt":"2026-05-02T15:18:21.055Z"}
+{"seq":1,"ts":"2026-05-02T15:18:21.054Z","sessionId":"wf-20260502-231820","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"output/analysis.md and TickEngine.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

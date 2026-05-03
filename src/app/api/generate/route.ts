@@ -84,6 +84,10 @@ function buildSystemPrompt(subject?: string, stage?: string): string {
   
   // 加载学科知识库
   const subjectKnowledge = subject ? loadSubjectKnowledge(subject) : '';
+
+  // 加载组装规范（拓扑实验）
+  const assemblySkillPath = join(SKILL_DIR, 'assembly-skill.md');
+  const assemblySkill = existsSync(assemblySkillPath) ? readFileSync(assemblySkillPath, 'utf-8') : '';
   
   // Stage-aware teaching guideline
   const stageInfo = stage ? STAGE_GUIDELINES[stage] : null;
@@ -122,6 +126,8 @@ function buildSystemPrompt(subject?: string, stage?: string): string {
 设计评价与拓展
 
 ${subjectKnowledge ? `## 学科知识库参考\n${subjectKnowledge}` : ''}
+
+${assemblySkill ? `## 实验扩展与组装约束\n${assemblySkill}` : ''}
 
 ## 重要原则
 
@@ -198,27 +204,26 @@ ${subjectKnowledge ? `## 学科知识库参考\n${subjectKnowledge}` : ''}
       "description": "场景描述",
       "params": { "变量名": 值 }
     }
+  ],
+  "components": [
+    { "id": "组件id", "kind": "类型", "props": {} }
+  ],
+  "connections": [
+    { "from": "A", "fromPort": "out", "to": "B", "toPort": "in" }
   ]
 }
 
 关键规则：
-1. params 中至少要有1个 category="input" 的输入参数
-2. formulas 中至少要有1个公式
-3. physicsType 必须从列表中选择，这决定系统使用哪个物理引擎
-4. 你只需生成 meta + params + formulas + teaching + scenes，canvas/physics/interactions 由系统自动补充
-5. 参数范围要科学合理，符合物理规律
+1. 必须生成 components 和 connections 数组，描述实验的原子元件和拓扑结构。
+2. 你无需生成 formulas 字段，底层的拓扑物理引擎会自动根据 components 的种类和 connections 连线来推导业务结果。
+3. params 依然可以保留，作为可调节输入参数，但重点是让物理元件真实组装（例如电池、导线、开关、灯泡）。
+4. 保证参数和拓扑结构的科学合理性。
 
-## 🚫 严格禁止（Triple-Lock Security）
+## 🚫 严格禁止
 
-以下内容由审核通过的 HTML 模板负责，**绝对禁止** LLM 生成：
-- ❌ 不要输出 canvas 字段或任何 canvas 相关的 elements、shapes、points、坐标数据
-- ❌ 不要输出 interactions 字段的 hit-testing 逻辑、事件处理代码
-- ❌ 不要输出图形绘制指令（如 draw/line/arc/rect 等）
-- ❌ 不要输出任何 HTML / CSS / JavaScript 代码片段
-- ❌ 不要输出自定义 UI 样式或动画定义
-
-✅ 你只负责：概念讲解、参数设计、公式推导、教学设计、教学场景
-✅ 画面交给系统根据 physicsType 选择对应的预置 HTML 模板（已通过物理学专家审核）
+- ❌ 不要输出任何 HTML / CSS / JavaScript 代码片段。
+- ❌ 不要输出 interactions 字段的 hit-testing 逻辑。
+- ✅ 你只负责：概念讲解、参数设计、拓扑设计（元件和连线）、教学设计。
 
 只返回 JSON，不要其他内容！`;
 }
@@ -306,7 +311,8 @@ export async function POST(request: NextRequest) {
     if (rawJson) {
       // 🔒 Triple-Lock defensive sanitization: strip any canvas/interactions/code
       //    fields that LLM may have emitted despite the prompt ban.
-      //    This ensures only whitelisted templates can render visuals.
+      //    Template visuals are only rendered when registry metadata approves
+      //    the resolved templateId.
       sanitizeLLMOutput(rawJson);
 
       const partial = transformToSchema(rawJson, subject);
@@ -339,7 +345,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 🔒 Triple-Lock template routing (Lock 2 + Lock 3):
-    //    Resolve concept → templateId → whitelist check.
+    //    Resolve concept → templateId → registry metadata guard.
     //    Frontend will prefer iframe template over Canvas rendering when available.
     const candidateId =
       conceptToTemplateId(concept) ||
@@ -353,7 +359,7 @@ export async function POST(request: NextRequest) {
       subject,
       schema,
       /** Approved template ID (may be null if no matching template). Frontend
-       *  must still validate via getTemplate() — client-side whitelist is authoritative. */
+       *  must still validate via getTemplate() — registry metadata is authoritative. */
       templateId,
       validationReport,
     });
@@ -480,6 +486,8 @@ function transformToSchema(raw: Record<string, unknown>, subject: string): Parti
     formulas: (raw.formulas as FormulaDefinition[]) ?? [],
     teaching: (raw.teaching as TeachingDesign) ?? {},
     scenes: (raw.scenes as ExperimentScene[]) ?? [],
+    components: raw.components as any,
+    connections: raw.connections as any,
   };
 }
 

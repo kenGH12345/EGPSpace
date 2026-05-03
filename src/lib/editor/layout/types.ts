@@ -7,7 +7,7 @@
  * - boundingBox / centerAt helper 供算法收尾使用
  */
 
-export type LayoutAlgorithm = 'grid' | 'force';
+export type LayoutAlgorithm = 'grid' | 'force' | 'dagre';
 
 export interface Position {
   readonly x: number;

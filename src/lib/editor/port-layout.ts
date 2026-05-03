@@ -56,15 +56,34 @@ export function getPortCanvasPos(
   component: Pick<PlacedComponent, 'kind' | 'anchor'>,
   portName: string,
   table: PortLayoutTable,
+  palette: readonly PaletteHintEntry[] = [],
 ): Point {
   const kindEntry = table[component.kind];
   const offset = kindEntry?.[portName];
   if (!offset) {
     return { x: component.anchor.x, y: component.anchor.y };
   }
+  
+  let dx = offset.dx;
+  let dy = offset.dy;
+  
+  const rotation = component.anchor.rotation || 0;
+  if (rotation !== 0) {
+    const entry = palette.find((p) => p.kind === component.kind);
+    const size = entry?.hintSize ?? { width: 50, height: 40 };
+    const cx = size.width / 2;
+    const cy = size.height / 2;
+    
+    const angle = (rotation * Math.PI) / 180;
+    const px = dx - cx;
+    const py = dy - cy;
+    dx = cx + px * Math.cos(angle) - py * Math.sin(angle);
+    dy = cy + px * Math.sin(angle) + py * Math.cos(angle);
+  }
+  
   return {
-    x: component.anchor.x + offset.dx,
-    y: component.anchor.y + offset.dy,
+    x: component.anchor.x + dx,
+    y: component.anchor.y + dy,
   };
 }
 
@@ -76,8 +95,9 @@ export function getPortScreenPos(
   portName: string,
   table: PortLayoutTable,
   camera: EditorCamera,
+  palette: readonly PaletteHintEntry[] = [],
 ): Point {
-  return canvasToScreen(getPortCanvasPos(component, portName, table), camera);
+  return canvasToScreen(getPortCanvasPos(component, portName, table, palette), camera);
 }
 
 /**
@@ -90,13 +110,14 @@ export function findPortAtScreen(
   table: PortLayoutTable,
   camera: EditorCamera,
   radiusPx: number = 12,
+  palette: readonly PaletteHintEntry[] = [],
 ): { componentId: string; portName: string; distance: number } | null {
   let best: { componentId: string; portName: string; distance: number } | null = null;
   for (const c of components) {
     const portTable = table[c.kind];
     if (!portTable) continue;
     for (const portName of Object.keys(portTable)) {
-      const portScreen = getPortScreenPos(c, portName, table, camera);
+      const portScreen = getPortScreenPos(c, portName, table, camera, palette);
       const dx = portScreen.x - screen.x;
       const dy = portScreen.y - screen.y;
       const distance = Math.hypot(dx, dy);
@@ -148,11 +169,24 @@ export function componentBounds(
 ): ComponentBounds {
   const entry = palette.find((p) => p.kind === component.kind);
   const size = entry?.hintSize ?? DEFAULT_BOUNDS_SIZE;
+  
+  let width = size.width;
+  let height = size.height;
+  
+  const rotation = component.anchor.rotation || 0;
+  if (rotation % 180 !== 0) {
+    width = size.height;
+    height = size.width;
+  }
+  
+  const cx = component.anchor.x + size.width / 2;
+  const cy = component.anchor.y + size.height / 2;
+  
   return {
-    x: component.anchor.x,
-    y: component.anchor.y,
-    width: size.width,
-    height: size.height,
+    x: cx - width / 2,
+    y: cy - height / 2,
+    width,
+    height,
   };
 }
 

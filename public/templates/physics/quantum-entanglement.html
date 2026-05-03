@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量子纠缠演示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0f172a; /* slate-900 */
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        .particle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #a855f7, #3b82f6);
+            box-shadow: 0 0 20px #8b5cf6, inset 0 0 10px #ffffff;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .particle.spin-up {
+            transform: translateY(-20px);
+        }
+
+        .particle.spin-down {
+            transform: translateY(20px);
+        }
+
+        .particle::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 50%;
+            border: 2px dashed rgba(139, 92, 246, 0.5);
+            animation: rotate 4s linear infinite;
+        }
+
+        .particle.spin-down::after {
+            animation-direction: reverse;
+        }
+
+        .connection-line {
+            position: absolute;
+            top: 50%;
+            left: 25%;
+            right: 25%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.8), transparent);
+            z-index: 0;
+        }
+
+        .connection-particles {
+            position: absolute;
+            top: 50%;
+            left: 25%;
+            right: 25%;
+            height: 4px;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .flow {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #a855f7, transparent);
+            animation: flow 2s linear infinite;
+            opacity: 0.5;
+        }
+
+        .label {
+            position: absolute;
+            bottom: -30px;
+            font-size: 14px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes flow {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+        
+        .state-text {
+            position: absolute;
+            top: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e2e8f0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="state-text" id="state-display">总自旋态: |Ψ⟩ = 1/√2 (|↑↓⟩ - |↓↑⟩)</div>
+    
+    <div class="container">
+        <div class="connection-line"></div>
+        <div class="connection-particles"><div class="flow" id="flow-effect"></div></div>
+        
+        <div class="particle" id="particle-A">
+            <span id="spin-A">?</span>
+            <div class="label">粒子 A</div>
+        </div>
+        
+        <div class="particle" id="particle-B">
+            <span id="spin-B">?</span>
+            <div class="label">粒子 B</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="measure('A')">测量粒子 A</button>
+        <button onclick="measure('B')">测量粒子 B</button>
+        <button onclick="reset()" style="background-color: #475569;">重置纠缠态</button>
+    </div>
+
+    <script>
+        let isMeasured = false;
+        
+        // Listen to host messages (params)
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+            if (data && data.type === 'UPDATE_PARAMS') {
+                const params = data.params;
+                // We can adjust probability or other parameters sent by LLM
+                console.log("Received params:", params);
+            }
+        });
+
+        function measure(target) {
+            if (isMeasured) return;
+            
+            // Randomly determine outcome for the measured particle
+            const isUp = Math.random() > 0.5;
+            
+            const pA = document.getElementById('particle-A');
+            const pB = document.getElementById('particle-B');
+            const sA = document.getElementById('spin-A');
+            const sB = document.getElementById('spin-B');
+            
+            if (target === 'A') {
+                sA.textContent = isUp ? '↑' : '↓';
+                sB.textContent = isUp ? '↓' : '↑'; // Opposite spin due to conservation
+                
+                pA.className = `particle ${isUp ? 'spin-up' : 'spin-down'}`;
+                pB.className = `particle ${isUp ? 'spin-down' : 'spin-up'}`;
+            } else {
+                sB.textContent = isUp ? '↑' : '↓';
+                sA.textContent = isUp ? '↓' : '↑';
+                
+                pB.className = `particle ${isUp ? 'spin-up' : 'spin-down'}`;
+                pA.className = `particle ${isUp ? 'spin-down' : 'spin-up'}`;
+            }
+            
+            document.getElementById('flow-effect').style.display = 'none';
+            document.getElementById('state-display').textContent = `波函数坍缩！测量结果: |${sA.textContent}${sB.textContent}⟩`;
+            
+            isMeasured = true;
+            
+            // Send back result
+            window.parent.postMessage({
+                type: 'CALCULATION_RESULT',
+                result: {
+                    spinA: sA.textContent === '↑' ? 1 : -1,
+                    spinB: sB.textContent === '↑' ? 1 : -1
+                }
+            }, '*');
+        }
+
+        function reset() {
+            isMeasured = false;
+            
+            const pA = document.getElementById('particle-A');
+            const pB = document.getElementById('particle-B');
+            
+            pA.className = 'particle';
+            pB.className = 'particle';
+            
+            document.getElementById('spin-A').textContent = '?';
+            document.getElementById('spin-B').textContent = '?';
+            
+            document.getElementById('flow-effect').style.display = 'block';
+            document.getElementById('state-display').textContent = '总自旋态: |Ψ⟩ = 1/√2 (|↑↓⟩ - |↓↑⟩)';
+            
+            // Notify host
+            window.parent.postMessage({ type: 'CALCULATION_RESULT', result: { state: 'superposition' } }, '*');
+        }
+    </script>
+</body>
+</html>

@@ -87,6 +87,7 @@ const eslintConfig = defineConfig([
     'dist/**',
     // Script files (CommonJS):
     'scripts/**/*.js',
+    'output/**',
   ]),
 ]);
 

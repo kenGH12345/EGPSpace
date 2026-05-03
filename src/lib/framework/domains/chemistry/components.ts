@@ -195,9 +195,52 @@ export class Thermometer extends AbstractComponent<ThermometerProps, ChemStampEn
   }
 }
 
+// ── Igniter ─────────────────────────────────────────────────────────────
+
+export interface IgniterProps {
+  meta?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export class Igniter extends AbstractComponent<IgniterProps, ChemStampEntry> {
+  readonly domain: ComponentDomain = 'chemistry';
+  readonly kind = 'igniter';
+  readonly ports = ['in'] as const;
+
+  constructor(id: string, props: IgniterProps, anchor?: ComponentAnchor) {
+    super(id, props, anchor);
+  }
+
+  toStamp(): ComponentStamp<ChemStampEntry> {
+    return chemStamp(this.id);
+  }
+}
+
+// ── Alcohol Lamp ──────────────────────────────────────────────────────────
+
+export interface AlcoholLampProps {
+  isLit: boolean;
+  meta?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export class AlcoholLamp extends AbstractComponent<AlcoholLampProps, ChemStampEntry> {
+  readonly domain: ComponentDomain = 'chemistry';
+  readonly kind = 'alcohol-lamp';
+  readonly ports = ['in'] as const;
+
+  constructor(id: string, props: AlcoholLampProps, anchor?: ComponentAnchor) {
+    super(id, props, anchor);
+  }
+
+  toStamp(): ComponentStamp<ChemStampEntry> {
+    return chemStamp(this.id);
+  }
+}
+
 // ── Union type for convenience ────────────────────────────────────────────
 
-export type ChemistryComponent = Flask | Reagent | Bubble | Solid | Thermometer;
+export type ChemistryComponent = Flask | Reagent | Bubble | Solid | Thermometer | AlcoholLamp | Igniter;
 
 // ── Factory helpers (used by componentRegistry in index.ts) ───────────────
 
@@ -215,4 +258,10 @@ export function createSolid(dto: { id: string; props: SolidProps; anchor?: Compo
 }
 export function createThermometer(dto: { id: string; props: ThermometerProps; anchor?: ComponentAnchor }): Thermometer {
   return new Thermometer(dto.id, dto.props, dto.anchor);
+}
+export function createAlcoholLamp(dto: { id: string; props: AlcoholLampProps; anchor?: ComponentAnchor }): AlcoholLamp {
+  return new AlcoholLamp(dto.id, dto.props, dto.anchor);
+}
+export function createIgniter(dto: { id: string; props: IgniterProps; anchor?: ComponentAnchor }): Igniter {
+  return new Igniter(dto.id, dto.props, dto.anchor);
 }

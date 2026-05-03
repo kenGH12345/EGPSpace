@@ -8,7 +8,6 @@ import {
   listSlots,
   loadBundle,
   removeSlot,
-  runEditorBundle,
   extractPerComponent,
   saveBundle,
   type EditorDomainConfig,
@@ -25,13 +24,12 @@ export interface RunControlsProps {
   onUndo: () => void;
   onRedo: () => void;
   onAutoLayout: (algorithm: LayoutAlgorithm) => void;
-  onResult: (per: Record<string, Record<string, unknown>>, msg: string) => void;
   onStatus: (msg: string) => void;
   onLoadState: (bundle: AssemblyBundle<ComponentDomain>) => void;
 }
 
 /**
- * Header controls: Undo/Redo / AutoLayout / Run / Save / Load / Export / Import.
+ * Header controls: Undo/Redo / AutoLayout / Save / Load / Export / Import.
  */
 export function RunControls({
   state,
@@ -41,43 +39,15 @@ export function RunControls({
   onUndo,
   onRedo,
   onAutoLayout,
-  onResult,
   onStatus,
   onLoadState,
 }: RunControlsProps) {
-  const [running, setRunning] = useState(false);
   const [slots, setSlots] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshSlots = useCallback(() => {
     setSlots(listSlots(state.domain));
   }, [state.domain]);
-
-  const onRun = useCallback(async () => {
-    const errors = config.validateBundle
-      ? config.validateBundle(state.placed.length, state.connections.length)
-      : [];
-    if (errors.length > 0) {
-      onStatus(`⚠ ${errors.join(' · ')}`);
-      return;
-    }
-    setRunning(true);
-    onStatus('运行中...');
-    const bundle = bundleFromState(state);
-    const r = await runEditorBundle(state.domain, bundle);
-    setRunning(false);
-    if (!r.ok || !r.result) {
-      onStatus(`❌ 运行失败: ${r.error ?? 'unknown'}`);
-      return;
-    }
-    if (r.result.state === 'error') {
-      const msg = (r.result.values.errorMessage as string) ?? r.result.explanation ?? 'error';
-      onStatus(`❌ 引擎返回错误: ${msg}`);
-      return;
-    }
-    const perC = extractPerComponent(r.result);
-    onResult(perC, `✅ 已运行 · state=${r.result.state}`);
-  }, [state, config, onResult, onStatus]);
 
   const onSave = useCallback(() => {
     const slot = prompt('保存为存档名', 'untitled');
@@ -186,19 +156,13 @@ export function RunControls({
         <option value="" disabled>
           ⊞ 自动布局
         </option>
+        <option value="dagre">有向图布局 (AI推荐)</option>
         <option value="grid">网格布局</option>
         <option value="force">力导向布局</option>
       </select>
 
       <span className="w-px h-5 bg-slate-300 mx-1" />
 
-      <button
-        className="px-3 py-1 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-        onClick={onRun}
-        disabled={running || state.placed.length === 0}
-      >
-        ▶ 运行
-      </button>
       <button className="px-2 py-1 text-sm rounded border hover:bg-slate-50" onClick={onSave}>
         💾 保存
       </button>

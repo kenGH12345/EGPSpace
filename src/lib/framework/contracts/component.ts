@@ -131,6 +131,15 @@ export abstract class AbstractComponent<Props extends object, StampEntry = unkno
   }
 }
 
+/** Plain JSON-safe value produced by solvers for UI, tests, and postMessage. */
+export type ComponentSolvedValue =
+  | number
+  | string
+  | boolean
+  | null
+  | ComponentSolvedValue[]
+  | { [key: string]: ComponentSolvedValue };
+
 /**
  * A snapshot of solved values for a single component, produced by a solver.
  * Domain solvers extend this with their own semantics:
@@ -139,7 +148,7 @@ export abstract class AbstractComponent<Props extends object, StampEntry = unkno
  *  - Mechanics: { force, displacement, kineticEnergy }
  */
 export interface ComponentSolvedValues {
-  [key: string]: number | string | boolean;
+  [key: string]: ComponentSolvedValue;
 }
 
 export type PortRefExport = PortRef; // re-export for convenience

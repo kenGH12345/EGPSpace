@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260502-234945","createdAt":"2026-05-02T15:49:45.897Z"}
+{"seq":1,"ts":"2026-05-02T15:49:45.897Z","sessionId":"wf-20260502-234945","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"TemplateRegistry, getTemplate whitelist, Macro port map"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

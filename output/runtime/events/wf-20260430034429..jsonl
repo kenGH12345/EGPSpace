@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260430034429.","createdAt":"2026-04-30T03:48:10.602Z"}
+{"seq":1,"ts":"2026-04-30T03:48:10.602Z","sessionId":"wf-20260430034429.","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"src/app/experiments/[id]/page.tsx, src/components/IframeExperiment.tsx, src/lib/template-registry.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

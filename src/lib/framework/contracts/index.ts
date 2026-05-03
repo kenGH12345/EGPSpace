@@ -3,3 +3,7 @@
 export * from './rule';
 export * from './events';
 export * from './errors';
+export * from './component';
+export * from './assembly';
+export * from './traits';
+export * from './solver';

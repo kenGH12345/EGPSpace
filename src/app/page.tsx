@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { AIGeneratorDialog } from '@/components/AIGeneratorDialog';
 
 // 学科分类数据
 const subjects = [
@@ -328,6 +329,7 @@ export default function HomePage() {
               </button>
             </div>
             <div className="flex items-center gap-4">
+              <AIGeneratorDialog />
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="4" x2="20" y1="12" y2="12" />
