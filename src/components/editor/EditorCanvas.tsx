@@ -267,6 +267,19 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
           e.preventDefault();
           return;
         }
+        // Toggle switch on simple click (no-drag intent)
+        if (hit.kind === 'switch') {
+          dispatch({ type: 'selectComponent', id: hit.id });
+          dispatch({
+            type: 'updateProp',
+            id: hit.id,
+            key: 'closed',
+            value: !hit.props.closed,
+          });
+          e.stopPropagation();
+          e.preventDefault();
+          return;
+        }
         dispatch({ type: 'selectComponent', id: hit.id });
         dragRef.current = { kind: 'move', id: hit.id, lastCanvas: canvasPt };
         return;
