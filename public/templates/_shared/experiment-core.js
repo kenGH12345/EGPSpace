@@ -70,6 +70,15 @@
 
   // ---------- Host Communication (backward compatible) ----------
 
+  // Internal post helper (hoisted so all EurekaHost methods can see it)
+  function _post(msg) {
+    msg.source = MESSAGE_SOURCE;
+    msg.timestamp = new Date().toISOString();
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(msg, '*');
+    }
+  }
+
   const EurekaHost = {
     /** Set the active template ID. Called once per template. */
     setTemplateId(id) {
@@ -151,19 +160,10 @@
         }
       });
     },
-
-    // Internal post helper
-    _post(msg) {
-      msg.source = MESSAGE_SOURCE;
-      msg.timestamp = new Date().toISOString();
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(msg, '*');
-      }
-    },
   };
 
-  // Keep internal _post accessible on EurekaHost for backwards compat
-  EurekaHost._post = EurekaHost._post;
+  // Expose _post on EurekaHost for backwards compat
+  EurekaHost._post = _post;
 
   // ---------- Parameter System (new in v1.0) ----------
 

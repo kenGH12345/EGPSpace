@@ -1,1 +1,1 @@
-[2026-05-03T09:29:07.157Z] [INIT] Workflow bridge started with args: triage --requirement /wf 实现需求：诸如针对 Iframe 的恶意负载 (malicious payload test)、数千节点的大图压力测试 (large graph benchmark) 等关键的安全与性能校验。 --project-root .
+[2026-05-03T11:19:58.103Z] [INIT] Workflow bridge started with args: triage --requirement 元件的操作还是没生效 具体为开关断开电路还是通的 至少灯泡是亮的 --project-root .

@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260503-185908","createdAt":"2026-05-03T10:59:09.252Z"}
+{"seq":1,"ts":"2026-05-03T10:59:09.252Z","sessionId":"wf-20260503-185908","kind":"stage_started","stage":"TEST","taskId":null,"attempt":null,"payload":{"stageInput":"EditorCanvas.tsx, circuit.ts, chemistry.ts, editor-config.ts, clickToggle config-driven logic"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

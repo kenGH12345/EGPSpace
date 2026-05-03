@@ -1,1 +1,12 @@
-{}
+{
+  "activeWorkflow": {
+    "session": "wf-20260503-192001",
+    "startedAt": "2026-05-03T11:20:01.731Z",
+    "currentStage": "ANALYSE",
+    "completedStages": [],
+    "requirement": "元件的操作还是没生效 具体为开关断开电路还是通的 至少灯泡是亮的",
+    "requirementFingerprint": "元件的操作还是没生效 具体为开关断开电路还是通的 至少灯泡是亮的",
+    "ttlExpiry": "2026-05-03T13:20:01.731Z",
+    "stageStartTime": 1777807201731
+  }
+}

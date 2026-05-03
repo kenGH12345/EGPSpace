@@ -155,7 +155,7 @@
     // Bulb body
     const cx = ax + 25, cy = ay + 20;
     const intensity = Math.min(1, glow);
-    const yellowish = 'rgba(250, 204, 21, ' + (0.2 + intensity * 0.8) + ')';
+    const yellowish = 'rgba(250, 204, 21, ' + intensity + ')';
     ctx.fillStyle = yellowish;
     ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = state === 'overload' ? '#DC2626' : STROKE;

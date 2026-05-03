@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260503-192001","createdAt":"2026-05-03T11:20:01.678Z"}
+{"seq":1,"ts":"2026-05-03T11:20:01.678Z","sessionId":"wf-20260503-192001","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"电路开关交互、灯泡渲染逻辑、点击Toggle状态切换"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

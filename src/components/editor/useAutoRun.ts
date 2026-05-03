@@ -26,28 +26,35 @@ export function useAutoRun(
 
     // If physical state hasn't changed, do nothing.
     if (currentStateStr === lastStateStrRef.current) {
+      console.log('[useAutoRun] state unchanged, skipping');
       return;
     }
 
     lastStateStrRef.current = currentStateStr;
+    console.log('[useAutoRun] state changed, scheduling run...');
 
     // We do have a change. Debounce the execution.
     const timerId = setTimeout(async () => {
       onStatus('运行中...');
       const bundle = bundleFromState(state);
+      console.log('[useAutoRun] running bundle:', bundle);
       const r = await runEditorBundle(state.domain, bundle, state.macros);
+      console.log('[useAutoRun] run result:', r);
       
       if (!r.ok || !r.result) {
-        onStatus(`❌ 运行失败: ${r.error ?? 'unknown'}`);
+        onStatus(`运行失败: ${r.error ?? 'unknown'}`);
+        console.log('[useAutoRun] run failed:', r.error);
         return;
       }
       if (r.result.state === 'error') {
         const msg = (r.result.values.errorMessage as string) ?? r.result.explanation ?? 'error';
-        onStatus(`❌ 引擎返回错误: ${msg}`);
+        onStatus(`引擎返回错误: ${msg}`);
+        console.log('[useAutoRun] engine error:', msg);
         return;
       }
       const perC = extractPerComponent(r.result);
-      onResult(perC, `✅ 已运行 · state=${r.result.state}`);
+      console.log('[useAutoRun] per-component:', perC);
+      onResult(perC, `已运行 · state=${r.result.state}`);
     }, 150);
 
     return () => clearTimeout(timerId);

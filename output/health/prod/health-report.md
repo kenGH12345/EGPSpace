@@ -1,7 +1,7 @@
 # 🏥 System Health Monitoring Report
 
-> Generated: 2026-05-03T09:40:07.595Z
-> Session ID: `default`
+> Generated: 2026-05-03T11:20:01.593Z
+> Session ID: `wf-20260503-192001`
 > Run Category: `prod`
 
 ---
@@ -10,9 +10,15 @@
 
 | Field | Value |
 |-------|-------|
-| **Requirement** | N/A |
-| **Entry Point** | `unknown` |
+| **Requirement** | 元件的操作还是没生效 具体为开关断开电路还是通的 至少灯泡是亮的 |
+| **Entry Point** | `IDE_AGENT` |
 | **Mode** | `sequential` |
+
+### Full User Input
+
+```
+/wf 元件的操作还是没生效 具体为开关断开电路还是通的 至少灯泡是亮的
+```
 
 ---
 
@@ -33,7 +39,7 @@
 
 | Check | Status |
 |-------|--------|
-| Workflow Start | ❌ |
+| Workflow Start | ✅ |
 | Workflow End | ❌ |
 | Stage: ANALYSE | ❌ |
 | Stage: ARCHITECT | ❌ |
@@ -42,7 +48,7 @@
 | Stage: TEST | ❌ |
 | **Overall Status** | **⚠️ INCOMPLETE** |
 
-**⚠️ Missing Stages:** `ANALYSE (✗start/✗end)`, `ARCHITECT (✗start/✗end)`, `PLAN (✗start/✗end)`, `CODE (✗start/✗end)`, `TEST (✗start/✗end)`
+**⚠️ Missing Stages:** `ANALYSE (✓start/✗end)`, `ARCHITECT (✗start/✗end)`, `PLAN (✗start/✗end)`, `CODE (✗start/✗end)`, `TEST (✗start/✗end)`
 
 ---
 
@@ -52,7 +58,7 @@
 |--------|-------|
 | Total Events | 2 |
 | Stage Starts | 1 (raw: 1) |
-| Stage Ends | 1 |
+| Stage Ends | 0 |
 | Socratic Checks | 0 (coverage: 0/0) |
 | Effective Challenge Rate | 100% (0/0) |
 | Errors | 0 |
@@ -62,8 +68,8 @@
 
 | Event Type | Count |
 |------------|-------|
+| `workflow_start` | 1 |
 | `stage_start` | 1 |
-| `stage_end` | 1 |
 
 ---
 
@@ -95,61 +101,32 @@
 |--------|-------|
 | Trend Enabled | ✅ Yes |
 | Window Size | 5 |
-| History Sessions | 144 |
-| Recent Avg Score | 74.4 |
-| Previous Avg Score | 75.8 |
-| Delta (Recent-Previous) | -1.4 |
+| History Sessions | 150 |
+| Recent Avg Score | 53.4 |
+| Previous Avg Score | 68.8 |
+| Delta (Recent-Previous) | -15.4 |
 | Low Score Threshold | 75 |
 | Alert Status | 🚨 Triggered |
 
-> Latest health score 52.0 is below threshold 75
+> Rolling-window degradation detected (-15.4 pts, window=5)
 
 ---
 
 ## 🔄 Stage Execution Details
 
-### 1. `DEPLOY`
+### 1. `ANALYSE`
 
 | Metric | Value |
 |--------|-------|
-| Status | ✅ Success |
-| Metrics Gate | ✅ PASSED |
+| Status | ⏳ Running... |
+| Metrics Gate | ⬜ N/A (Node Orchestrator mode) |
 
-**📋 Summary:** 已输出部署总结，验证测试覆盖率和打包成功
+**📥 Input:** 电路开关交互、灯泡渲染逻辑、点击Toggle状态切换
 
-**📥 Input:** output/deploy-output.md
+**Input Artifact:** `C:\workspace\EGPSpace\output\requirement.md`
+- Lines: 405, Hash: `16400-#EGPSpace—P1TemplateRegistry`
 
-**📤 Output:** output/deploy-output.md
-
-**Input Artifact:** None (first stage)
-
-**Output Artifact:** `C:\workspace\EGPSpace\output\deploy-output.md`
-- Lines: 16, Hash: `756-##DeploymentSummary本次部署针对5`
-
-<details><summary>Preview (first 400 chars)</summary>
-
-```
-## Deployment Summary
-本次部署针对 5 项安全与性能缺失测试（TickEngine 调度、大图基准测试、注册表一致性、宏无效导出映射及 postMessage 恶意荷载防护）的补充。代码合并后直接跟随 CI 提升了系统的抗风险基线。
-
-## Pre-Deployment Checks
-- 所有新增测试文件是否在本地通过执行？是（21 个断言全部通过）。
-- `jest.config.js` 的 `roots` 路径是否已被正向合并且未破坏现有构建？是（已成功编译运行）。
-
-## Deployment Actions
-- Git Add & Commit：将
-```
-</details>
-
-<details><summary>🚦 Metrics Gate Detail (PASSED)</summary>
-
-| Gate | Status | Actual | Threshold |
-|------|--------|--------|-----------|
-| maxErrorCount | ✅ pass | 0 | 3 |
-| maxDurationMs | ✅ pass | 0.0s | 600.0s |
-| maxLlmCalls | ✅ pass | 0 | 15 |
-
-</details>
+**Output Artifact:** ⚠️ Not captured
 
 ---
 
@@ -158,7 +135,7 @@
 | Field | Value |
 |-------|-------|
 | Protocol Version | `evidence-v1` |
-| Session | `default` |
+| Session | `wf-20260503-192001` |
 | Run Category | `prod` |
 | Missing Stage Artifacts | 0 |
 
@@ -170,9 +147,9 @@
 | ARCHITECT | ✅ | 4032 | `3cc69f5491ba7d49...` |
 | PLAN | ✅ | 2737 | `803bedeb1ad77d18...` |
 | CODE | ✅ | 3936 | `796c74069c6ed292...` |
-| TEST | ✅ | 2718 | `4c58ff309ce10d61...` |
+| TEST | ✅ | 2242 | `d5e5d340dc36f433...` |
 
-- **Trace Hash**: `11f5e218fefaee33524154d158c3e171e080c132b059ff897ad22da3f3d53123`
+- **Trace Hash**: `6eb9c9abbb22b7c3620562587ba551f0abec6ed801fcf9fcd6b960feeb56ab5a`
 - **Quality Report Hash**: N/A
 - **Evolution Log Hash**: N/A
 

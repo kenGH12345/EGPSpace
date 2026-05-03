@@ -1,0 +1,3 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260503-184733","createdAt":"2026-05-03T10:47:34.203Z"}
+{"seq":1,"ts":"2026-05-03T10:47:34.203Z","sessionId":"wf-20260503-184733","kind":"stage_started","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageInput":"EditorCanvas onMouseDown, EditorDomainConfig, switch/alcohol-lamp hardcoded kind checks"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
+{"seq":2,"ts":"2026-05-03T10:48:51.370Z","sessionId":"wf-20260503-184733","kind":"stage_completed","stage":"ANALYSE","taskId":null,"attempt":null,"payload":{"stageOutput":"analysis.md ready"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}

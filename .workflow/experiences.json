@@ -1862,5 +1862,51 @@
     "createdAt": "2026-05-03T05:03:48.758Z",
     "updatedAt": "2026-05-03T05:03:48.758Z",
     "expiresAt": "2027-05-03T05:03:48.758Z"
+  },
+  {
+    "id": "EXP-1777806276752-DPG706P",
+    "type": "positive",
+    "category": "stable_pattern",
+    "title": "配置驱动的交互注册表模式 (ClickToggleConfig)",
+    "content": "将硬编码的 kind-specific 交互逻辑（如 switch 的点击切换）重构为声明式配置（Record<string, ClickToggleConfig>）。关键实践：(1) 在 EditorDomainConfig 中新增 clickToggle 字段；(2) 各域配置文件自行声明哪些 kind 支持什么交互；(3) 画布事件处理器通过 config.clickToggle?.[hit.kind] 做 O(1) 查找，无需硬编码 kind 常量。这使得新增同类交互元件时只需改配置、不改画布核心代码。",
+    "taskId": null,
+    "skill": "code-development",
+    "tags": [
+      "refactor",
+      "config-driven",
+      "architecture"
+    ],
+    "codeExample": null,
+    "sourceFile": null,
+    "namespace": null,
+    "moduleId": null,
+    "hitCount": 0,
+    "evolutionCount": 0,
+    "createdAt": "2026-05-03T11:04:36.752Z",
+    "updatedAt": "2026-05-03T11:04:36.752Z",
+    "expiresAt": "2027-05-03T11:04:36.752Z"
+  },
+  {
+    "id": "EXP-1777806282360-DIFO08C",
+    "type": "negative",
+    "category": "pitfall",
+    "title": "EditorCanvas onMouseDown 交互优先级链缺失文档",
+    "content": "在审查和修改 EditorCanvas.onMouseDown 时，最耗时的是确认 5 级交互优先级的完整链（Port → Shift+MultiSelect → ClickToggle → Drag → Empty）。代码中没有显式注释列出这个优先级，给重构带来了认知负担。最佳实践：在 onMouseDown 函数顶部添加一个优先级顺序注释，或在架构文档中维护交互事件处理策略图。",
+    "taskId": null,
+    "skill": "code-development",
+    "tags": [
+      "documentation",
+      "interaction-priority",
+      "onboarding"
+    ],
+    "codeExample": null,
+    "sourceFile": null,
+    "namespace": null,
+    "moduleId": null,
+    "hitCount": 0,
+    "evolutionCount": 0,
+    "createdAt": "2026-05-03T11:04:42.360Z",
+    "updatedAt": "2026-05-03T11:04:42.360Z",
+    "expiresAt": "2026-08-01T11:04:42.360Z"
   }
 ]

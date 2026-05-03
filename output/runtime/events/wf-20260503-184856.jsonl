@@ -1,0 +1,2 @@
+{"schemaVersion":"2.0","sessionId":"wf-20260503-184856","createdAt":"2026-05-03T10:48:56.861Z"}
+{"seq":1,"ts":"2026-05-03T10:48:56.861Z","sessionId":"wf-20260503-184856","kind":"stage_started","stage":"ARCHITECT","taskId":null,"attempt":null,"payload":{"stageInput":"editor-config.ts, EditorDomainConfig type, PaletteEntry, EditorCanvas onMouseDown, circuit.ts, chemistry.ts"},"causationId":null,"correlationId":null,"snapshotHint":false,"schemaVersion":"2.0"}
