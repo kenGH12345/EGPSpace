@@ -68,8 +68,9 @@ export function EditorShell({ initialDomain = 'circuit', initialBundle }: Editor
     historyReducer as (s: HEditorState, a: HEditorAction) => HEditorState,
     initialDomain,
     (d) => {
-      const emptyState = emptyEditorState(initialBundle ? initialBundle.spec.domain : d);
-      const state = initialBundle
+      const targetDomain = initialBundle?.spec?.domain ?? d;
+      const emptyState = emptyEditorState(targetDomain);
+      const state = initialBundle?.spec
         ? applyEditorAction(emptyState, { type: 'loadBundle', bundle: initialBundle })
         : emptyState;
       return emptyHistory(state);
