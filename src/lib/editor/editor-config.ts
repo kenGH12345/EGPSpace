@@ -17,6 +17,14 @@ import type { PortLayoutTable, PortOffset } from './port-layout';
 
 export type { PortLayoutTable, PortOffset };
 
+/** Configuration for a click-toggle interaction on the canvas. */
+export interface ClickToggleConfig {
+  /** The prop key to toggle when the component body is clicked. */
+  propKey: string;
+  /** Expected prop type for validation. Only 'boolean' supported for now. */
+  type: 'boolean';
+}
+
 /** One palette entry — a kind the user can drag onto the canvas. */
 export interface PaletteEntry {
   kind: string;
@@ -106,6 +114,12 @@ export interface EditorDomainConfig<D extends ComponentDomain = ComponentDomain>
    * Default 20 applied by EditorCanvas when consumer passes undefined.
    */
   snapGrid?: number;
+  /**
+   * Optional mapping from kind → ClickToggleConfig.
+   * Enables canvas click to toggle a boolean prop without opening the property panel.
+   * Example: { 'switch': { propKey: 'closed', type: 'boolean' } }
+   */
+  clickToggle?: Record<string, ClickToggleConfig>;
 }
 
 /** Port radius in canvas pixels (used by PortHotspots). */

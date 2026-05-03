@@ -151,6 +151,9 @@ export const chemistryEditorConfig: EditorDomainConfig<'chemistry'> = {
     strokeWidth: 1.5,
     dash: [6, 3],
   },
+  clickToggle: {
+    'alcohol-lamp': { propKey: 'isLit', type: 'boolean' },
+  },
   validateBundle: (placedCount, connectionCount) => {
     const errors: string[] = [];
     if (placedCount === 0) errors.push('画布为空');

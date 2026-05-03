@@ -267,14 +267,15 @@ export function EditorCanvas({ state, config, dispatch, runResult }: EditorCanva
           e.preventDefault();
           return;
         }
-        // Toggle switch on simple click (no-drag intent)
-        if (hit.kind === 'switch') {
+        // Config-driven click toggle (architecture fix: eliminates hard-coded kind checking)
+        const toggleCfg = config.clickToggle?.[hit.kind];
+        if (toggleCfg && typeof hit.props[toggleCfg.propKey] === 'boolean') {
           dispatch({ type: 'selectComponent', id: hit.id });
           dispatch({
             type: 'updateProp',
             id: hit.id,
-            key: 'closed',
-            value: !hit.props.closed,
+            key: toggleCfg.propKey,
+            value: !hit.props[toggleCfg.propKey],
           });
           e.stopPropagation();
           e.preventDefault();

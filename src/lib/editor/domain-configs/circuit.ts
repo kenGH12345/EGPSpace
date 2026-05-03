@@ -118,6 +118,9 @@ export const circuitEditorConfig: EditorDomainConfig<'circuit'> = {
     stroke: '#0F172A',
     strokeWidth: 1.5,
   },
+  clickToggle: {
+    switch: { propKey: 'closed', type: 'boolean' },
+  },
   validateBundle: (placedCount, connectionCount) => {
     const errors: string[] = [];
     if (placedCount === 0) errors.push('画布为空，请至少放一个元件');
