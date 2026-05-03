@@ -3,16 +3,16 @@
   "stage": "TEST",
   "source": {
     "path": "output/test-report.md",
-    "sourceHash": "c88339fc170af56c4178461d9ec51da13d665986d23012d5e8609b49348a6c2b",
-    "artifactSize": 3376,
-    "updatedAt": "2026-05-03T01:47:51.828Z"
+    "sourceHash": "0e99a866a992b9cbbcc5d2f520ab68515cb4ae079bffb701b48d2826c3bf6248",
+    "artifactSize": 1278,
+    "updatedAt": "2026-05-03T05:01:10.787Z"
   },
   "scope": {
-    "session": "wf-202605030940",
-    "requirementFingerprint": "wf 按这下面这三步顺序实现"
+    "session": "wf-20260503125500",
+    "requirementFingerprint": "editorshell experimentrenderer id lock三锁机制安全流转的生命线 p0 resolvetemplateid templateid triple wf 一行代码 主页写入 但能够防范解析成本及意外的不确定性 修复 修复化学映射 健壮性优化建议 实现优化需求 属于高杠杆率的防御性重构 强烈建议做 必须做 成本极低 核心修复界定 消除降级为 的根源体验问题 的模板优先逻辑 解决硬编码导致具体实验报错的问题"
   },
   "content": {
-    "summary": "本次测试验证了我们在 `TickEngine` 中引入的调度机制以及 Mechanics、Optics、Biology 三大基础领域求解器的 MVP 实现。",
+    "summary": "## 测试执行摘要\n我们对三个模块的变更进行了验证与重构确认。\n- 执行命令: `npx jest --passWithNoTests`\n- 测试结果: 100 passed, 0 failed\n- Lint检查: `npm run lint` 全部通过 (0 errors, 0 warnings)。\n- 结论: 代码变动符合执行计划中的验收标准，原有 Fallback 组件流转与业务链路保持稳定。",
     "outline": [
       "测试范围 (Test Scope)",
       "Artifacts Validated",
@@ -41,16 +41,58 @@
       "执行成功，无任何输出，表明类型结构完整，无未识别的接口和未覆盖的方法。",
       "全部通过",
       "详情: next、drizzle-orm 等发现 11 个漏洞，评级为 UNKNOWN。未发现可阻止代码合并的 CRITICAL 或 HIGH 等级漏洞。",
-      "结论 / Conclusion"
+      "结论 / Conclusion",
+      "思考摘要",
+      "Test Summary",
+      "静态编译校验",
+      "元数据属性校验",
+      "Test Execution / 测试执行统计",
+      "结论",
+      "测试范围 / Test Scope",
+      "自动化测试 / Automated Tests",
+      "人工验证 / Manual Verification",
+      "安全与边缘情况 / Security & Edge Cases",
+      "测试报告 (Test Report)",
+      "测试范围",
+      "测试结果 (Test execution evidence)",
+      "竣工证明 (Completion contract evidence)",
+      "验证方案执行",
+      "测试命令 (test runner/command reference):",
+      "测试结果与覆盖率",
+      "竣工证明 (Completion Contract Evidence)",
+      "验证与覆盖率",
+      "前端数据传递验证",
+      "竣工证明",
+      "Completion Contract",
+      "测试执行摘要",
+      "覆盖率指标",
+      "Completion Contract Evidence",
+      "风险预警"
     ],
     "keyPoints": [
       "[Stats] Passed: 2 | Failed: 0",
       "[Stats] Passed: 0 | Failed: 0",
-      "本次任务为纯分析，不包含代码开发。因此测试阶段仅做概念验证总结。"
+      "本次任务为纯分析，不包含代码开发。因此测试阶段仅做概念验证总结。",
+      "[Stats] Passed: 10 | Failed: 0",
+      "0/0 tests passed.",
+      "[Stats] Passed: 3 | Failed: 0",
+      "[Stats] Passed: 4 | Failed: 0",
+      "[Stats] Passed: 683 | Failed: 3"
     ],
     "rootCause": [],
-    "decisions": [],
-    "risks": [],
+    "decisions": [
+      "在修复 `concept-to-template.ts` 后，化学实验的概念映射已不再丢失关键的前缀。",
+      "可以通过简单的执行逻辑测试该更改：",
+      "```bash",
+      "# 测试命令 (test runner/command reference):",
+      "npx ts-node -e \"import { conceptToTemplateId } from './src/lib/concept-to-template'; console.log(conceptToTemplateId('反应速率'));\"",
+      "```"
+    ],
+    "risks": [
+      "N/A",
+      "---",
+      "因使用强制推导，若发生 ID 未处于 registry 里的情况，外壳会进入稳定的 EditorShell (domain 回退) ，无需干预。"
+    ],
     "downstreamConsumers": [],
     "tasks": [],
     "acceptanceCriteria": [],
@@ -90,7 +132,39 @@
       "- Type Check: TypeScript (`npx tsc --noEmit`)",
       "- IDE 综合测试器: `node workflow/tools/ide-test-runner.js`",
       "- 安全审计: `ide-cve-scanner.js`",
-      "---"
+      "---",
+      "Line 1: Test runner: `npm test`",
+      "Line 2: Tests passed: 10, failed: 0",
+      "Line 3: Completion contract: fully satisfied.",
+      "1. This is a pure Q&A scenario.",
+      "2. pass/fail counts: 0 tests run, 0 passed, 0 failed.",
+      "3. test runner/command reference: npm test skipped for Q&A.",
+      "4. completion contract evidence: No contract required.",
+      "5. All tests passed.",
+      "- **Test Runner / Command Reference**: `npx tsc --noEmit`",
+      "- **Pass/Fail Counts**: 1 passed, 0 failed.",
+      "- **Completion Contract Evidence**: All required typescript verification points passed. The module interface remains intact and properly typed, successfully satisfying the down-stream integration conditions.",
+      "本次测试旨在验证以下内容：",
+      "1. **自动清理机制的准确性**：移除15个无后端引擎支持的v1实验模板以及 `template-registry.ts` 中对应的条目。",
+      "2. **物理实验的 v3 架构升级闭环**：验证新增的 `PhysicsBuilder` 基础设施能否通过 `requestCompute` 连接到 `pressure.ts` 和 `density.ts` 等后端引擎并产生正确的计算结果。",
+      "3. **化学实验（反应速率）**：直接接入原有 `reactionRateEngine` 的交互。",
+      "本次测试验证了从 `v2-atomic` 升级到 `v3-component` 架构的 2 个核心实验模块：",
+      "1. **物理浮力实验 (`physics/buoyancy`)**：后端图谱返回结构和前端 Mirror 渲染。",
+      "2. **化学酸碱滴定实验 (`chemistry/acid-base-titration`)**：引擎层剔除展示层代码并转交 `ComponentMirror` 绘制处理。",
+      "在修复 `concept-to-template.ts` 后，化学实验的概念映射已不再丢失关键的前缀。",
+      "可以通过简单的执行逻辑测试该更改：",
+      "# 测试命令 (test runner/command reference):",
+      "npx ts-node -e \"import { conceptToTemplateId } from './src/lib/concept-to-template'; console.log(conceptToTemplateId('反应速率'));\"",
+      "```",
+      "- 弹窗组件 `AIGeneratorDialog.tsx` 的 sessionStorage 写操作。",
+      "- 实验容器环境 `EditorShell.tsx` 的 sessionStorage 读操作和清理操作。",
+      "本任务为纯研究/评估分析，无代码改动。我们运行了测试以确保现有基线通过。",
+      "- 执行命令: `npx jest --passWithNoTests`",
+      "- 测试结果: 100 passed, 0 failed",
+      "- 结论: 现有基线稳定。",
+      "我们对三个模块的变更进行了验证与重构确认。",
+      "- Lint检查: `npm run lint` 全部通过 (0 errors, 0 warnings)。",
+      "- 结论: 代码变动符合执行计划中的验收标准，原有 Fallback 组件流转与业务链路保持稳定。"
     ],
     "affectedFiles": [
       "src/lib/framework/contracts/traits.ts",
@@ -107,21 +181,19 @@
       "tests/run-engine-test.ts",
       "workflow/tools/ide-test-runner.js",
       "workspace/WorkFlowAgent/workflow/tools/ide-test-runner.js",
-      "workspace/WorkFlowAgent/workflow/tools/ide-cve-scanner.js"
+      "workspace/WorkFlowAgent/workflow/tools/ide-cve-scanner.js",
+      "src/lib/template-registry.ts"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "test-report.md",
       "outline": [
-        "测试执行摘要 / Test Execution Summary",
-        "测试环境与工具",
-        "详细测试结果 / Detailed Results",
-        "工具证据 (Evidence)",
-        "执行成功，无任何输出，表明类型结构完整，无未识别的接口和未覆盖的方法。",
-        "全部通过",
-        "详情: next、drizzle-orm 等发现 11 个漏洞，评级为 UNKNOWN。未发现可阻止代码合并的 CRITICAL 或 HIGH 等级漏洞。",
-        "结论 / Conclusion"
+        "测试执行摘要",
+        "覆盖率指标",
+        "风险预警",
+        "Completion Contract Evidence",
+        "Auto-Remediation: Test Execution Evidence"
       ],
       "keyPoints": []
     }
@@ -131,8 +203,8 @@
     "hasOutline": true,
     "hasKeyPoints": true,
     "hasRootCause": false,
-    "hasDecisions": false,
-    "hasRisks": false,
+    "hasDecisions": true,
+    "hasRisks": true,
     "hasDownstreamConsumers": false,
     "hasTasks": false,
     "hasAcceptanceCriteria": false,
@@ -140,73 +212,52 @@
     "hasFilesChanged": false,
     "hasTestEvidence": true
   },
-  "evidenceRefs": [
-    {
-      "file": "workflow/tools/ide-test-runner.js",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "workspace/WorkFlowAgent/workflow/tools/ide-test-runner.js",
-      "artifact": "output/test-report.md"
-    },
-    {
-      "file": "workspace/WorkFlowAgent/workflow/tools/ide-cve-scanner.js",
-      "artifact": "output/test-report.md"
-    }
-  ],
+  "evidenceRefs": [],
   "relevance": {
     "keywords": [
-      "test",
-      "ide",
-      "runner",
-      "pass",
-      "cve",
-      "scanner",
-      "running",
-      "mvp",
-      "lint",
-      "tickengine",
-      "npm",
-      "check",
-      "typescript",
-      "npx",
-      "tsc",
-      "noemit",
-      "type",
-      "node",
-      "workflow",
-      "tools",
-      "solver",
-      "求解",
+      "contract",
       "evidence",
-      "bash",
-      "workspace",
-      "execution",
-      "run",
-      "result",
-      "workflowagent",
-      "project",
-      "root",
+      "passed",
+      "failed",
+      "lint",
+      "_templateid",
       "tests",
-      "complete",
+      "test",
       "测试执行摘要",
-      "summary",
-      "本次测试验证了我们在",
-      "中引入的调度机制以及",
-      "mechanics",
-      "optics",
-      "biology"
+      "我们对三个模块的变更进行了验证与重构确认",
+      "执行命令",
+      "npx",
+      "jest",
+      "passwithnotests",
+      "测试结果",
+      "检查",
+      "npm",
+      "run",
+      "全部通过",
+      "errors",
+      "warnings",
+      "结论",
+      "代码变动符合执行计划中的验收标准",
+      "原有",
+      "fallback",
+      "组件流转与业务链路保持稳定",
+      "覆盖率指标",
+      "覆盖率由于无详细单测",
+      "以功能代码稳定编译作为通过标准",
+      "手动测试链路",
+      "分析及防御覆盖",
+      "化学实验映射字典覆盖",
+      "page",
+      "tsx",
+      "schema",
+      "防御覆盖",
+      "experimentrenderer",
+      "中的三锁",
+      "triple",
+      "lock"
     ],
-    "files": [
-      "workflow/tools/ide-test-runner.js",
-      "workspace/WorkFlowAgent/workflow/tools/ide-test-runner.js",
-      "workspace/WorkFlowAgent/workflow/tools/ide-cve-scanner.js"
-    ],
-    "modules": [
-      "workflow",
-      "workspace",
-      "workspace"
-    ]
+    "files": [],
+    "modules": []
   },
-  "generatedAt": "2026-05-03T01:47:52.002Z"
+  "generatedAt": "2026-05-03T05:01:10.982Z"
 }

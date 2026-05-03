@@ -1,12 +1,1 @@
-{
-  "activeWorkflow": {
-    "session": "wf-202605031017",
-    "startedAt": "2026-05-03T02:18:11.120Z",
-    "currentStage": "ANALYSE",
-    "completedStages": [],
-    "requirement": "现在所有的实验室模板是通过元件原子化配置来实现的吗",
-    "requirementFingerprint": "现在所有的实验室模板是通过元件原子化配置来实现的吗",
-    "ttlExpiry": "2026-05-03T04:18:11.121Z",
-    "stageStartTime": 1777774691121
-  }
-}
+{}

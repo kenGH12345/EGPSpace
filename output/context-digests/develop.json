@@ -3,16 +3,16 @@
   "stage": "DEVELOP",
   "source": {
     "path": "output/code.diff",
-    "sourceHash": "80b23f2907004c4a6fd989eaadc165e75eb75dbafc0bd355044066c3303de4a6",
-    "artifactSize": 2016,
-    "updatedAt": "2026-05-03T01:45:01.774Z"
+    "sourceHash": "ad46ef61b6904ff685526450d085ea7f86f929fca94d944d2776b763cb0fd829",
+    "artifactSize": 2375,
+    "updatedAt": "2026-05-03T05:00:03.011Z"
   },
   "scope": {
-    "session": "wf-202605030940",
-    "requirementFingerprint": "wf 按这下面这三步顺序实现"
+    "session": "wf-20260503125500",
+    "requirementFingerprint": "editorshell experimentrenderer id lock三锁机制安全流转的生命线 p0 resolvetemplateid templateid triple wf 一行代码 主页写入 但能够防范解析成本及意外的不确定性 修复 修复化学映射 健壮性优化建议 实现优化需求 属于高杠杆率的防御性重构 强烈建议做 必须做 成本极低 核心修复界定 消除降级为 的根源体验问题 的模板优先逻辑 解决硬编码导致具体实验报错的问题"
   },
   "content": {
-    "summary": "��d\u0000i\u0000f\u0000f\u0000 \u0000-\u0000-\u0000g\u0000i\u0000t\u0000 \u0000a\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000 \u0000b\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000\r\u0000\n\u0000-\u0000-\u0000-\u0000 \u0000a\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000\r\u0000\n\u0000+\u0000+\u0000+\u0000 \u0000b\u0000/\u0000s\u0000r\u0000c\u0000/\u0000l\u0000i\u0000b\u0000/\u0000f\u0000r\u0000a\u0000m\u0000e\u0000w\u0000o\u0000r\u0000k\u0000/\u0000c\u0000o\u0000r\u0000e\u0000/\u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000.\u0000t\u0000s\u0000\r\u0000\n\u0000@\u0000@\u0000 \u0000-\u00001\u0000,\u00005\u0000 \u0000+\u00001\u0000,\u00006\u0000 \u0000@\u0000@\u0000\r\u0000\n\u0000+\u0000 \u0000/\u0000/\u0000 \u0000I\u0000m\u0000p\u0000l\u0000e\u0000m\u0000e\u0000n\u0000t\u0000e\u0000d\u0000 \u0000f\u0000a\u0000i\u0000r\u0000 \u0000s\u0000c\u0000h\u0000e\u0000d\u0000u\u0000l\u0000i\u0000n\u0000g\u0000 \u0000i\u0000n\u0000 \u0000T\u0000i\u0000c\u0000k\u0000E\u0000n\u0000g\u0000i\u0000n\u0000e\u0000\r\u0000\n\u0000d\u0000i\u0000f\u0000f\u0000 \u0000-\u0000",
+    "summary": "diff --git a/src/app/page.tsx b/src/app/page.tsx\n@@ -128,4 +128,8 @@\n         const experimentId = schema.meta?.physicsType || mapConceptToExperiment(exp);\n+        if (experimentId && typeof schema === 'object' && schema !== null) {\n+          (schema as Record<string, unknown>)._templateId = experimentId;\n+        }\n         sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));\ndiff --git a/src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx\n@@ -",
     "outline": [],
     "keyPoints": [],
     "rootCause": [],
@@ -22,14 +22,38 @@
     "tasks": [],
     "acceptanceCriteria": [],
     "testEvidence": [],
-    "affectedFiles": [],
-    "filesChanged": [],
+    "affectedFiles": [
+      "a/src/lib/concept-to-template.ts",
+      "b/src/lib/concept-to-template.ts",
+      "a/src/components/AIGeneratorDialog.tsx",
+      "b/src/components/AIGeneratorDialog.tsx",
+      "a/src/components/editor/EditorShell.tsx",
+      "b/src/components/editor/EditorShell.tsx",
+      "a/src/app/page.tsx",
+      "b/src/app/page.tsx",
+      "a/src/components/ExperimentRenderer.tsx",
+      "b/src/components/ExperimentRenderer.tsx"
+    ],
+    "filesChanged": [
+      "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts",
+      "src/lib/concept-to-template.ts",
+      "src/components/AIGeneratorDialog.tsx b/src/components/AIGeneratorDialog.tsx",
+      "src/components/AIGeneratorDialog.tsx",
+      "src/components/editor/EditorShell.tsx b/src/components/editor/EditorShell.tsx",
+      "src/components/editor/EditorShell.tsx",
+      "src/app/page.tsx b/src/app/page.tsx",
+      "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx"
+    ],
     "stageOutputReport": {
       "kind": "diff",
       "artifact": "code.diff",
-      "filesChanged": [],
-      "additions": 0,
-      "deletions": 0
+      "filesChanged": [
+        "src/app/page.tsx b/src/app/page.tsx",
+        "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx",
+        "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts"
+      ],
+      "additions": 24,
+      "deletions": 2
     }
   },
   "coverage": {
@@ -42,15 +66,113 @@
     "hasDownstreamConsumers": false,
     "hasTasks": false,
     "hasAcceptanceCriteria": false,
-    "hasAffectedFiles": false,
-    "hasFilesChanged": false,
+    "hasAffectedFiles": true,
+    "hasFilesChanged": true,
     "hasTestEvidence": false
   },
-  "evidenceRefs": [],
+  "evidenceRefs": [
+    {
+      "file": "a/src/app/page.tsx",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "b/src/app/page.tsx",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "a/src/components/ExperimentRenderer.tsx",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "b/src/components/ExperimentRenderer.tsx",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "a/src/lib/concept-to-template.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "b/src/lib/concept-to-template.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/app/page.tsx b/src/app/page.tsx",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts",
+      "artifact": "output/code.diff"
+    }
+  ],
   "relevance": {
-    "keywords": [],
-    "files": [],
-    "modules": []
+    "keywords": [
+      "candidate",
+      "null",
+      "src",
+      "const",
+      "schema",
+      "string",
+      "_templateid",
+      "return",
+      "aischema",
+      "tsx",
+      "resolvedtemplateid",
+      "isapprovedtemplate",
+      "templateid",
+      "onmetadatachange",
+      "selfresolvedtid",
+      "iron",
+      "rusting",
+      "diff",
+      "git",
+      "experimentid",
+      "meta",
+      "backendtid",
+      "aiconfig",
+      "candidates",
+      "app",
+      "page",
+      "components",
+      "experimentrenderer",
+      "iframeexperiment",
+      "height",
+      "experimentschema",
+      "experiment",
+      "injectedtid",
+      "concepttotemplateid",
+      "topic",
+      "name",
+      "reaction",
+      "rate",
+      "chemistry",
+      "lib"
+    ],
+    "files": [
+      "a/src/app/page.tsx",
+      "b/src/app/page.tsx",
+      "a/src/components/ExperimentRenderer.tsx",
+      "b/src/components/ExperimentRenderer.tsx",
+      "a/src/lib/concept-to-template.ts",
+      "b/src/lib/concept-to-template.ts",
+      "src/app/page.tsx b/src/app/page.tsx",
+      "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx",
+      "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts"
+    ],
+    "modules": [
+      "a",
+      "b",
+      "a",
+      "b",
+      "a",
+      "b",
+      "src",
+      "src",
+      "src"
+    ]
   },
-  "generatedAt": "2026-05-03T01:45:53.303Z"
+  "generatedAt": "2026-05-03T05:00:09.304Z"
 }

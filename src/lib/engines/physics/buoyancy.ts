@@ -63,22 +63,34 @@ export class BuoyancyEngine implements IExperimentEngine {
 
     const objY = 40 + (1 - Math.max(0, Math.min(1, immersionRatio))) * 150;
 
-    // ── Display-layer derivations (v2-atomic: templates read these directly) ──
-    const materialName =
-      rhoObj < 500 ? '软木' :
-      rhoObj < 900 ? '塑料' :
-      rhoObj < 1200 ? '木材' :
-      rhoObj < 2500 ? '玻璃' :
-      rhoObj < 5000 ? '铝' :
-      rhoObj < 9000 ? '铜' : '铁';
+    const mass = rhoObj * vol;
+    
+    // v3-component component graph output
+    const components = [
+      {
+        id: 'Liquid1',
+        kind: 'liquid-container',
+        props: { rhoLiq, liquidDensity: rhoLiq }
+      },
+      {
+        id: 'Block1',
+        kind: 'block',
+        props: { 
+          rhoObj, 
+          volume: vol, 
+          immersionRatio, 
+          floatState: state,
+          buoyantForce,
+          gravity,
+          objY
+        }
+      }
+    ];
 
-    const liquidName =
-      rhoLiq < 900 ? '油' :
-      rhoLiq < 1100 ? '水' :
-      rhoLiq < 3000 ? '盐水' : '水银';
-
-    // Hue 0 (red) → 120 (green): lower density = greener
-    const hue = Math.max(0, Math.min(120, 120 - ((rhoObj - 200) / 1800) * 120));
+    const perComponent = {
+      'Liquid1': { rhoLiq },
+      'Block1': { rhoObj, volume: vol, immersionRatio, floatState: state, buoyantForce, gravity }
+    };
 
     let badgeKind: 'success' | 'danger' | 'info' = 'info';
     let badgeText = '物体悬浮（密度 = 液体）';
@@ -103,11 +115,9 @@ export class BuoyancyEngine implements IExperimentEngine {
         floatState: state,
         objY,
         objColor: rhoObj < rhoLiq ? '#f97316' : rhoObj > rhoLiq ? '#6366f1' : '#a855f7',
-        mass: rhoObj * vol,
-        // v2-atomic display-layer fields
-        materialName,
-        liquidName,
-        hue,
+        mass,
+        components,
+        perComponent,
         badgeKind,
         badgeText,
       },

@@ -107,22 +107,27 @@ const CONCEPT_MAPPINGS: ConceptMapping[] = [
   // === 化学实验 — Phase 2（统一框架迁移） ===
   {
     keywords: ['酸碱滴定', '滴定', 'pH曲线', '强酸强碱', 'acid-base titration'],
-    templateId: 'acid-base-titration',
+    templateId: 'chemistry/acid-base-titration',
     params: { highlight: ['acid-base-titration'] },
   },
   {
     keywords: ['电解水', '电解', '氢气氧气', '阴极阳极', 'electrolysis'],
-    templateId: 'electrolysis',
+    templateId: 'chemistry/electrolysis',
     params: { highlight: ['electrolysis'] },
   },
   {
+    keywords: ['铁生锈', '铁生锈条件探究', '铁生锈条件', '生锈', 'iron rusting', 'rust'],
+    templateId: 'chemistry/iron-rusting',
+    params: { highlight: ['iron-rusting'] },
+  },
+  {
     keywords: ['反应速率', '阿伦尼乌斯', '催化剂', '化学动力学', 'reaction rate'],
-    templateId: 'reaction-rate',
+    templateId: 'chemistry/reaction-rate',
     params: { highlight: ['reaction-rate'] },
   },
   {
     keywords: ['燃烧条件', '燃烧三要素', '燃点', '助燃物', 'combustion conditions'],
-    templateId: 'combustion',
+    templateId: 'chemistry/combustion-conditions',
     params: { highlight: ['combustion'] },
   },
 ];

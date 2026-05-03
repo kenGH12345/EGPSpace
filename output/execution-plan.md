@@ -1,49 +1,53 @@
-## Task List / 任务列表
+## Tasks / 任务分解
 
-- **T-1: 前置阻力清除 - TickEngine 升级 (Fixed Timestep & Max Substeps)**
-  - **Description**: 验证和加固 `src/lib/framework/core/TickEngine.ts` 中的调度逻辑，确保 `fixedDeltaTime` 累加器模式与 `maxSubsteps` 中断保护机制坚不可摧，防止物理运算拖垮主线程。
-  - **Acceptance Criteria**:
-    - [ ] `accumulator >= fixedDeltaTime` 能够按正确的整数次扣除时间。
-    - [ ] 当计算超时时，`substepCount` 正确达到 `maxSubsteps` 阀值并主动 `break` 丢弃剩余积压时间，避免死亡螺旋。
-  - **Files**: `src/lib/framework/core/TickEngine.ts`
-  - **Dependencies**: None
+## Phase 1: 物理高频缺失模板补全 (光学与力学)
+**T-1: 光学透镜与折射动态沙盒**
+- **描述**: 开发支持调整物距和焦距的凸透镜成像实验。
+- **Acceptance Criteria**:
+  1. 能够自由拖动蜡烛（物），并实时计算并显示像的位置和倒立/正立状态。
+  2. 提供焦距控制滑块。
+  3. `isApprovedTemplate` 注册 `physics/lens`。
 
-- **T-2: 第一阶段 (高优) - 力学 MVP (Mechanics MVP)**
-  - **Description**: 将 `src/lib/framework/domains/mechanics/solver.ts` 改写为真正的“质点-弹簧模型”，引入半隐式欧拉积分算法，作为 Fixed Timestep 最好的试金石。
-  - **Acceptance Criteria**:
-    - [ ] `MechanicsSolver.performUpdate` 实现对内部 Nodes 和 Springs 的遍历，根据胡克定律施加力，计算加速度，并使用半隐式欧拉法推演新的速度和位置。
-    - [ ] 向外发射序列化后的快照数据以便测试观察。
-  - **Files**: `src/lib/framework/domains/mechanics/solver.ts`, `src/lib/framework/domains/mechanics/components.ts`
-  - **Dependencies**: T-1
+**T-2: 引入 matter.js 引擎并实现高中力学碰撞台**
+- **描述**: 在物理 shared 目录下封装 `physics-engine.js` (基于 matter.js)，并实现动量守恒与完全弹性/非弹性碰撞模板。
+- **Acceptance Criteria**:
+  1. `public/templates/_shared` 内集成轻量级 `matter.js` 的核心刚体与碰撞模块。
+  2. 实现 `physics/collision` 模板，支持动态调整小球质量、初始速度。
+  3. 碰撞过程中能够实时提取物体的速度向量并绘制 v-t 图像，验证动量守恒定律。
 
-- **T-3: 第二阶段 (中优) - 光学 MVP (Optics MVP)**
-  - **Description**: 将 `src/lib/framework/domains/optics/solver.ts` 改写为基础的光线追踪或传递矩阵，用于验证大量纯数据对象在 EventBus 上的通信压力。
-  - **Acceptance Criteria**:
-    - [ ] `OpticsSolver.performUpdate` 追踪光线路径并计算至少 1 次界面折射或反射。
-    - [ ] 针对高耗时，内部写死 `MAX_BOUNCE`，光线数据组装为 Snapshot 发射。
-  - **Files**: `src/lib/framework/domains/optics/solver.ts`
-  - **Dependencies**: T-1
+## Phase 2: 生物学基础架构建设 (从0到1)
+**T-3: 显微镜通用交互组件**
+- **描述**: 构建一个带有粗细准焦螺旋、物镜转换、视野平移的公共组件。
+- **Acceptance Criteria**:
+  1. 支持传入高分辨率的标本大图。
+  2. 模糊滤镜模拟焦距，放大滤镜模拟倍率。
+  3. 新增 `biology-router.ts` 并注册 `biology/microscope`。
 
-- **T-4: 第二阶段 (中优) - 生物 MVP (Biology MVP)**
-  - **Description**: 将 `src/lib/framework/domains/biology/solver.ts` 改写为基于时间序列模型或状态机演化的生命系统模拟。验证非高频动画的长周期逻辑演化。
-  - **Acceptance Criteria**:
-    - [ ] 根据累积时间计算生物群体/状态增量方程。
-    - [ ] 生成生命周期状态变更快照。
-  - **Files**: `src/lib/framework/domains/biology/solver.ts`
-  - **Dependencies**: T-1
+**T-4: 细胞生理动态模拟 (质壁分离)**
+- **描述**: 制作一个基于 Canvas 的植物细胞脱水/吸水动态展示。
+- **Acceptance Criteria**:
+  1. 可调节细胞外液浓度。
+  2. 动画平滑展示液泡收缩/膨胀及原生质层分离现象。
 
-## Dependency Graph / 依赖关系图
+## Phase 3: 化学有机微观结构及复杂实验扩展
+**T-5: 引入 WebGL 方案实现有机分子 3D 渲染**
+- **描述**: 在化学 shared 目录下封装 `webgl-renderer.js` (如基于 Three.js)，实现甲烷、乙烯、乙酸乙酯等有机物的三维球棍模型展示与交互。
+- **Acceptance Criteria**:
+  1. 实现 `chemistry/organic-molecules` 模板。
+  2. 支持鼠标对 3D 分子模型的 360 度旋转、缩放。
+  3. 包含断键/成键的简易动画触发接口，支持化学反应微观过程演示。
 
-```mermaid
-graph TD
-  T1[T-1: TickEngine Upgrade] --> T2[T-2: Mechanics MVP (High Priority)]
-  T1 --> T3[T-3: Optics MVP (Medium Priority)]
-  T1 --> T4[T-4: Biology MVP (Medium Priority)]
-```
+**T-6: 经典气体制备拼装台**
+- **描述**: 实现类似拼图的发生装置（试管/烧瓶+酒精灯）和收集装置的组合。
+- **Acceptance Criteria**:
+  1. 错误拼装时（如加热高锰酸钾不放棉花）给出红色告警。
+  2. 注册 `chemistry/gas-generation`。
 
-## Risk Assessment / 风险评估
+## Critical Path
+本计划的关键路径在于 **T-2 (引入 matter.js)** 与 **T-5 (引入 WebGL)**。作为突破原生 HTML DOM 渲染瓶颈的核心基建，这两步的成功落地将决定高中复杂物理与化学实验能否顺利支持强交互和动态演化计算。生物学方面，**T-3 (显微镜交互)** 则是开启生物实验的第一把钥匙。
 
-- **最高风险任务**: T-2 (Mechanics MVP)。
-- **风险描述**: 力学积分是最容易因为参数过载或 `deltaTime` 抖动而导致坐标计算变成 `NaN` 的地方。如果 T-1 的时间锁扣不住，T-2 就会引发数值爆炸。
-- **缓解策略**: 在 T-2 实现中，加入严格的合法性校验：如果计算出的坐标是 NaN 或超过绝对空间大小阈值，强制重置速度和加速度为 0。同时限制弹簧系数的最大容许值。
-- **前端渲染风险**: 待 T-3 完成后，产生的大量光线数据可能会严重拖累现有 React Virtual DOM 渲染机制，未来需考虑向 Canvas 迁移。
+## Risk Mitigation
+- **风险**: T-2 和 T-5 引入外部引擎可能会导致单个 iframe 模板的体积显著增大，并增加内存消耗风险。
+- **缓解策略**:
+  1. 对 `matter.js` 和 WebGL 库采用 CDN 异步按需加载，不在主 bundle 中打包。
+  2. 在 `ExperimentRenderer` 组件级联时设置内存回收与销毁钩子，确保 iframe 卸载时一并释放引擎上下文。

@@ -87,7 +87,8 @@ export function EditorShell({ initialDomain = 'circuit', initialBundle }: Editor
 
   // 提取 AI 生成的 Schema 并进行布局
   useEffect(() => {
-    const aiSchemaStr = sessionStorage.getItem('ai-generated-schema');
+    // 优先读取新的配置键名，其次兜底旧键名
+    const aiSchemaStr = sessionStorage.getItem('eureka_experiment_config') || sessionStorage.getItem('ai-generated-schema');
     if (aiSchemaStr) {
       try {
         const schema = JSON.parse(aiSchemaStr);
@@ -101,6 +102,7 @@ export function EditorShell({ initialDomain = 'circuit', initialBundle }: Editor
             },
           };
           // 清除标志，避免刷新重复加载
+          sessionStorage.removeItem('eureka_experiment_config');
           sessionStorage.removeItem('ai-generated-schema');
           dispatch({ type: 'loadBundle', bundle });
         }

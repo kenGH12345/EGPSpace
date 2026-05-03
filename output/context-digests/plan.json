@@ -3,16 +3,16 @@
   "stage": "PLAN",
   "source": {
     "path": "output/execution-plan.md",
-    "sourceHash": "e98c830222dd29f7f8b54455e555c05c4df4699ad0e6780ced092926fbd7da48",
-    "artifactSize": 3382,
-    "updatedAt": "2026-05-03T01:42:51.127Z"
+    "sourceHash": "8a76f3fbcbf6cb1b079eae244e86bb968795201b8e3b39298561944204708a0f",
+    "artifactSize": 3239,
+    "updatedAt": "2026-05-03T08:39:08.559Z"
   },
   "scope": {
-    "session": "wf-202605030940",
-    "requirementFingerprint": "wf 按这下面这三步顺序实现"
+    "session": "wf-20260503053412.",
+    "requirementFingerprint": "dom html js matter webgl wf 以突破现有 力学 动态演化场景 化学 在架构设计中建议后续对高中碰撞实验 实现物理与化学缺乏强交互 引入外部轻量级引擎辅助 或特定 方案 有机微观结构 渲染能力的瓶颈"
   },
   "content": {
-    "summary": "## Task List / 任务列表\r\n\r\n- **T-1: 前置阻力清除 - TickEngine 升级 (Fixed Timestep & Max Substeps)**\r\n  - **Description**: 验证和加固 `src/lib/framework/core/TickEngine.ts` 中的调度逻辑，确保 `fixedDeltaTime` 累加器模式与 `maxSubsteps` 中断保护机制坚不可摧，防止物理运算拖垮主线程。\r\n  - **Acceptance Criteria**:\r\n    - [ ] `accumulator >= fixedDeltaTime` 能够按正确的整数次扣除时间。\r\n    - [ ] 当计算超时时，`substepCount` 正确达到 `maxSubsteps` 阀值并主动 `break` 丢弃剩余积压时间，避免死亡螺旋。\r\n  - **Files**: `src/lib/framework/core/TickEngine.ts`\r\n  - **Dependencies**: None\r\n\r\n- **T-2: 第一阶段 (",
+    "summary": "[Phase] Phase 1: 物理高频缺失模板补全 (光学与力学); [Phase] Phase 2: 生物学基础架构建设 (从0到1); [Phase] Phase 3: 化学有机微观结构及复杂实验扩展",
     "outline": [
       "依赖关系图 / Dependency Graph",
       "阶段划分 / Phase Division",
@@ -26,12 +26,67 @@
       "验收标准 / Acceptance Criteria",
       "Task List / 任务列表",
       "Dependency Graph / 依赖关系图",
-      "Risk Assessment / 风险评估"
+      "Risk Assessment / 风险评估",
+      "Execution Plan",
+      "思考摘要",
+      "Execution Phase 1: Analysis and Documentation",
+      "Execution Phase 2: Completion",
+      "Tasks",
+      "Dependencies",
+      "Execution Phase 1",
+      "执行计划 / Execution Plan",
+      "阶段 1：清理废弃代码 (Cleanup Phase)",
+      "T-1: 删除过时的 v1 HTML 模板",
+      "T-2: 同步清理注册表",
+      "阶段 2：基础设施 (Infrastructure Phase)",
+      "T-3: 编写 PhysicsBuilder",
+      "T-4: 编写核心物理引擎",
+      "阶段 3：组件化重写 (Implementation Phase)",
+      "T-5: 重写压强与密度模板",
+      "T-6: 重写反应速率模板",
+      "依赖关系 (Dependency Graph)",
+      "任务拆解 / Task Breakdown",
+      "关键路径 / Critical Path",
+      "Task Breakdown / 任务分解",
+      "Execution Phases / 执行阶段",
+      "阶段1：修复化学实验的概念路由前缀",
+      "任务细分",
+      "依赖图",
+      "阶段1：统一配置存储上下文",
+      "任务细分 (Task Breakdown)",
+      "依赖图 (Dependency Graph)",
+      "Task Breakdown",
+      "Risk Analysis",
+      "Architecture Alignment",
+      "Phase 1: 增强 `conceptToTemplateId` 的化学映射字典",
+      "Phase 2: 页面跳转级的缓存穿透防御",
+      "Phase 3: Triple-Lock 三锁机制的生命线重构与修复",
+      "Execution Contract / 契约",
+      "Phase 1: 物理高频缺失模板补全 (光学与力学)",
+      "Phase 2: 生物学基础架构建设 (从0到1)",
+      "Phase 3: 化学实验扩展",
+      "Critical Path",
+      "Risk Mitigation",
+      "Phase 3: 化学有机微观结构及复杂实验扩展"
     ],
     "keyPoints": [
       "[Phase] 阶段划分 / Phase Division",
       "[Phase] Phase 3.1 核心通信与调度驱动",
-      "[Phase] Phase 3.2 契约与基础适配"
+      "[Phase] Phase 3.2 契约与基础适配",
+      "[Risk/Dep] T-2 独立于 T-1，但可以在同一文件变更中完成。",
+      "[Risk/Dep] T-3 依赖于 T-1 和 T-2。",
+      "[Phase] 阶段 1：清理废弃代码 (Cleanup Phase)",
+      "[Phase] 阶段 2：基础设施 (Infrastructure Phase)",
+      "[Phase] 阶段 3：组件化重写 (Implementation Phase)",
+      "[Phase] 阶段1：修复化学实验的概念路由前缀",
+      "[Phase] 阶段1：统一配置存储上下文",
+      "[Phase] Phase 1: 增强 `conceptToTemplateId` 的化学映射字典",
+      "[Phase] Phase 2: 页面跳转级的缓存穿透防御",
+      "[Phase] Phase 3: Triple-Lock 三锁机制的生命线重构与修复",
+      "[Phase] Phase 1: 物理高频缺失模板补全 (光学与力学)",
+      "[Phase] Phase 2: 生物学基础架构建设 (从0到1)",
+      "[Phase] Phase 3: 化学实验扩展",
+      "[Phase] Phase 3: 化学有机微观结构及复杂实验扩展"
     ],
     "rootCause": [],
     "decisions": [],
@@ -39,7 +94,14 @@
       "- **最高风险任务**: T-2 (Mechanics MVP)。",
       "- **风险描述**: 力学积分是最容易因为参数过载或 `deltaTime` 抖动而导致坐标计算变成 `NaN` 的地方。如果 T-1 的时间锁扣不住，T-2 就会引发数值爆炸。",
       "- **缓解策略**: 在 T-2 实现中，加入严格的合法性校验：如果计算出的坐标是 NaN 或超过绝对空间大小阈值，强制重置速度和加速度为 0。同时限制弹簧系数的最大容许值。",
-      "- **前端渲染风险**: 待 T-3 完成后，产生的大量光线数据可能会严重拖累现有 React Virtual DOM 渲染机制，未来需考虑向 Canvas 迁移。"
+      "- **前端渲染风险**: 待 T-3 完成后，产生的大量光线数据可能会严重拖累现有 React Virtual DOM 渲染机制，未来需考虑向 Canvas 迁移。",
+      "The analysis provided clearly demonstrates the low risk of implementing the suggested changes. The highest risk is ignoring the core routing and fallback logic issues.",
+      "- **风险**: T-4 和 T-5 包含复杂的动画逻辑和拖拽拼装碰撞检测。",
+      "- **缓解策略**: 在 T-5 中优先引入已有的前端轻量级物理拖拽引擎（如 `react-dnd` 或 `interact.js`）以缩短开发时间；对于 T-4，使用预渲染的 Lottie 动画或 SVG 路径补间代替复杂的 WebGL 运算，保障性能下限。",
+      "- **风险**: T-2 和 T-5 引入外部引擎可能会导致单个 iframe 模板的体积显著增大，并增加内存消耗风险。",
+      "- **缓解策略**:",
+      "1. 对 `matter.js` 和 WebGL 库采用 CDN 异步按需加载，不在主 bundle 中打包。",
+      "2. 在 `ExperimentRenderer` 组件级联时设置内存回收与销毁钩子，确保 iframe 卸载时一并释放引擎上下文。"
     ],
     "downstreamConsumers": [],
     "tasks": [
@@ -78,7 +140,29 @@
       "- **T-2: 第一阶段 (高优) - 力学 MVP (Mechanics MVP)**",
       "- **Description**: 将 `src/lib/framework/domains/mechanics/solver.ts` 改写为真正的“质点-弹簧模型”，引入半隐式欧拉积分算法，作为 Fixed Timestep 最好的试金石。",
       "- [ ] `MechanicsSolver.performUpdate` 实现对内部 Nodes 和 Springs 的遍历，根据胡克定律施加力，计算加速度，并使用半隐式欧拉法推演新的速度和位置。",
-      "- [ ] 向外发射序列化后的快照数据以便测试观察。"
+      "- [ ] 向外发射序列化后的快照数据以便测试观察。",
+      "1. **Task T-1: 更新 registry 中的 physics 实验元数据**",
+      "- Description: 遍历 `REGISTRY` 中属 `physics` 且缺失 `atomVersion` 或是明确标为 `v1-legacy` 的实验，补充 `atomVersion: 'v3-component'`。",
+      "- Acceptance Criteria: 所有 physics 的过时模板都有合法的 v3-component 标记。",
+      "- Complexity: 极低（Low）。涉及文件 `src/lib/template-registry.ts`，纯 JSON 对象属性补充。",
+      "2. **Task T-2: 更新 registry 中的 chemistry 实验元数据**",
+      "- Description: 遍历 `REGISTRY` 中属 `chemistry` 且缺失 `atomVersion` 的实验（如 `chemistry/iron-rusting`、`chemistry/electrolysis` 等），补充 `atomVersion: 'v3-component'`。",
+      "- Acceptance Criteria: 所有 chemistry 的过时模板都有合法的 v3-component 标记。",
+      "- Complexity: 极低（Low）。同样修改 `src/lib/template-registry.ts`。",
+      "3. **Task T-3: 校验修改结果不破坏 TypeScript 类型系统**",
+      "- Description: 运行 tsc 检查或者 lint 确保增加的 `atomVersion: 'v3-component'` 契合已定义的类型联合。",
+      "- Acceptance Criteria: 编译/Lint无报错。",
+      "- Complexity: 极低（Low）。验证环节。",
+      "| Task ID | Description | File(s) | Dependencies |",
+      "| **T-1** | 更新实验模板注册表的架构元数据标识（`v2-atomic` -> `v3-component`） | `src/lib/templates/physics-registry.ts`, `src/lib/template-registry.ts` | None |",
+      "| **T-2** | 升级化学引擎 `titration.ts` 的计算响应格式，使其支持图谱化的组件数组返回 | `src/lib/engines/chemistry/titration.ts` | None |",
+      "| **T-3** | 重构化学模板 `acid-base-titration.html`，接入 `ChemistryBuilder` 与 `ComponentMirror` | `public/templates/chemistry/acid-base-titration.html` | T-2 |",
+      "| **T-4** | 升级物理引擎 `buoyancy.ts`，组装 `block` 与 `liquid-container` 的结果数据结构 | `src/lib/engines/physics/buoyancy.ts` | None |",
+      "| **T-5** | 重构物理模板 `buoyancy.html`，通过 `PhysicsBuilder` 生成声明式图谱进行请求及渲染 | `public/templates/physics/buoyancy.html` | T-4 |",
+      "- **T-001**: 答复用户。",
+      "- 文件：`src/lib/template-registry.ts`",
+      "- 动作：基于该文件验证所有模板均为 v3 并在终端提供答疑结果。",
+      "No execution tasks required as this is purely a research analysis."
     ],
     "acceptanceCriteria": [
       "- `MechanicsSolver` 能正确计算受重力和弹力作用下的质点坐标，无数值发散（即坐标不为 NaN）。",
@@ -96,18 +180,41 @@
       "src/lib/framework/domains/optics/solver.ts",
       "src/lib/framework/domains/biology/solver.ts",
       "tests/run-engine-test.ts",
-      "src/lib/framework/domains/mechanics/components.ts"
+      "src/lib/framework/domains/mechanics/components.ts",
+      "src/lib/template-registry.ts",
+      "src/lib/experiment-message-schema.ts",
+      "public/templates/_shared/physics-builder.js",
+      "src/lib/engines/physics/pressure.ts",
+      "src/lib/engines/physics/density.ts",
+      "src/lib/engines/physics/index.ts",
+      "templates/_shared/physics-builder.js",
+      "chemistry/reaction-rate.ts",
+      "src/lib/templates/physics-registry.ts",
+      "src/lib/engines/chemistry/titration.ts",
+      "src/lib/engines/physics/buoyancy.ts",
+      "src/lib/concept-to-template.ts",
+      "src/components/AIGeneratorDialog.tsx",
+      "src/components/editor/EditorShell.tsx",
+      "docs/architecture.md",
+      "src/app/page.tsx",
+      "src/components/ExperimentRenderer.tsx"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "execution-plan.md",
       "outline": [
-        "Task List / 任务列表",
-        "Dependency Graph / 依赖关系图",
-        "Risk Assessment / 风险评估"
+        "Phase 1: 物理高频缺失模板补全 (光学与力学)",
+        "Phase 2: 生物学基础架构建设 (从0到1)",
+        "Phase 3: 化学有机微观结构及复杂实验扩展",
+        "Critical Path",
+        "Risk Mitigation"
       ],
-      "keyPoints": []
+      "keyPoints": [
+        "[Phase] Phase 1: 物理高频缺失模板补全 (光学与力学)",
+        "[Phase] Phase 2: 生物学基础架构建设 (从0到1)",
+        "[Phase] Phase 3: 化学有机微观结构及复杂实验扩展"
+      ]
     }
   },
   "coverage": {
@@ -124,85 +231,52 @@
     "hasFilesChanged": false,
     "hasTestEvidence": false
   },
-  "evidenceRefs": [
-    {
-      "file": "src/lib/framework/core/TickEngine.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/mechanics/solver.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/mechanics/components.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/optics/solver.ts",
-      "artifact": "output/execution-plan.md"
-    },
-    {
-      "file": "src/lib/framework/domains/biology/solver.ts",
-      "artifact": "output/execution-plan.md"
-    }
-  ],
+  "evidenceRefs": [],
   "relevance": {
     "keywords": [
-      "mvp",
-      "src",
-      "lib",
-      "framework",
-      "domains",
-      "mechanics",
-      "solver",
-      "tickengine",
-      "description",
+      "描述",
       "acceptance",
       "criteria",
-      "files",
-      "dependencies",
-      "optics",
+      "matter",
+      "引入",
+      "webgl",
+      "phase",
+      "physics",
+      "注册",
+      "shared",
+      "目录下封装",
+      "实现",
+      "模板",
       "biology",
-      "priority",
-      "fixed",
-      "timestep",
-      "core",
-      "fixeddeltatime",
-      "maxsubsteps",
-      "performupdate",
-      "第二阶段",
-      "中优",
-      "graph",
-      "medium",
-      "nan",
-      "task",
-      "list",
-      "任务列表",
-      "前置阻力清除",
-      "升级",
-      "max",
-      "substeps",
-      "验证和加固",
-      "中的调度逻辑",
-      "确保",
-      "累加器模式与",
-      "中断保护机制坚不可摧",
-      "防止物理运算拖垮主线程"
+      "chemistry",
+      "iframe",
+      "物理高频缺失模板补全",
+      "光学与力学",
+      "光学透镜与折射动态沙盒",
+      "开发支持调整物距和焦距的凸透镜成像实验",
+      "能够自由拖动蜡烛",
+      "并实时计算并显示像的位置和倒立",
+      "正立状态",
+      "提供焦距控制滑块",
+      "isapprovedtemplate",
+      "lens",
+      "引擎并实现高中力学碰撞台",
+      "在物理",
+      "engine",
+      "基于",
+      "并实现动量守恒与完全弹性",
+      "非弹性碰撞模板",
+      "public",
+      "templates",
+      "_shared",
+      "内集成轻量级",
+      "的核心刚体与碰撞模块",
+      "collision",
+      "支持动态调整小球质量",
+      "初始速度"
     ],
-    "files": [
-      "src/lib/framework/core/TickEngine.ts",
-      "src/lib/framework/domains/mechanics/solver.ts",
-      "src/lib/framework/domains/mechanics/components.ts",
-      "src/lib/framework/domains/optics/solver.ts",
-      "src/lib/framework/domains/biology/solver.ts"
-    ],
-    "modules": [
-      "src",
-      "src",
-      "src",
-      "src",
-      "src"
-    ]
+    "files": [],
+    "modules": []
   },
-  "generatedAt": "2026-05-03T01:42:57.458Z"
+  "generatedAt": "2026-05-03T08:45:59.730Z"
 }

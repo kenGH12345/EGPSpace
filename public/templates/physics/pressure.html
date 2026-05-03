@@ -7,72 +7,31 @@
 <link rel="stylesheet" href="/templates/_shared/ui-core.css">
 <style>
   .pressure-canvas-wrapper {
-    position: relative;
     background: linear-gradient(180deg, #F0FDF4 0%, #ECFDF5 100%);
-  }
-  .pressure-mode-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  .pressure-mode-tab {
-    flex: 1;
-    padding: 8px 16px;
-    border: 2px solid #D1D5DB;
+    border: 1px solid #E5E7EB;
     border-radius: 8px;
-    background: #fff;
-    cursor: pointer;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 500;
-    color: #6B7280;
-    transition: all 0.2s;
+    overflow: hidden;
   }
-  .pressure-mode-tab.active {
-    border-color: #10B981;
-    color: #10B981;
-    background: #ECFDF5;
-  }
-  .pressure-label-overlay {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    background: rgba(255,255,255,0.85);
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12px;
-    line-height: 1.5;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  }
-  .pressure-label-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-  }
-  .pressure-label-row .k { color: #6B7280; }
-  .pressure-label-row .v { font-weight: 600; color: #1F2937; font-variant-numeric: tabular-nums; }
+  .pressure-canvas-wrapper canvas { max-width: 100%; height: auto; display: block; }
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .mode-tab { flex: 1; padding: 8px; text-align: center; border: 1px solid #D1D5DB; border-radius: 6px; cursor: pointer; }
+  .mode-tab.active { background: #10B981; color: white; border-color: #047857; }
 </style>
 </head>
 <body>
 <div class="eureka-root">
-
-  <!-- Mode selector -->
-  <div class="pressure-mode-tabs">
-    <div class="pressure-mode-tab active" data-mode="solid" id="tab-solid">固体压强</div>
-    <div class="pressure-mode-tab" data-mode="liquid" id="tab-liquid">液体压强</div>
+  <div class="mode-tabs">
+    <div class="mode-tab active" id="tab-solid" onclick="switchMode('solid')">固体压强</div>
+    <div class="mode-tab" id="tab-liquid" onclick="switchMode('liquid')">液体压强</div>
   </div>
 
-  <!-- Summary stats -->
   <div class="eureka-grid-3">
     <div class="eureka-stat">
-      <p class="eureka-stat-label" id="stat-label-1">压力 F</p>
+      <p class="eureka-stat-label" id="lbl-1">压力 F</p>
       <p class="eureka-stat-value primary" id="stat-1">0 N</p>
     </div>
     <div class="eureka-stat">
-      <p class="eureka-stat-label" id="stat-label-2">受力面积 S</p>
+      <p class="eureka-stat-label" id="lbl-2">受力面积 S</p>
       <p class="eureka-stat-value" id="stat-2">0 cm²</p>
     </div>
     <div class="eureka-stat">
@@ -81,377 +40,189 @@
     </div>
   </div>
 
-  <!-- Canvas visualization -->
-  <div class="eureka-canvas-wrapper pressure-canvas-wrapper">
-    <canvas id="canvas" class="eureka-canvas" width="680" height="380"></canvas>
-    <div class="pressure-label-overlay">
-      <div class="pressure-label-row"><span class="k">p</span><span class="v" id="overlay-p">0</span></div>
-      <div class="pressure-label-row"><span class="k">单位</span><span class="v" id="overlay-unit">Pa</span></div>
+  <div class="eureka-card" style="margin-top:12px;">
+    <div class="eureka-card-header">
+      <span>物理可视化</span>
+      <span class="badge-info" id="arch-version">v3-component · PressureEngine</span>
     </div>
-    <span class="eureka-badge" id="status-badge">计算中…</span>
-  </div>
-
-  <!-- Parameter controls -->
-  <div class="eureka-card">
-    <h3 class="eureka-card-title">参数调节</h3>
-
-    <!-- Solid mode controls -->
-    <div id="controls-solid">
-      <div class="eureka-control">
-        <div class="eureka-control-header">
-          <span class="eureka-control-label">压力 F</span>
-          <span class="eureka-control-value"><span id="v-force">50</span> N</span>
-        </div>
-        <input id="ctl-force" class="eureka-slider" type="range" min="10" max="500" step="10" value="50">
-      </div>
-      <div class="eureka-control">
-        <div class="eureka-control-header">
-          <span class="eureka-control-label">受力面积 S</span>
-          <span class="eureka-control-value"><span id="v-area">100</span> cm²</span>
-        </div>
-        <input id="ctl-area" class="eureka-slider" type="range" min="25" max="400" step="25" value="100">
-      </div>
-    </div>
-
-    <!-- Liquid mode controls -->
-    <div id="controls-liquid" style="display:none;">
-      <div class="eureka-control">
-        <div class="eureka-control-header">
-          <span class="eureka-control-label">液体密度 ρ</span>
-          <span class="eureka-control-value"><span id="v-rho">1000</span> kg/m³</span>
-        </div>
-        <input id="ctl-rho" class="eureka-slider" type="range" min="800" max="13600" step="100" value="1000">
-      </div>
-      <div class="eureka-control">
-        <div class="eureka-control-header">
-          <span class="eureka-control-label">深度 h</span>
-          <span class="eureka-control-value"><span id="v-depth">0.50</span> m</span>
-        </div>
-        <input id="ctl-depth" class="eureka-slider" type="range" min="0.1" max="2.0" step="0.05" value="0.50">
-      </div>
-      <div class="eureka-control">
-        <div class="eureka-control-header">
-          <span class="eureka-control-label">重力加速度 g</span>
-          <span class="eureka-control-value"><span id="v-g">9.8</span> m/s²</span>
-        </div>
-        <input id="ctl-g" class="eureka-slider" type="range" min="1" max="20" step="0.1" value="9.8">
-      </div>
+    <div class="pressure-canvas-wrapper">
+      <canvas id="canvas" width="640" height="300"></canvas>
     </div>
   </div>
 
+  <div class="eureka-card" style="margin-top:12px;">
+    <div class="eureka-card-header"><span>参数控制</span></div>
+    <div class="eureka-controls" id="ctrls-solid">
+      <div class="eureka-control">
+        <label>压力 F (N)</label>
+        <input type="range" class="eureka-slider" id="ctrl-force" min="10" max="500" step="10" value="50">
+        <span class="eureka-slider-value" id="val-force">50</span>
+      </div>
+      <div class="eureka-control">
+        <label>受力面积 S (cm²)</label>
+        <input type="range" class="eureka-slider" id="ctrl-area" min="25" max="400" step="25" value="100">
+        <span class="eureka-slider-value" id="val-area">100</span>
+      </div>
+    </div>
+    <div class="eureka-controls" id="ctrls-liquid" style="display:none;">
+      <div class="eureka-control">
+        <label>液体密度 ρ (kg/m³)</label>
+        <input type="range" class="eureka-slider" id="ctrl-rho" min="800" max="13600" step="100" value="1000">
+        <span class="eureka-slider-value" id="val-rho">1000</span>
+      </div>
+      <div class="eureka-control">
+        <label>深度 h (m)</label>
+        <input type="range" class="eureka-slider" id="ctrl-depth" min="0.1" max="2.0" step="0.05" value="0.5">
+        <span class="eureka-slider-value" id="val-depth">0.5</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="/templates/_shared/experiment-core.js"></script>
+<script src="/templates/_shared/ui-core.js"></script>
+<script src="/templates/_shared/component-mirror.js"></script>
+<script src="/templates/_shared/physics-draw.js"></script>
+<script src="/templates/_shared/physics-builder.js"></script>
+
 <script>
 (function () {
   'use strict';
-
-  const TEMPLATE_ID = 'physics/pressure';
-  EurekaHost.setTemplateId(TEMPLATE_ID);
-
+  
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  
   const state = {
-    mode: 'solid', // 'solid' | 'liquid'
-    // solid mode
-    force: 50,   // N
-    area: 100,   // cm²
-    // liquid mode
-    rho: 1000,   // kg/m³
-    depth: 0.50, // m
-    g: 9.8,      // m/s²
+    mode: 'solid',
+    force: 50,
+    area: 100,
+    rho: 1000,
+    depth: 0.5,
+    g: 9.8
   };
 
-  const canvas = document.getElementById('canvas');
-  const cssW = 680, cssH = 380;
-  const ctx = EurekaCanvas.setupHiDPI(canvas, cssW, cssH);
+  window.switchMode = function(m) {
+    state.mode = m;
+    document.getElementById('tab-solid').className = 'mode-tab' + (m === 'solid' ? ' active' : '');
+    document.getElementById('tab-liquid').className = 'mode-tab' + (m === 'liquid' ? ' active' : '');
+    document.getElementById('ctrls-solid').style.display = m === 'solid' ? '' : 'none';
+    document.getElementById('ctrls-liquid').style.display = m === 'liquid' ? '' : 'none';
+    
+    document.getElementById('lbl-1').textContent = m === 'solid' ? '压力 F' : '液体密度 ρ';
+    document.getElementById('lbl-2').textContent = m === 'solid' ? '受力面积 S' : '深度 h';
+    recompute();
+  };
 
-  const tabSolid = document.getElementById('tab-solid');
-  const tabLiquid = document.getElementById('tab-liquid');
-  const controlsSolid = document.getElementById('controls-solid');
-  const controlsLiquid = document.getElementById('controls-liquid');
-  const formulaSolid = document.getElementById('formula-solid');
-  const formulaLiquid = document.getElementById('formula-liquid');
-
-  const statLabel1 = document.getElementById('stat-label-1');
-  const statLabel2 = document.getElementById('stat-label-2');
-  const stat1 = document.getElementById('stat-1');
-  const stat2 = document.getElementById('stat-2');
-  const statPressure = document.getElementById('stat-pressure');
-  const statusBadge = document.getElementById('status-badge');
-  const ovP = document.getElementById('overlay-p');
-  const ovUnit = document.getElementById('overlay-unit');
-
-  const ctlForce = document.getElementById('ctl-force');
-  const ctlArea = document.getElementById('ctl-area');
-  const ctlRho = document.getElementById('ctl-rho');
-  const ctlDepth = document.getElementById('ctl-depth');
-  const ctlG = document.getElementById('ctl-g');
-
-  const vForce = document.getElementById('v-force');
-  const vArea = document.getElementById('v-area');
-  const vRho = document.getElementById('v-rho');
-  const vDepth = document.getElementById('v-depth');
-  const vG = document.getElementById('v-g');
-
-  function switchMode(mode) {
-    state.mode = mode;
-    if (mode === 'solid') {
-      tabSolid.classList.add('active');
-      tabLiquid.classList.remove('active');
-      controlsSolid.style.display = '';
-      controlsLiquid.style.display = 'none';
-      if (formulaSolid) formulaSolid.style.display = '';
-      if (formulaLiquid) formulaLiquid.style.display = 'none';
-      statLabel1.textContent = '压力 F';
-      statLabel2.textContent = '受力面积 S';
-    } else {
-      tabSolid.classList.remove('active');
-      tabLiquid.classList.add('active');
-      controlsSolid.style.display = 'none';
-      controlsLiquid.style.display = '';
-      if (formulaSolid) formulaSolid.style.display = 'none';
-      if (formulaLiquid) formulaLiquid.style.display = '';
-      statLabel1.textContent = '液体密度 ρ';
-      statLabel2.textContent = '深度 h';
-    }
-    updateAll();
-  }
-
-  tabSolid.addEventListener('click', () => switchMode('solid'));
-  tabLiquid.addEventListener('click', () => switchMode('liquid'));
-
-  function computePhysics() {
+  function buildGraph() {
+    const pb = new window.PhysicsBuilder();
     if (state.mode === 'solid') {
-      const areaM2 = state.area / 10000; // cm² → m²
-      const pressure = state.force / areaM2; // Pa
-      return {
-        pressure,
-        display1: state.force + ' N',
-        display2: state.area + ' cm²',
-        pressureDisplay: formatPressure(pressure),
-        badge: 'p = ' + formatPressure(pressure),
-        mode: 'solid',
-      };
+      pb.block({ id: 'Block1', force: state.force, area: state.area });
     } else {
-      const pressure = state.rho * state.g * state.depth; // Pa
-      return {
-        pressure,
-        display1: state.rho + ' kg/m³',
-        display2: state.depth + ' m',
-        pressureDisplay: formatPressure(pressure),
-        badge: 'p = ' + formatPressure(pressure),
-        mode: 'liquid',
-      };
+      pb.liquidContainer({ id: 'Container1', liquidDensity: state.rho, depth: state.depth });
+    }
+    return pb.toSpec();
+  }
+
+  function drawBackground() {
+    ctx.save();
+    ctx.fillStyle = '#ECFDF5';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  async function recompute() {
+    try {
+      const graph = buildGraph();
+      const r = await window.requestCompute('physics/pressure', {
+        mode: state.mode,
+        force: state.force,
+        area: state.area,
+        rho: state.rho,
+        depth: state.depth,
+        g: state.g,
+        graph
+      });
+      applyResult(r);
+    } catch (e) {
+      console.error(e);
     }
   }
 
-  function formatPressure(pa) {
-    if (pa >= 100000) return EurekaFormat.num(pa / 100000, 2) + ' 标准大气压';
-    if (pa >= 1000) return EurekaFormat.num(pa / 1000, 2) + ' kPa';
-    return EurekaFormat.num(pa, 1) + ' Pa';
-  }
-
-  function pressureColor(pa) {
-    // Low pressure = green, high pressure = red
-    const t = EurekaFormat.clamp(pa / 50000, 0, 1);
-    const r = Math.round(16 + (239 - 16) * t);
-    const g = Math.round(185 + (68 - 185) * t);
-    const b = Math.round(129 + (68 - 129) * t);
-    return `rgb(${r},${g},${b})`;
-  }
-
-  function renderSolid() {
-    EurekaCanvas.clear(ctx, cssW, cssH);
-    const cx = cssW / 2;
-    const tableY = 280;
-    const tableW = 400;
-    const tableH = 12;
-
-    // Table
-    ctx.fillStyle = '#8B5CF6';
-    ctx.fillRect(cx - tableW / 2, tableY, tableW, tableH);
-    // Table legs
-    ctx.fillStyle = '#7C3AED';
-    ctx.fillRect(cx - tableW / 2 + 30, tableY + tableH, 8, 60);
-    ctx.fillRect(cx + tableW / 2 - 38, tableY + tableH, 8, 60);
-
-    const p = computePhysics().pressure;
-    const maxBlockW = 200;
-    const minBlockW = 60;
-    const blockW = minBlockW + (maxBlockW - minBlockW) * (1 - (state.area - 25) / 375);
-    const blockH = 80;
-    const blockX = cx - blockW / 2;
-    const blockY = tableY - blockH;
-
-    // Block with pressure-based color
-    ctx.fillStyle = pressureColor(p);
-    ctx.globalAlpha = 0.9;
-    ctx.fillRect(blockX, blockY, blockW, blockH);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#1F2937';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(blockX, blockY, blockW, blockH);
-
-    // Force arrow (downward from top of block)
-    const arrowLen = EurekaFormat.clamp(state.force * 0.15, 20, 80);
-    EurekaCanvas.drawArrow(ctx, cx, blockY - 30, cx, blockY - 5, '#EF4444', 'F=' + state.force + 'N');
-
-    // Scale indicator
-    ctx.fillStyle = '#6B7280';
-    ctx.font = '12px system-ui';
-    ctx.fillText('面积=' + state.area + 'cm²', cx - 40, blockY + blockH / 2 + 5);
-  }
-
-  function renderLiquid() {
-    EurekaCanvas.clear(ctx, cssW, cssH);
-    const cx = cssW / 2;
-    const containerLeft = cx - 120;
-    const containerRight = cx + 120;
-    const containerTop = 60;
-    const containerBottom = 320;
-    const containerW = containerRight - containerLeft;
-
-    // Liquid fill — color varies with density
-    let liquidColor;
-    if (state.rho > 10000) liquidColor = 'rgba(99,102,241,0.45)';
-    else if (state.rho > 2000) liquidColor = 'rgba(30,64,175,0.45)';
-    else if (state.rho > 1050) liquidColor = 'rgba(8,145,178,0.45)';
-    else if (state.rho > 950) liquidColor = 'rgba(6,182,212,0.4)';
-    else liquidColor = 'rgba(245,158,11,0.35)';
-    ctx.fillStyle = liquidColor;
-    ctx.fillRect(containerLeft + 2, containerTop + 2, containerW - 4, containerBottom - containerTop - 4);
-
-    // Container walls
-    ctx.strokeStyle = '#9CA3AF';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(containerLeft, containerTop);
-    ctx.lineTo(containerLeft, containerBottom);
-    ctx.lineTo(containerRight, containerBottom);
-    ctx.lineTo(containerRight, containerTop);
-    ctx.stroke();
-
-    // Depth marker
-    const depthY = containerTop + 2 + (state.depth / 2.0) * (containerBottom - containerTop - 4);
-    const clampedDepthY = Math.min(depthY, containerBottom - 10);
-    ctx.strokeStyle = '#EF4444';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(containerLeft - 20, clampedDepthY);
-    ctx.lineTo(containerRight + 20, clampedDepthY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Depth label
-    ctx.fillStyle = '#EF4444';
-    ctx.font = 'bold 13px system-ui';
-    ctx.fillText('h = ' + state.depth + 'm', containerRight + 25, clampedDepthY + 4);
-
-    // Pressure gauge dot
-    ctx.fillStyle = '#EF4444';
-    ctx.beginPath();
-    ctx.arc(cx, clampedDepthY, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Surface line
-    ctx.strokeStyle = 'rgba(14,165,233,0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(containerLeft + 2, containerTop + 2);
-    ctx.lineTo(containerRight - 2, containerTop + 2);
-    ctx.stroke();
-
-    // Liquid label
-    ctx.fillStyle = '#6B7280';
-    ctx.font = '12px system-ui';
-    ctx.fillText('ρ=' + state.rho + ' kg/m³', containerLeft + 8, containerBottom - 10);
-  }
-
-  function updateAll(emitParamChange) {
-    const p = computePhysics();
-    stat1.textContent = p.display1;
-    stat2.textContent = p.display2;
-    statPressure.textContent = p.pressureDisplay;
-    statusBadge.textContent = p.badge;
-    statusBadge.className = 'eureka-badge ' + (p.pressure > 30000 ? 'danger' : p.pressure > 10000 ? 'warning' : 'success');
-    ovP.textContent = EurekaFormat.num(p.pressure, 1);
-    ovUnit.textContent = 'Pa';
-
-    vForce.textContent = state.force;
-    vArea.textContent = state.area;
-    vRho.textContent = state.rho;
-    vDepth.textContent = state.depth;
-    vG.textContent = state.g;
-
-    if (state.mode === 'solid') renderSolid();
-    else renderLiquid();
-
-    EurekaHost.emitResultUpdate({
-      pressure: Number(p.pressure.toFixed(2)),
-      mode: state.mode,
-    });
-
-    if (emitParamChange) {
-      EurekaHost.emitParamChange(emitParamChange.param, emitParamChange.value);
+  function applyResult(r) {
+    const v = r.values;
+    document.getElementById('stat-pressure').textContent = (v.pressure || 0).toFixed(1) + ' Pa';
+    if (state.mode === 'solid') {
+      document.getElementById('stat-1').textContent = state.force + ' N';
+      document.getElementById('stat-2').textContent = state.area + ' cm²';
+    } else {
+      document.getElementById('stat-1').textContent = state.rho + ' kg/m³';
+      document.getElementById('stat-2').textContent = state.depth.toFixed(2) + ' m';
     }
-  }
 
-  function wireSlider(el, stateKey, paramName) {
-    el.addEventListener('input', () => {
-      const val = parseFloat(el.value);
-      state[stateKey] = val;
-      updateAll({ param: paramName, value: val });
-    });
-  }
-
-  wireSlider(ctlForce, 'force', 'force');
-  wireSlider(ctlArea, 'area', 'area');
-  wireSlider(ctlRho, 'rho', 'liquidDensity');
-  wireSlider(ctlDepth, 'depth', 'depth');
-  wireSlider(ctlG, 'g', 'gravity');
-
-  EurekaHost.onHostCommand((cmd) => {
-    if (cmd.type === 'set_param' && typeof cmd.param === 'string' && typeof cmd.value === 'number') {
-      applyParam(cmd.param, cmd.value);
-      updateAll();
-    } else if (cmd.type === 'set_params' && cmd.params && typeof cmd.params === 'object') {
-      for (const k in cmd.params) {
-        if (Object.prototype.hasOwnProperty.call(cmd.params, k)) applyParam(k, cmd.params[k]);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    
+    // Simplistic rendering based on ComponentMirror and draw utilities
+    if (window.EurekaPhysicsDraw) {
+      const PD = window.EurekaPhysicsDraw;
+      if (state.mode === 'solid') {
+        const cx = canvas.width / 2;
+        const blockW = Math.max(60, Math.min(200, state.area));
+        const blockH = 60;
+        const blockY = 150;
+        
+        ctx.fillStyle = '#8B5CF6';
+        ctx.fillRect(cx - 150, blockY + blockH, 300, 10);
+        
+        PD.drawGradientBlock(ctx, {
+          x: cx - blockW/2, y: blockY, width: blockW, height: blockH,
+          text: 'F=' + state.force + 'N', subtext: state.area + 'cm²'
+        });
+        
+        PD.drawForceArrow(ctx, {
+          x: cx, y: blockY, magnitude: state.force, direction: 'down', color: '#EF4444'
+        });
+      } else {
+        const cx = canvas.width / 2;
+        PD.drawBeaker(ctx, {
+          left: cx - 100, right: cx + 100, top: 50, bottom: 250, label: '液体容器'
+        });
+        PD.drawLiquidFill(ctx, {
+          x: cx - 100, y: 100, width: 200, height: 150, color: 'rgba(8,145,178,0.5)'
+        });
+        
+        // Depth line
+        const depthY = 100 + (state.depth / 2.0) * 150;
+        ctx.strokeStyle = '#EF4444';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(cx - 110, depthY);
+        ctx.lineTo(cx + 110, depthY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#EF4444';
+        ctx.fillText('h = ' + state.depth + 'm', cx + 115, depthY);
       }
-      updateAll();
-    } else if (cmd.type === 'reset') {
-      state.mode = 'solid';
-      state.force = 50; state.area = 100;
-      state.rho = 1000; state.depth = 0.50; state.g = 9.8;
-      ctlForce.value = 50; ctlArea.value = 100;
-      ctlRho.value = 1000; ctlDepth.value = 0.50; ctlG.value = 9.8;
-      switchMode('solid');
-    }
-  });
-
-  function applyParam(name, value) {
-    switch (name) {
-      case 'force': state.force = EurekaFormat.clamp(value, 10, 500); ctlForce.value = state.force; break;
-      case 'area': state.area = EurekaFormat.clamp(value, 25, 400); ctlArea.value = state.area; break;
-      case 'liquidDensity': state.rho = EurekaFormat.clamp(value, 800, 13600); ctlRho.value = state.rho; break;
-      case 'depth': state.depth = EurekaFormat.clamp(value, 0.1, 2.0); ctlDepth.value = state.depth; break;
-      case 'gravity': state.g = EurekaFormat.clamp(value, 1, 20); ctlG.value = state.g; break;
-      case 'mode': switchMode(value === 'liquid' ? 'liquid' : 'solid'); break;
     }
   }
 
-  updateAll();
+  function bindSlider(id, key) {
+    const el = document.getElementById('ctrl-' + id);
+    const val = document.getElementById('val-' + id);
+    el.addEventListener('input', () => {
+      val.textContent = el.value;
+      state[key] = parseFloat(el.value);
+      recompute();
+    });
+  }
+  
+  bindSlider('force', 'force');
+  bindSlider('area', 'area');
+  bindSlider('rho', 'rho');
+  bindSlider('depth', 'depth');
 
-  setTimeout(() => {
-    try { EurekaHints.show(canvas, '👆 点击"液体压强"标签切换实验模式', 5000); } catch {}
-  }, 600);
-
-  EurekaHost.emitReady(['force', 'area', 'liquidDensity', 'depth', 'gravity', 'mode'], {
-    formulas: [
-      { title: '固体压强公式', expression: 'p = F / S', note: '压强 = 压力 ÷ 受力面积' },
-      { title: '液体压强公式', expression: 'p = ρ × g × h', note: '液体压强 = 液体密度 × 重力加速度 × 深度' },
-    ],
-  });
+  window.EurekaHost.setTemplateId('physics/pressure');
+  recompute().then(() => window.EurekaHost.emitReady(['force', 'area', 'rho', 'depth', 'mode']));
 })();
 </script>
 </body>

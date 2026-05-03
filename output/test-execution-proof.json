@@ -1,42 +1,65 @@
 {
-  "executedAt": "2026-05-03T01:49:18.013Z",
+  "executedAt": "2026-05-03T08:55:15.924Z",
   "sessionId": "",
   "command": "npm test",
-  "exitCode": 0,
-  "passed": true,
-  "totalTests": 0,
-  "passedTests": 0,
-  "failedTests": 0,
+  "exitCode": 1,
+  "passed": false,
+  "totalTests": 686,
+  "passedTests": 683,
+  "failedTests": 3,
   "skippedTests": 0,
-  "durationMs": 5527,
-  "passRate": 0,
+  "durationMs": 6915,
+  "passRate": 0.9956,
   "testStatus": {
-    "overallPassed": true,
-    "rootCause": "tests_passed",
+    "overallPassed": false,
+    "rootCause": "test_count_failures",
     "contradiction": false,
-    "countsKnown": false,
+    "countsKnown": true,
     "countsPassed": false,
-    "processPassed": true,
-    "stderrPresent": false,
-    "stderrExcerpt": "",
-    "outputTail": "> projects@0.1.0 test\n> jest",
+    "processPassed": false,
+    "stderrPresent": true,
+    "stderrExcerpt": " \u001b[90m 32 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:29:37)\n\n  ● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)\n\n    expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"success\"\n    Received: undefined\n\n    \u001b[0m \u001b[90m 49 |\u001b[39m       })\u001b[33m;\u001b[39m\n     \u001b[90m 50 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mstateLabel)\u001b[33m.\u001b[39mtoBe(\u001b[32m'等当点'\u001b[39m)\u001b[33m;\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mbadgeKind)\u001b[33m.\u001b[39mtoBe(\u001b[32m'success'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 52 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mpH)\u001b[33m.\u001b[39mtoBeCloseTo(\u001b[35m7\u001b[39m\u001b[33m,\u001b[39m \u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n     \u001b[90m 54 |\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:51:34)\n\n\nTest Suites: 1 failed, 41 passed, 42 total\nTests:       3 failed, 683 passed, 686 total\nSnapshots:   0 total\nTime:        5.564 s\nRan all test suites.",
+    "outputTail": " \u001b[90m 32 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:29:37)\n\n  ● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)\n\n    expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"success\"\n    Received: undefined\n\n    \u001b[0m \u001b[90m 49 |\u001b[39m       })\u001b[33m;\u001b[39m\n     \u001b[90m 50 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mstateLabel)\u001b[33m.\u001b[39mtoBe(\u001b[32m'等当点'\u001b[39m)\u001b[33m;\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mbadgeKind)\u001b[33m.\u001b[39mtoBe(\u001b[32m'success'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 52 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mpH)\u001b[33m.\u001b[39mtoBeCloseTo(\u001b[35m7\u001b[39m\u001b[33m,\u001b[39m \u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n     \u001b[90m 54 |\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:51:34)\n\n\nTest Suites: 1 failed, 41 passed, 42 total\nTests:       3 failed, 683 passed, 686 total\nSnapshots:   0 total\nTime:        5.564 s\nRan all test suites.",
     "reasons": [
       {
         "dimension": "test-counts",
-        "passed": null,
-        "totalTests": null,
+        "passed": false,
+        "totalTests": 686,
         "passedTests": null,
-        "failedTests": null,
+        "failedTests": 3,
         "skippedTests": null,
-        "message": "No parseable test counts found in runner output"
+        "message": "683/686 parsed tests passed, 3 failed"
       },
       {
         "dimension": "process-exit",
-        "passed": true,
-        "exitCode": 0,
-        "message": "Process exited with code 0"
+        "passed": false,
+        "exitCode": 1,
+        "message": "Process exited with non-zero code 1"
+      },
+      {
+        "dimension": "stderr",
+        "passed": false,
+        "message": "stderr was emitted by the test command",
+        "excerpt": " \u001b[90m 32 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:29:37)\n\n  ● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)\n\n    expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"success\"\n    Received: undefined\n\n    \u001b[0m \u001b[90m 49 |\u001b[39m       })\u001b[33m;\u001b[39m\n     \u001b[90m 50 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mstateLabel)\u001b[33m.\u001b[39mtoBe(\u001b[32m'等当点'\u001b[39m)\u001b[33m;\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mbadgeKind)\u001b[33m.\u001b[39mtoBe(\u001b[32m'success'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 52 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mpH)\u001b[33m.\u001b[39mtoBeCloseTo(\u001b[35m7\u001b[39m\u001b[33m,\u001b[39m \u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n     \u001b[90m 54 |\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:51:34)\n\n\nTest Suites: 1 failed, 41 passed, 42 total\nTests:       3 failed, 683 passed, 686 total\nSnapshots:   0 total\nTime:        5.564 s\nRan all test suites."
+      },
+      {
+        "dimension": "failure-summary",
+        "passed": false,
+        "message": "10 failure line(s) extracted from output",
+        "failures": [
+          "● Console",
+          "FAIL src/lib/engines/__tests__/atomization-refactor.test.ts",
+          "● L2/L4 Atomization Refactor › T-8 BuoyancyEngine display fields › returns materialName/liquidName/hue/badgeKind for floating object",
+          "● L2/L4 Atomization Refactor › T-8 BuoyancyEngine display fields › marks dense object as 铜 with danger badge",
+          "● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)",
+          "● Console",
+          "● Console",
+          "● Console",
+          "Error in event listener for execution.started: Error: Listener error",
+          "FAIL src/lib/engines/__tests__/atomization-refactor.test.ts"
+        ]
       }
     ]
   },
-  "proofHash": "2aa3c6ea765b31c419101c3274b22a4c7aac8bd59e0dcb8f17eabdd38f0e81d5"
+  "proofHash": "6097948da4dbc3af25c0a7e0d7646d95902c8c915a493d421cd0f5c1113d1c3c"
 }

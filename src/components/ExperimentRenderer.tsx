@@ -47,8 +47,17 @@ export function ExperimentRenderer({
   resolvedTemplateId,
   onMetadataChange,
 }: ExperimentRendererProps) {
-  if (resolvedTemplateId) {
+  // Lock 1: Ensure if resolvedTemplateId is provided, we strictly follow it and don't fallback to EditorShell
+  if (resolvedTemplateId && isApprovedTemplate(resolvedTemplateId)) {
     return <IframeExperiment templateId={resolvedTemplateId} height={900} onMetadataChange={onMetadataChange} />;
+  }
+
+  // Lock 2: If we didn't receive a resolvedTemplateId but we can manually resolve one here
+  const backendTid = (aiSchema as (ExperimentSchema & { _templateId?: string }) | null)?._templateId || null;
+  const selfResolvedTid = resolveTemplateId(aiSchema, aiConfig, experiment, backendTid);
+  
+  if (selfResolvedTid && isApprovedTemplate(selfResolvedTid)) {
+    return <IframeExperiment templateId={selfResolvedTid} height={900} onMetadataChange={onMetadataChange} />;
   }
 
   const hasAssemblySchema = Boolean(aiSchema?.components && aiSchema.components.length > 0);
@@ -99,12 +108,30 @@ export function resolveTemplateId(
   experiment: PresetExperiment | null,
   backendTid?: string | null,
 ): string | null {
+  // Highest priority: injected _templateId (often passed as backendTid)
+  const injectedTid = (aiSchema as (ExperimentSchema & { _templateId?: string }) | null)?._templateId || null;
+
   const candidates = [
+    injectedTid,
     backendTid,
     experiment?.templateId,
     conceptToTemplateId(aiSchema?.meta?.topic ?? aiSchema?.meta?.name),
     conceptToTemplateId(aiConfig?.topic ?? aiConfig?.name),
   ];
 
-  return candidates.find((candidate): candidate is string => isApprovedTemplate(candidate)) ?? null;
+  // Defensive domain check to normalize missing 'chemistry/' prefixes etc.
+  for (let candidate of candidates) {
+    if (!candidate) continue;
+    
+    // Auto-fix chemistry domains
+    if (['acid-base-titration', 'electrolysis', 'iron-rusting', 'reaction-rate', 'combustion-conditions'].includes(candidate)) {
+      candidate = `chemistry/${candidate}`;
+    }
+    
+    if (isApprovedTemplate(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
 }

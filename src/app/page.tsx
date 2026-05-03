@@ -131,6 +131,12 @@ export default function HomePage() {
         };
         setGeneratedExp(exp);
         const experimentId = schema.meta?.physicsType || mapConceptToExperiment(exp);
+        
+        // Defensive approach: inject `_templateId` into schema to prevent downstream fallback issues
+        if (experimentId && typeof schema === 'object' && schema !== null) {
+          (schema as Record<string, unknown>)._templateId = experimentId;
+        }
+        
         sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));
         window.location.href = `/experiments/${experimentId}`;
       } else {

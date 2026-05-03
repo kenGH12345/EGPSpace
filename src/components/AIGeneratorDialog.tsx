@@ -35,6 +35,8 @@ export function AIGeneratorDialog() {
       const tId = data.templateId || 'generic';
       
       // 我们将生成的 Schema 存入 sessionStorage 供渲染页提取使用
+      sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));
+      // 兼容可能遗漏修改的内部组件，保留旧键名
       sessionStorage.setItem('ai-generated-schema', JSON.stringify(schema));
       
       setOpen(false);

@@ -3,16 +3,16 @@
   "stage": "ARCHITECT",
   "source": {
     "path": "output/architecture.md",
-    "sourceHash": "25bc028817896874d17619800a4af8ed32a337d139bdba2e5c5c11cbb503157d",
-    "artifactSize": 4784,
-    "updatedAt": "2026-05-03T01:42:21.119Z"
+    "sourceHash": "7eede21464b0593280c40dbe7426e9d7f7a98d8d5c59e64164e0406d0b28e180",
+    "artifactSize": 3818,
+    "updatedAt": "2026-05-03T05:34:52.567Z"
   },
   "scope": {
-    "session": "wf-202605030940",
-    "requirementFingerprint": "wf 按这下面这三步顺序实现"
+    "session": "wf-20260503053412.",
+    "requirementFingerprint": "dom html js matter webgl wf 以突破现有 力学 动态演化场景 化学 在架构设计中建议后续对高中碰撞实验 实现物理与化学缺乏强交互 引入外部轻量级引擎辅助 或特定 方案 有机微观结构 渲染能力的瓶颈"
   },
   "content": {
-    "summary": "## Structural Design / 结构设计\r\n针对这三个阶段的实施计划，架构在结构上做出如下设计：\r\n- `TickEngine` (`src/lib/framework/core/TickEngine.ts`) 必须充当时间墙：无论 `MechanicsSolver` 计算多耗时，`accumulator >= fixedDeltaTime` 与 `substepCount < maxSubsteps` 必须同时满足，否则强行截断，这是保证架构生存的最底线。\r\n- `MechanicsSolver` (`src/lib/framework/domains/mechanics/solver.ts`)：内部划分为节点（Node）管理器和弹簧（Spring）管理器。`performUpdate` 将遍历所有的边，计算力，并在节点上应用半隐式欧拉积分推进状态。\r\n- `OpticsSolver` (`src/lib/framework/domains/optics/solver.ts`)：基于几何光学的 `RaySegment` 模型，追踪每条光线经过界面的折射与反射，将其序列化",
+    "summary": "## Architecture Scorecard\n| Attribute | Status | Explanation |\n|---|---|---|\n| Scalability | **PASS** | 引入动态模板按需加载机制，避免一次性加载过多资源。 |\n| Maintainability | **PASS** | `concept-to-template` 严格按照学科领域 (biology, physics, chemistry) 进行子模块划分，易于后续更新。 |\n| Performance | **PASS** | Iframe 沙盒天然隔离，不会导致主 Next.js 线程内存泄漏。 |",
     "outline": [
       "Architecture Scorecard",
       "核心系统架构 / Core Systems",
@@ -35,9 +35,30 @@
       "Scenario Coverage / 场景覆盖",
       "Structural Design / 结构设计",
       "Interfaces Contracts / 接口契约",
-      "Security Performance / 安全与性能"
+      "Security Performance / 安全与性能",
+      "Consumer Adoption Design",
+      "思考摘要",
+      "Trade-offs / 取舍分析",
+      "Migration Safety / 迁移安全性",
+      "架构设计 / Architecture Design",
+      "详细架构设计 / Detailed Architecture",
+      "1. 物理领域: 浮力实验 (Buoyancy)",
+      "2. 化学领域: 酸碱滴定 (Titration)",
+      "Technical Constraints / 技术约束",
+      "核心组件",
+      "接口或数据结构",
+      "回滚与监控",
+      "验证方案",
+      "Architecture Scorecard / 架构计分",
+      "Failure Model / 失败模型",
+      "Migration / 迁移说明",
+      "Migration Safety Case / 迁移安全性分析",
+      "Module Breakdown",
+      "API Contracts"
     ],
-    "keyPoints": [],
+    "keyPoints": [
+      "[Component] *组件链路解析：**"
+    ],
     "rootCause": [],
     "decisions": [
       "一旦底层引擎组件完成：",
@@ -58,7 +79,27 @@
       "- **高性能渲染方案**：由于渲染频次极高，可能需要绕过 React 状态树，直接使用 WebGL / Canvas2D / SVG 操作 DOM 节点以保证帧率。",
       "- **TickEngine**: 消费真实 Solver 返回的 `dt` 计算延迟，并执行 budget 报警策略。",
       "- **React Frontend 适配**：对于 Optics 等能产生海量光线路径段（几百条直线）的模块，React 的 Virtual DOM diff 极大概率掉帧。建议通过 EventBus 转发给一个独立的 Canvas / WebGL Renderer 层来直接执行渲染指令。",
-      "- **LayoutSpec 同步**：用户拖拽产生的新组件必须通过统一的 `TemplateRegistry` 进行组件状态（Stamp）更新，Solver 在下一次 Tick 时将自动读取新参数，实现热重载。"
+      "- **LayoutSpec 同步**：用户拖拽产生的新组件必须通过统一的 `TemplateRegistry` 进行组件状态（Stamp）更新，Solver 在下一次 Tick 时将自动读取新参数，实现热重载。",
+      "本方案产生的 `template-registry.ts` 变更，主要由后台的实验路由以及统计脚本进行消费。",
+      "- **进度追踪仪表板**：可读取此元数据，得知哪些模板已列入“v3-component”重构计划。",
+      "- **未来的重构任务**：可以直接扫描 Registry 中标记为 v3 但 HTML 内容不包含 component builder 的条目，作为后续拆分独立任务的依据。",
+      "下游消费端（例如 iframe 渲染器或 iframe 外壳组件）不需要进行任何变更。",
+      "只要 `template-registry.ts` 中对应的条目标记为 `v3-component` 且在 `REGISTRY` 中存活，渲染器就能通过同样的 PostMessage 通道执行渲染和数据同步。",
+      "我们也将自动生成新的调用方式的测试用例供外部消费者参考。",
+      "- **模板文件**：`public/templates/physics/buoyancy.html` 与 `public/templates/chemistry/acid-base-titration.html` 的开发者可以直接调用 `new window.PhysicsBuilder()` 及 `new window.ChemistryBuilder()`。不再需要手动 `ctx.fillRect` 去画图，直接使用 `ComponentMirror.render(canvas, r.values.components)` 即可（若需覆盖可定制）。",
+      "- **注册表维护者**：在 `src/lib/templates/physics-registry.ts` 与 `src/lib/template-registry.ts` 中直接查看 `atomVersion` 即可清楚它是一个 v3 组件化应用。",
+      "各实验客户端可直接利用 v3 的组件渲染，前端继续使用 ComponentMirror 处理响应即可。",
+      "无需任何额外配置，无需更改现有前端接入逻辑。",
+      "修复 `src/lib/concept-to-template.ts` 中的 4 处漏写前缀的问题（酸碱滴定、电解水、反应速率、燃烧条件）。",
+      "**严格验证点：**",
+      "- 当向 `conceptToTemplateId` 传入概念关键词 `'反应速率'` 时，函数必须精准返回字符串 `'chemistry/reaction-rate'`，而不能是原先的 `'reaction-rate'`。",
+      "- 以此确保 AI 产生的实验配置能够通过审核注册表，最终在视图层无缝唤起包含互动内容的 `IframeExperiment`。",
+      "- 下游消费方：`src/app/experiments/[id]/page.tsx` 以及可能潜伏在暗处的 `EditorShell.tsx`。",
+      "- 消费方式：对于页面，将直接提取新键名并解析渲染 iframe，对组件是无感知升级。建议 `EditorShell` 内部也一并统一键名。",
+      "- 下游消费方：`DEVELOP` 阶段执行代码修改。",
+      "- `DEVELOP` 需要将这些策略转换为代码，确保遵循分析文档的影响范围：修改 `page.tsx`, `ExperimentRenderer.tsx`, 和 `concept-to-template.ts` 中的具体逻辑，并使用测试命令 `npx jest` 等保证改动后的正确性。",
+      "下游的 `ExperimentRenderer` 组件将无缝接管新的模板 ID。无需更改核心消费端逻辑，只需保证所有新增加的模板能够正确注册进 `isApprovedTemplate` 白名单即可。对于大语言模型，随着路由配置的丰富，能够精确命中的概念将呈几何级数增加。",
+      "在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。"
     ],
     "risks": [],
     "downstreamConsumers": [
@@ -80,11 +121,46 @@
       "- **高性能渲染方案**：由于渲染频次极高，可能需要绕过 React 状态树，直接使用 WebGL / Canvas2D / SVG 操作 DOM 节点以保证帧率。",
       "- **TickEngine**: 消费真实 Solver 返回的 `dt` 计算延迟，并执行 budget 报警策略。",
       "- **React Frontend 适配**：对于 Optics 等能产生海量光线路径段（几百条直线）的模块，React 的 Virtual DOM diff 极大概率掉帧。建议通过 EventBus 转发给一个独立的 Canvas / WebGL Renderer 层来直接执行渲染指令。",
-      "- **LayoutSpec 同步**：用户拖拽产生的新组件必须通过统一的 `TemplateRegistry` 进行组件状态（Stamp）更新，Solver 在下一次 Tick 时将自动读取新参数，实现热重载。"
+      "- **LayoutSpec 同步**：用户拖拽产生的新组件必须通过统一的 `TemplateRegistry` 进行组件状态（Stamp）更新，Solver 在下一次 Tick 时将自动读取新参数，实现热重载。",
+      "Line 1",
+      "Line 2",
+      "Line 3",
+      "Line 4",
+      "1. Consumers (developers) will reference the registry comments.",
+      "2. Developers should look at `src/lib/template-registry.ts` to see definitions.",
+      "3. When creating new templates, the registry and message schema guide their choice.",
+      "4. Documentation serves as the primary adoption tool.",
+      "5. Existing template usages provide practical examples.",
+      "本方案产生的 `template-registry.ts` 变更，主要由后台的实验路由以及统计脚本进行消费。",
+      "- **进度追踪仪表板**：可读取此元数据，得知哪些模板已列入“v3-component”重构计划。",
+      "- **未来的重构任务**：可以直接扫描 Registry 中标记为 v3 但 HTML 内容不包含 component builder 的条目，作为后续拆分独立任务的依据。",
+      "下游消费端（例如 iframe 渲染器或 iframe 外壳组件）不需要进行任何变更。",
+      "只要 `template-registry.ts` 中对应的条目标记为 `v3-component` 且在 `REGISTRY` 中存活，渲染器就能通过同样的 PostMessage 通道执行渲染和数据同步。",
+      "我们也将自动生成新的调用方式的测试用例供外部消费者参考。",
+      "- **模板文件**：`public/templates/physics/buoyancy.html` 与 `public/templates/chemistry/acid-base-titration.html` 的开发者可以直接调用 `new window.PhysicsBuilder()` 及 `new window.ChemistryBuilder()`。不再需要手动 `ctx.fillRect` 去画图，直接使用 `ComponentMirror.render(canvas, r.values.components)` 即可（若需覆盖可定制）。",
+      "- **注册表维护者**：在 `src/lib/templates/physics-registry.ts` 与 `src/lib/template-registry.ts` 中直接查看 `atomVersion` 即可清楚它是一个 v3 组件化应用。",
+      "各实验客户端可直接利用 v3 的组件渲染，前端继续使用 ComponentMirror 处理响应即可。",
+      "无需任何额外配置，无需更改现有前端接入逻辑。",
+      "- 下游消费方：`resolveTemplateId` 与 `ExperimentRenderer`。",
+      "- 消费方式：自动且无感知。`ExperimentRenderer` 在重新获得合规的模板 ID 后，会自然走入 `IframeExperiment` 的加载路径，下游 UI 层无需任何侵入式修改。",
+      "- 下游消费方：`src/app/experiments/[id]/page.tsx` 以及可能潜伏在暗处的 `EditorShell.tsx`。",
+      "- 消费方式：对于页面，将直接提取新键名并解析渲染 iframe，对组件是无感知升级。建议 `EditorShell` 内部也一并统一键名。",
+      "Downstream consumers (the development team) will use this analysis artifact to prioritize their sprint tasks.",
+      "They can safely implement the fixes in `src/components/ExperimentRenderer.tsx` and `src/app/experiments/[id]/page.tsx` knowing the high ROI and low risk profile.",
+      "No new APIs or integration patterns are introduced for consumers to adopt.",
+      "- 下游消费方：`DEVELOP` 阶段执行代码修改。",
+      "- `DEVELOP` 需要将这些策略转换为代码，确保遵循分析文档的影响范围：修改 `page.tsx`, `ExperimentRenderer.tsx`, 和 `concept-to-template.ts` 中的具体逻辑，并使用测试命令 `npx jest` 等保证改动后的正确性。",
+      "下游的 `ExperimentRenderer` 组件将无缝接管新的模板 ID。无需更改核心消费端逻辑，只需保证所有新增加的模板能够正确注册进 `isApprovedTemplate` 白名单即可。对于大语言模型，随着路由配置的丰富，能够精确命中的概念将呈几何级数增加。",
+      "在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。"
     ],
     "tasks": [],
     "acceptanceCriteria": [],
-    "testEvidence": [],
+    "testEvidence": [
+      "修复 `src/lib/concept-to-template.ts` 中的 4 处漏写前缀的问题（酸碱滴定、电解水、反应速率、燃烧条件）。",
+      "**严格验证点：**",
+      "- 当向 `conceptToTemplateId` 传入概念关键词 `'反应速率'` 时，函数必须精准返回字符串 `'chemistry/reaction-rate'`，而不能是原先的 `'reaction-rate'`。",
+      "- 以此确保 AI 产生的实验配置能够通过审核注册表，最终在视图层无缝唤起包含互动内容的 `IframeExperiment`。"
+    ],
     "affectedFiles": [
       "src/lib/framework/domains/mechanics/solver.ts",
       "src/lib/framework/domains/optics/solver.ts",
@@ -93,20 +169,29 @@
       "src/lib/framework/domains/mechanics/components.ts",
       "src/lib/framework/core/EventBus.ts",
       "src/lib/framework/core/TickEngine.ts",
-      "optics/solver.ts"
+      "optics/solver.ts",
+      "src/lib/template-registry.ts",
+      "src/lib/experiment-message-schema.ts",
+      "public/templates/_shared/physics-builder.js",
+      "lib/engines/physics/pressure.ts",
+      "src/lib/templates/physics-registry.ts",
+      "src/lib/concept-to-template.ts",
+      "src/components/ExperimentRenderer.tsx",
+      "src/app/page.tsx",
+      "public/templates/_shared/physics-engine.js",
+      "public/templates/_shared/webgl-renderer.js"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "architecture.md",
       "outline": [
-        "Structural Design / 结构设计",
-        "Interfaces Contracts / 接口契约",
-        "Security Performance / 安全与性能",
+        "Architecture Scorecard",
+        "Failure Model",
+        "Migration Safety Case",
+        "Module Breakdown",
+        "API Contracts",
         "Consumer Adoption Design / 下游消费方案",
-        "Architecture Scorecard / 架构计分卡",
-        "Failure Model / 故障模型",
-        "Migration Safety Case / 迁移安全案例",
         "Scenario Coverage / 场景覆盖"
       ],
       "keyPoints": []
@@ -115,7 +200,7 @@
   "coverage": {
     "hasSummary": true,
     "hasOutline": true,
-    "hasKeyPoints": false,
+    "hasKeyPoints": true,
     "hasRootCause": false,
     "hasDecisions": true,
     "hasRisks": false,
@@ -124,87 +209,75 @@
     "hasAcceptanceCriteria": false,
     "hasAffectedFiles": true,
     "hasFilesChanged": false,
-    "hasTestEvidence": false
+    "hasTestEvidence": true
   },
   "evidenceRefs": [
     {
-      "file": "src/lib/framework/core/TickEngine.ts",
+      "file": "src/lib/concept-to-template.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "src/lib/framework/domains/mechanics/solver.ts",
+      "file": "public/templates/_shared/physics-engine.js",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "src/lib/framework/domains/optics/solver.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "src/lib/framework/domains/biology/solver.ts",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "optics/solver.ts",
+      "file": "public/templates/_shared/webgl-renderer.js",
       "artifact": "output/architecture.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "solver",
-      "src",
-      "lib",
-      "framework",
-      "stamp",
-      "tickengine",
-      "domains",
-      "mechanics",
-      "optics",
-      "eventbus",
-      "mechanicssolver",
-      "react",
-      "检测",
-      "恢复",
-      "design",
-      "deltatime",
-      "component",
-      "domain",
-      "canvas",
-      "templateregistry",
-      "max",
-      "substeps",
-      "structural",
-      "结构设计",
-      "针对这三个阶段的实施计划",
-      "架构在结构上做出如下设计",
-      "core",
-      "必须充当时间墙",
-      "无论",
-      "计算多耗时",
-      "accumulator",
-      "fixeddeltatime",
-      "substepcount",
-      "maxsubsteps",
-      "必须同时满足",
-      "否则强行截断",
-      "这是保证架构生存的最底线",
-      "内部划分为节点",
-      "node",
-      "管理器和弹簧"
+      "pass",
+      "concept",
+      "template",
+      "biology",
+      "physics",
+      "router",
+      "public",
+      "templates",
+      "webgl",
+      "chemistry",
+      "iframe",
+      "场景",
+      "isapprovedtemplate",
+      "_shared",
+      "dom",
+      "schema",
+      "architecture",
+      "scorecard",
+      "attribute",
+      "status",
+      "explanation",
+      "scalability",
+      "引入动态模板按需加载机制",
+      "避免一次性加载过多资源",
+      "maintainability",
+      "严格按照学科领域",
+      "进行子模块划分",
+      "易于后续更新",
+      "performance",
+      "沙盒天然隔离",
+      "不会导致主",
+      "next",
+      "线程内存泄漏",
+      "failure",
+      "model",
+      "如果新的实验模板",
+      "比如极度依赖",
+      "cpu",
+      "计算的物理碰撞实验或大量微观粒子运算的化学反应",
+      "加载或渲染失败"
     ],
     "files": [
-      "src/lib/framework/core/TickEngine.ts",
-      "src/lib/framework/domains/mechanics/solver.ts",
-      "src/lib/framework/domains/optics/solver.ts",
-      "src/lib/framework/domains/biology/solver.ts",
-      "optics/solver.ts"
+      "src/lib/concept-to-template.ts",
+      "public/templates/_shared/physics-engine.js",
+      "public/templates/_shared/webgl-renderer.js"
     ],
     "modules": [
       "src",
-      "src",
-      "src",
-      "src",
-      "optics"
+      "public",
+      "public"
     ]
   },
-  "generatedAt": "2026-05-03T01:42:29.298Z"
+  "generatedAt": "2026-05-03T05:35:26.810Z"
 }

@@ -1,192 +1,5 @@
 [
   {
-    "id": "TH-1777462144988-QBCSI",
-    "timestamp": "2026-04-29T11:29:04.988Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "E 阶段 · TSC 技术债清理（53→0）+ 首次受控松动 framework + AC-E11 工作流防复发",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "E 阶段 · TSC 技术债清理（53→0）+ 首次受控松动 framework + AC-E11 工作流防复发 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777477298423-XXQVS",
-    "timestamp": "2026-04-29T15:41:38.423Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "F 阶段 · framework 物理分层重构（Proposal B' 目录分层 + 文件 co-location · 15 文件 mv · 硬约束四件套兑现 · 防 R-F7 假兑现）",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "F 阶段 · framework 物理分层重构（Proposal B' 目录分层 + 文件 co-location · 15 文件 mv · 硬约束四件套兑现 · 防 R-F7 假兑现） — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777523051191-SDZQU",
-    "timestamp": "2026-04-30T04:24:11.192Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现预置实验的编辑态交互与元件清单列表",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现预置实验的编辑态交互与元件清单列表 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777525735457-MOU16",
-    "timestamp": "2026-04-30T05:08:55.457Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "修复电路预置实验中开关断开时不中断的Bug",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "修复电路预置实验中开关断开时不中断的Bug — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777533862029-47ARI",
-    "timestamp": "2026-04-30T07:24:22.029Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现 AI 拓扑实验生成与全新机制扩展",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现 AI 拓扑实验生成与全新机制扩展 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777539958279-WY0XP",
-    "timestamp": "2026-04-30T09:05:58.279Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "引入dagre算法自动计算AI生成实验排版",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "引入dagre算法自动计算AI生成实验排版 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777543334465-FPD7W",
-    "timestamp": "2026-04-30T10:02:14.465Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现通用化的组件端口连线验证逻辑和磁吸效果",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现通用化的组件端口连线验证逻辑和磁吸效果 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777544624210-BEFUB",
-    "timestamp": "2026-04-30T10:23:44.210Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现 Canvas 线路渲染与 SVG 拖拽连线预览的正交（Orthogonal）折线算法",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现 Canvas 线路渲染与 SVG 拖拽连线预览的正交（Orthogonal）折线算法 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777559779475-1WGLZ",
-    "timestamp": "2026-04-30T14:36:19.475Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现空间布局层的原子组件旋转功能与端口坐标动态映射",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现空间布局层的原子组件旋转功能与端口坐标动态映射 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777593109889-P15MD",
-    "timestamp": "2026-04-30T23:51:49.889Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "把所有学科所有实验元件底层都修改为原子化组件化元件积木化的底层 不要用预先写好的html模板",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "把所有学科所有实验元件底层都修改为原子化组件化元件积木化的底层 不要用预先写好的html模板 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
-    "id": "TH-1777595698636-VG4HM",
-    "timestamp": "2026-05-01T00:34:58.636Z",
-    "mode": "sequential",
-    "projectId": "EGPSpace",
-    "goal": "实现化学实验中对添加液体、加热、燃烧等反应的支持",
-    "taskCount": 1,
-    "taskTitles": [],
-    "outcome": "success",
-    "summary": "实现化学实验中对添加液体、加热、燃烧等反应的支持 — completed",
-    "metrics": {
-      "durationMs": null,
-      "errorCount": 0,
-      "expRecorded": 0
-    },
-    "sessionMemory": null
-  },
-  {
     "id": "TH-1777597957896-QGTZO",
     "timestamp": "2026-05-01T01:12:37.896Z",
     "mode": "sequential",
@@ -332,6 +145,193 @@
     "taskTitles": [],
     "outcome": "success",
     "summary": "实现真实 Mechanics/Optics/Biology Solver MVP — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777776462805-ZLS3U",
+    "timestamp": "2026-05-03T02:47:42.805Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "把使用v1的实验模板都升级为v3版本",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "把使用v1的实验模板都升级为v3版本 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777777256075-65CG3",
+    "timestamp": "2026-05-03T03:00:56.075Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "将v1实验模板升级到v3并删除无法升级的废弃旧模板",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "将v1实验模板升级到v3并删除无法升级的废弃旧模板 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777778275046-DWV21",
+    "timestamp": "2026-05-03T03:17:55.046Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "全面升级遗留的 v2-atomic 实验模板至 v3-component 架构",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "全面升级遗留的 v2-atomic 实验模板至 v3-component 架构 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777779363133-VBJF8",
+    "timestamp": "2026-05-03T03:36:03.133Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "确认所有的实验模板是否全面升级为v3版本",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "确认所有的实验模板是否全面升级为v3版本 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777780080633-LASZR",
+    "timestamp": "2026-05-03T03:48:00.633Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "分析实验渲染链路断点，修复 concept-to-template.ts 中缺少的 chemistry/ 前缀",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "分析实验渲染链路断点，修复 concept-to-template.ts 中缺少的 chemistry/ 前缀 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777780739277-AY7DG",
+    "timestamp": "2026-05-03T03:58:59.277Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "统一 AIGeneratorDialog 和 EditorShell 的 sessionStorage 键名解决页面跳转数据丢失导致的回退问题",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "统一 AIGeneratorDialog 和 EditorShell 的 sessionStorage 键名解决页面跳转数据丢失导致的回退问题 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777781144055-3TSLU",
+    "timestamp": "2026-05-03T04:05:44.055Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "评估实验渲染架构修复建议的必要性及性价比",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "评估实验渲染架构修复建议的必要性及性价比 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777784555034-D9TRH",
+    "timestamp": "2026-05-03T05:02:35.034Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现针对 ExperimentRenderer 渲染架构优化建议的代码重构",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现针对 ExperimentRenderer 渲染架构优化建议的代码重构 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777784708190-25BCB",
+    "timestamp": "2026-05-03T05:05:08.190Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "实现针对 ExperimentRenderer 渲染架构优化建议的代码重构",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "实现针对 ExperimentRenderer 渲染架构优化建议的代码重构 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777785547468-VG5SX",
+    "timestamp": "2026-05-03T05:19:07.468Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "调研分析初高中理化生实验缺失模板",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "调研分析初高中理化生实验缺失模板 — completed",
+    "metrics": {
+      "durationMs": null,
+      "errorCount": 0,
+      "expRecorded": 0
+    },
+    "sessionMemory": null
+  },
+  {
+    "id": "TH-1777798580729-8Z43H",
+    "timestamp": "2026-05-03T08:56:20.729Z",
+    "mode": "sequential",
+    "projectId": "EGPSpace",
+    "goal": "更新执行计划以支持引入 matter.js 和 WebGL 方案",
+    "taskCount": 1,
+    "taskTitles": [],
+    "outcome": "success",
+    "summary": "更新执行计划以支持引入 matter.js 和 WebGL 方案 — completed",
     "metrics": {
       "durationMs": null,
       "errorCount": 0,

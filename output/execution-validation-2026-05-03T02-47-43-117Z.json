@@ -1,0 +1,363 @@
+{
+  "timestamp": "2026-05-03T02:47:43.107Z",
+  "summary": {
+    "status": "passed_with_warnings",
+    "score": 54,
+    "totalStages": 5,
+    "completedStages": 0,
+    "failedStages": 0,
+    "warnings": 9
+  },
+  "stageValidations": {
+    "ANALYSE": {
+      "stage": "ANALYSE",
+      "status": "passed_with_warnings",
+      "score": 75,
+      "maxScore": 100,
+      "checks": [
+        {
+          "name": "required_artifact_exists",
+          "artifact": "requirement.md",
+          "passed": true,
+          "points": 20
+        },
+        {
+          "name": "optional_artifact_exists",
+          "artifact": "requirement.zh.md",
+          "passed": false,
+          "points": 0
+        },
+        {
+          "name": "content_length",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "lines": 405
+          }
+        },
+        {
+          "name": "section_count",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "sections": 40
+          }
+        },
+        {
+          "name": "required_sections",
+          "passed": true,
+          "points": 25
+        },
+        {
+          "name": "json_metadata",
+          "passed": false,
+          "points": 0
+        }
+      ],
+      "warnings": [
+        "JSON metadata missing or malformed"
+      ],
+      "errors": []
+    },
+    "ARCHITECT": {
+      "stage": "ARCHITECT",
+      "status": "passed_with_warnings",
+      "score": 50,
+      "maxScore": 100,
+      "checks": [
+        {
+          "name": "required_artifact_exists",
+          "artifact": "architecture.md",
+          "passed": true,
+          "points": 20
+        },
+        {
+          "name": "optional_artifact_exists",
+          "artifact": "architecture.zh.md",
+          "passed": false,
+          "points": 0
+        },
+        {
+          "name": "content_length",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "lines": 35
+          }
+        },
+        {
+          "name": "section_count",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "sections": 6
+          }
+        },
+        {
+          "name": "required_sections",
+          "passed": false,
+          "points": 0,
+          "details": {
+            "missing": [
+              "components",
+              "tech-stack",
+              "data-flow"
+            ]
+          }
+        },
+        {
+          "name": "json_metadata",
+          "passed": false,
+          "points": 0
+        }
+      ],
+      "warnings": [
+        "Missing required sections: components, tech-stack, data-flow",
+        "JSON metadata missing or malformed"
+      ],
+      "errors": []
+    },
+    "PLAN": {
+      "stage": "PLAN",
+      "status": "passed_with_warnings",
+      "score": 35,
+      "maxScore": 100,
+      "checks": [
+        {
+          "name": "required_artifact_exists",
+          "artifact": "execution-plan.md",
+          "passed": true,
+          "points": 20
+        },
+        {
+          "name": "optional_artifact_exists",
+          "artifact": "execution-plan.zh.md",
+          "passed": false,
+          "points": 0
+        },
+        {
+          "name": "content_length",
+          "passed": false,
+          "points": 0,
+          "details": {
+            "lines": 24,
+            "expected": {
+              "minLines": 25,
+              "maxLines": 600,
+              "hasJsonMetadata": true
+            }
+          }
+        },
+        {
+          "name": "section_count",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "sections": 3
+          }
+        },
+        {
+          "name": "required_sections",
+          "passed": false,
+          "points": 0,
+          "details": {
+            "missing": [
+              "dependencies"
+            ]
+          }
+        },
+        {
+          "name": "json_metadata",
+          "passed": false,
+          "points": 0
+        }
+      ],
+      "warnings": [
+        "Content length (24 lines) outside expected range (25-600)",
+        "Missing required sections: dependencies",
+        "JSON metadata missing or malformed"
+      ],
+      "errors": []
+    },
+    "CODE": {
+      "stage": "CODE",
+      "status": "passed_with_warnings",
+      "score": 60,
+      "maxScore": 100,
+      "checks": [
+        {
+          "name": "required_artifact_exists",
+          "artifact": "code.diff",
+          "passed": true,
+          "points": 20
+        },
+        {
+          "name": "content_length",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "lines": 181
+          }
+        },
+        {
+          "name": "section_count",
+          "passed": false,
+          "points": 0,
+          "details": {
+            "sections": 0,
+            "expected": 1
+          }
+        },
+        {
+          "name": "required_sections",
+          "passed": true,
+          "points": 25
+        }
+      ],
+      "warnings": [
+        "Too few sections (0, expected >= 1)"
+      ],
+      "errors": []
+    },
+    "TEST": {
+      "stage": "TEST",
+      "status": "passed_with_warnings",
+      "score": 50,
+      "maxScore": 100,
+      "checks": [
+        {
+          "name": "required_artifact_exists",
+          "artifact": "test-report.md",
+          "passed": true,
+          "points": 20
+        },
+        {
+          "name": "optional_artifact_exists",
+          "artifact": "test-report.zh.md",
+          "passed": false,
+          "points": 0
+        },
+        {
+          "name": "content_length",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "lines": 28
+          }
+        },
+        {
+          "name": "section_count",
+          "passed": true,
+          "points": 15,
+          "details": {
+            "sections": 5
+          }
+        },
+        {
+          "name": "required_sections",
+          "passed": false,
+          "points": 0,
+          "details": {
+            "missing": [
+              "summary",
+              "metrics"
+            ]
+          }
+        },
+        {
+          "name": "json_metadata",
+          "passed": false,
+          "points": 0
+        }
+      ],
+      "warnings": [
+        "Missing required sections: summary, metrics",
+        "JSON metadata missing or malformed"
+      ],
+      "errors": []
+    }
+  },
+  "flowValidation": {
+    "status": "passed",
+    "sequence": [
+      {
+        "from": "ANALYSE",
+        "to": "ARCHITECT",
+        "continuous": true
+      },
+      {
+        "from": "ARCHITECT",
+        "to": "PLAN",
+        "continuous": true
+      },
+      {
+        "from": "PLAN",
+        "to": "CODE",
+        "continuous": true
+      },
+      {
+        "from": "CODE",
+        "to": "TEST",
+        "continuous": true
+      }
+    ],
+    "breaks": [],
+    "warnings": []
+  },
+  "integrityChecks": [
+    {
+      "name": "all_required_artifacts_present",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "name": "content_completeness",
+      "passed": false,
+      "score": 45,
+      "maxScore": 100,
+      "details": {
+        "foundSections": 5,
+        "totalSections": 11
+      }
+    },
+    {
+      "name": "metadata_quality",
+      "passed": false,
+      "score": 0,
+      "maxScore": 100,
+      "details": {
+        "validMetadata": 0,
+        "totalMetadata": 4
+      }
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "medium",
+      "type": "low_quality",
+      "message": "Overall execution score (0) below threshold",
+      "action": "Review output completeness and structure"
+    },
+    {
+      "priority": "low",
+      "stage": "ARCHITECT",
+      "type": "missing_sections",
+      "message": "Stage ARCHITECT missing sections: components, tech-stack, data-flow",
+      "action": "Add required sections to output templates"
+    },
+    {
+      "priority": "low",
+      "stage": "PLAN",
+      "type": "missing_sections",
+      "message": "Stage PLAN missing sections: dependencies",
+      "action": "Add required sections to output templates"
+    },
+    {
+      "priority": "low",
+      "stage": "TEST",
+      "type": "missing_sections",
+      "message": "Stage TEST missing sections: summary, metrics",
+      "action": "Add required sections to output templates"
+    }
+  ]
+}

@@ -20,7 +20,7 @@ export const PHYSICS_TEMPLATES: Record<string, TemplateMetadata> = {
     auditDocPath: 'docs/audits/physics-buoyancy.md',
     lastAuditedAt: '2026-04-24',
     tags: ['mechanics', 'fluid', 'archimedes'],
-    atomVersion: 'v2-atomic',
+    atomVersion: 'v3-component',
   },
   'physics/pressure': {
     id: 'physics/pressure',

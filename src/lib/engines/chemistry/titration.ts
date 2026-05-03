@@ -114,13 +114,6 @@ export class TitrationEngine implements IExperimentEngine {
     const equivVol = (acidConc * acidVol) / baseConc;
     const buretteLevel = Math.min(100, (baseVol / equivVol) * 100);
 
-    // ── Display-layer derivations (v2-atomic) ──
-    let badgeKind: 'success' | 'danger' | 'info' | 'warning' = 'info';
-    if (state === '等当点') badgeKind = 'success';
-    else if (state === '酸过量') badgeKind = 'warning';
-    else if (state === '碱过量') badgeKind = 'info';
-    else if (state === '初始（纯酸）') badgeKind = 'danger';
-
     // Name the current indicator colour region for UI badge
     let colorName = '无色';
     if (indicatorKey === 'phenolphthalein') {
@@ -131,22 +124,42 @@ export class TitrationEngine implements IExperimentEngine {
       colorName = pH < 6 ? '黄' : pH < 7.6 ? '绿' : '蓝';
     }
 
+    const totalVolume = acidVol + baseVol;
+
+    // Component graph construction for v3-component
+    const components = [
+      {
+        id: 'Flask1',
+        kind: 'flask',
+        props: { volume: totalVolume, liquidColor: indicatorColor, pH, colorName }
+      },
+      {
+        id: 'Burette1',
+        kind: 'burette',
+        props: { level: buretteLevel, baseAdded: baseVol }
+      }
+    ];
+
+    const perComponent = {
+      'Flask1': { volume: totalVolume, liquidColor: indicatorColor, pH, colorName },
+      'Burette1': { level: buretteLevel, baseAdded: baseVol }
+    };
+
     return {
       values: {
         pH,
         pOH: 14 - pH,
         molesAcid,
         molesBase,
-        totalVolume: acidVol + baseVol,
+        totalVolume,
         equivalenceVolume: equivVol,
         buretteLevel,
         indicatorColor,
         stateLabel: state,
         speciesLabel: species,
-        // v2-atomic display-layer fields
-        badgeKind,
-        badgeText: state,
         colorName,
+        components,
+        perComponent
       },
       state,
       explanation: `${acidConc}M 酸 ${acidVol}mL + ${baseConc}M 碱 ${baseVol}mL → pH=${pH.toFixed(2)}。${state}。`,

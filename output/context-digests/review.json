@@ -3,16 +3,16 @@
   "stage": "REVIEW",
   "source": {
     "path": "output/review-output.md",
-    "sourceHash": "08b4c8207e92e75457918f5db22a843e000a27e98a3baadb71198c7846a68aae",
-    "artifactSize": 2025,
-    "updatedAt": "2026-05-03T01:48:11.600Z"
+    "sourceHash": "0ec1e5931154c490076d7b2aa1a91783e4274d7180197a9c55f88e45460d5b35",
+    "artifactSize": 702,
+    "updatedAt": "2026-05-03T05:04:17.589Z"
   },
   "scope": {
-    "session": "wf-202605030940",
-    "requirementFingerprint": "wf 按这下面这三步顺序实现"
+    "session": "wf-20260503125500",
+    "requirementFingerprint": ""
   },
   "content": {
-    "summary": "## 代码审查报告 (Code Review Report)\r\n\r\n### 审查范围\r\n本次主要审查 DEVELOP 阶段涉及的四个核心模块修改：\r\n1. `src/lib/framework/core/TickEngine.ts`\r\n2. `src/lib/framework/domains/mechanics/solver.ts`\r\n3. `src/lib/framework/domains/optics/solver.ts`\r\n4. `src/lib/framework/domains/biology/solver.ts`\r\n\r\n### 1. 架构契合度审查 (Architecture Alignment)\r\n- **调度机制设计**: \r\n  - `TickEngine` 彻底摒弃了阻塞型的单纯遍历，引入了 `lastSolverIndex` 作为断点记录，在 `performance.now()` 时间超限时及时 `break` 并在下一帧接续。这**完全契合**我们在分析阶段强调的 “Fair Scheduling” 及避免 “Death Spiral” 的目标。\r\n- *",
+    "summary": "## 回顾记录\r\n1. `src/lib/concept-to-template.ts` : 补齐了遗漏的 `chemistry/` 前缀，解决硬编码路径缺失导致路由失败的问题。\r\n2. `src/app/page.tsx`: 对生成的 `schema` 进行安全地强制注入 `_templateId`，防范直接依赖详情页再解析。\r\n3. `src/components/ExperimentRenderer.tsx` : `resolveTemplateId` 函数及组件入口处针对三锁机制执行了彻底重构，只要带有 `_templateId` 或能推导出的 ID 在白名单，就断言拦截 `EditorShell` 回退。\r\n\r\n本修改直接实现了所有必须要求（P0），同时包含了性价比极高的防御性重构（主页注入 ID）。目前流程已经测试通过并完整执行完毕。",
     "outline": [
       "Code Review 结果",
       "代码审查总结 / Code Review Summary",
@@ -27,7 +27,17 @@
       "审查范围",
       "1. 架构契合度审查 (Architecture Alignment)",
       "2. 数学模型与算法审查 (Mathematical Models & Algorithms)",
-      "3. 代码质量与安全性 (Quality & Security)"
+      "3. 代码质量与安全性 (Quality & Security)",
+      "Review Report",
+      "代码审查总结",
+      "审查结果",
+      "主要重构与代码清理",
+      "Code Review Report",
+      "变更概述",
+      "审查详情",
+      "代码审查",
+      "代码审查记录",
+      "回顾记录"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -44,25 +54,33 @@
       "- 架构设计（ARCHITECT）：引入了 `traits.ts` 用于解耦物理和化学的属性标签，这完全符合 ECS 数据驱动的要求。",
       "- 代码实现（CODE）：在各自的 Domain 目录下建立了 MVP 组件。未对原有 `chemistry` 和 `circuit` 产生耦合影响。",
       "- 类型安全（TEST）：修复了原有的 TypeScript 2367 与 2339 类型错误。通过了 `tsc --noEmit`。",
-      "整体代码符合规范，准许部署。"
+      "整体代码符合规范，准许部署。",
+      "- **架构对齐**: 与 ARCHITECT 阶段提议的方案高度一致。",
+      "- **质量评估**: TSC 类型校验通过，不存在语法错误，变更范围受控（仅1个注册表文件受影响）。",
+      "- **结论**: 审查通过，可以安全合并。"
     ],
     "affectedFiles": [
       "src/lib/framework/core/TickEngine.ts",
       "src/lib/framework/domains/mechanics/solver.ts",
       "src/lib/framework/domains/optics/solver.ts",
-      "src/lib/framework/domains/biology/solver.ts"
+      "src/lib/framework/domains/biology/solver.ts",
+      "src/lib/template-registry.ts",
+      "public/templates/_shared/physics-builder.js",
+      "src/lib/engines/physics/pressure.ts",
+      "src/lib/engines/physics/density.ts",
+      "src/lib/engines/physics/index.ts",
+      "src/lib/concept-to-template.ts",
+      "src/components/AIGeneratorDialog.tsx",
+      "src/components/editor/EditorShell.tsx",
+      "src/app/page.tsx",
+      "src/components/ExperimentRenderer.tsx"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "review-output.md",
       "outline": [
-        "代码审查报告 (Code Review Report)",
-        "审查范围",
-        "1. 架构契合度审查 (Architecture Alignment)",
-        "2. 数学模型与算法审查 (Mathematical Models & Algorithms)",
-        "3. 代码质量与安全性 (Quality & Security)",
-        "结论"
+        "回顾记录"
       ],
       "keyPoints": []
     }
@@ -83,77 +101,62 @@
   },
   "evidenceRefs": [
     {
-      "file": "src/lib/framework/core/TickEngine.ts",
+      "file": "src/lib/concept-to-template.ts",
       "artifact": "output/review-output.md"
     },
     {
-      "file": "src/lib/framework/domains/mechanics/solver.ts",
+      "file": "src/app/page.tsx",
       "artifact": "output/review-output.md"
     },
     {
-      "file": "src/lib/framework/domains/optics/solver.ts",
-      "artifact": "output/review-output.md"
-    },
-    {
-      "file": "src/lib/framework/domains/biology/solver.ts",
+      "file": "src/components/ExperimentRenderer.tsx",
       "artifact": "output/review-output.md"
     }
   ],
   "relevance": {
     "keywords": [
       "src",
+      "tsx",
+      "_templateid",
+      "回顾记录",
       "lib",
-      "framework",
-      "solver",
-      "mvp",
-      "tickengine",
-      "domains",
-      "mechanics",
-      "optics",
-      "biology",
-      "代码审查报告",
-      "code",
-      "review",
-      "report",
-      "审查范围",
-      "本次主要审查",
-      "develop",
-      "阶段涉及的四个核心模块修改",
-      "core",
-      "架构契合度审查",
-      "architecture",
-      "alignment",
-      "调度机制设计",
-      "彻底摒弃了阻塞型的单纯遍历",
-      "引入了",
-      "lastsolverindex",
-      "作为断点记录",
-      "performance",
-      "now",
-      "时间超限时及时",
-      "break",
-      "并在下一帧接续",
-      "完全契合",
-      "我们在分析阶段强调的",
-      "fair",
-      "scheduling",
-      "及避免",
-      "death",
-      "spiral",
-      "的目标"
+      "concept",
+      "template",
+      "补齐了遗漏的",
+      "chemistry",
+      "前缀",
+      "解决硬编码路径缺失导致路由失败的问题",
+      "app",
+      "page",
+      "对生成的",
+      "schema",
+      "进行安全地强制注入",
+      "防范直接依赖详情页再解析",
+      "components",
+      "experimentrenderer",
+      "resolvetemplateid",
+      "函数及组件入口处针对三锁机制执行了彻底重构",
+      "只要带有",
+      "或能推导出的",
+      "在白名单",
+      "就断言拦截",
+      "editorshell",
+      "回退",
+      "本修改直接实现了所有必须要求",
+      "同时包含了性价比极高的防御性重构",
+      "主页注入",
+      "目前流程已经测试通过并完整执行完毕"
     ],
     "files": [
-      "src/lib/framework/core/TickEngine.ts",
-      "src/lib/framework/domains/mechanics/solver.ts",
-      "src/lib/framework/domains/optics/solver.ts",
-      "src/lib/framework/domains/biology/solver.ts"
+      "src/lib/concept-to-template.ts",
+      "src/app/page.tsx",
+      "src/components/ExperimentRenderer.tsx"
     ],
     "modules": [
-      "src",
       "src",
       "src",
       "src"
     ]
   },
-  "generatedAt": "2026-05-03T01:48:17.286Z"
+  "generatedAt": "2026-05-03T05:04:31.497Z"
 }

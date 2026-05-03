@@ -65,10 +65,12 @@
 
 </div>
 
-<!-- L3 shared atoms (v2-atomic) -->
+<!-- L3 shared atoms (v3-component) -->
 <script src="/templates/_shared/experiment-core.js"></script>
 <script src="/templates/_shared/ui-core.js"></script>
+<script src="/templates/_shared/component-mirror.js"></script>
 <script src="/templates/_shared/physics-draw.js"></script>
+<script src="/templates/_shared/physics-builder.js"></script>
 <script>
   'use strict';
 
@@ -76,7 +78,7 @@
   const ENGINE_ID = 'physics/buoyancy';
 
   // Startup guard (ADR R4): make sure L3 atoms loaded
-  if (!window.__EUREKA_UI_LOADED || !window.EurekaPhysicsDraw) {
+  if (!window.__EUREKA_UI_LOADED) {
     console.error('[buoyancy] L3 shared atoms failed to load');
   }
 
@@ -94,6 +96,14 @@
 
   let lastResult = null;
 
+  function buildGraph() {
+    if (!window.PhysicsBuilder) return undefined;
+    const pb = new window.PhysicsBuilder();
+    pb.liquidContainer({ id: 'Liquid1', liquidDensity: state.liquidDensity, depth: 1 });
+    pb.block({ id: 'Block1', density: state.objectDensity, volume: state.volume / 1000000 });
+    return pb.toSpec();
+  }
+
   async function recompute() {
     // volume cm³ → m³ for engine; gravity fixed at 9.8
     const params = {
@@ -101,6 +111,7 @@
       liquidDensity: state.liquidDensity,
       volume: state.volume / 1_000_000,
       g: 9.8,
+      graph: buildGraph(),
     };
     try {
       const r = await window.requestCompute(ENGINE_ID, params);
@@ -130,7 +141,12 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    // Liquid (colour scales with density)
+    if (window.EurekaComponentMirror && v.components) {
+      window.EurekaComponentMirror.render(ctx, v.components);
+    }
+
+    if (PD) {
+      // Liquid (colour scales with density)
     const liqColor =
       state.liquidDensity > 2000 ? '#1E40AF' :
       state.liquidDensity > 1500 ? '#0891B2' :
@@ -211,12 +227,13 @@
     ctx.save();
     ctx.font = '11px system-ui';
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fillText(v.liquidName + ' ρ=' + state.liquidDensity + 'kg/m³',
+    ctx.fillText('液 ρ=' + state.liquidDensity + 'kg/m³',
       beakerLeft + 8, (liquidLevel + beakerBottom) / 2);
     ctx.fillStyle = '#64748B';
     ctx.fillText('V=' + state.volume + 'cm³',
       beakerRight + 5, objY + objH / 2);
     ctx.restore();
+    }
   }
 
   // Wire up existing sliders

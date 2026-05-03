@@ -91,18 +91,19 @@
 
 </div>
 
-<!-- L3 shared atoms (v2-atomic) -->
+<!-- L3 shared atoms (v3-component) -->
 <script src="/templates/_shared/experiment-core.js"></script>
 <script src="/templates/_shared/ui-core.js"></script>
 <script src="/templates/_shared/chemistry-draw.js"></script>
-<script src="/templates/_shared/chemistry-utils.js"></script>
+<script src="/templates/_shared/component-mirror.js"></script>
+<script src="/templates/_shared/chemistry-builder.js"></script>
 <script>
   'use strict';
 
   const TEMPLATE_ID = 'chemistry/acid-base-titration';
   const ENGINE_ID = 'chemistry/titration';
 
-  if (!window.__EUREKA_UI_LOADED || !window.EurekaChemistryDraw) {
+  if (!window.__EUREKA_UI_LOADED) {
     console.error('[titration] L3 shared atoms failed to load');
   }
 
@@ -124,6 +125,15 @@
 
   let lastResult = null;
 
+  function buildGraph() {
+    if (!window.ChemistryBuilder) return undefined;
+    const cb = new window.ChemistryBuilder();
+    cb.flask({ id: 'Flask1', formula: 'HCl', volumeML: state.acidVolume + state.baseAdded });
+    // ChemistryBuilder does not have a burette yet, but we can pass it anyway via ._add
+    cb._add('burette', { level: state.baseAdded });
+    return cb.toSpec();
+  }
+
   async function recompute() {
     const params = {
       acid_concentration: state.acidConc,
@@ -131,6 +141,7 @@
       acid_volume: state.acidVolume,
       base_volume: state.baseAdded,
       indicator: state.indicator,
+      graph: buildGraph(),
     };
     try {
       const r = await window.requestCompute(ENGINE_ID, params);
@@ -150,7 +161,6 @@
     document.getElementById('color-dot').style.background = v.indicatorColor;
     document.getElementById('color-name').textContent = v.colorName;
 
-    // Badge: equivalence detection via engine state
     let badgeKind = 'info';
     let badgeText = '滴定进行中';
     if (v.stateLabel === '等当点') {
@@ -177,7 +187,12 @@
     ctx.fillStyle = '#F3E8FF';
     ctx.fillRect(0, 0, W, H);
 
-    // Burette (top-center)
+    if (window.EurekaComponentMirror && v.components) {
+      window.EurekaComponentMirror.render(ctx, v.components);
+    }
+
+    if (CD) {
+      // Burette (top-center)
     const buretteX = W / 2 - 10;
     const buretteY = 20;
     const buretteH = 90;
@@ -223,6 +238,7 @@
     ctx.fillText('V等当 = ' + UI.formatNum(v.equivalenceVolume, 1) + ' mL', 20, 48);
     ctx.fillText(v.speciesLabel, 20, 66);
     ctx.restore();
+    }
   }
 
   // Wire up sliders

@@ -1824,5 +1824,43 @@
     "createdAt": "2026-05-03T01:52:55.907Z",
     "updatedAt": "2026-05-03T01:52:55.907Z",
     "expiresAt": "2026-08-01T01:52:55.907Z"
+  },
+  {
+    "id": "EXP-1777780095271-WY9YH4P",
+    "type": "negative",
+    "category": "pitfall",
+    "title": "Triple-Lock Router Mismatch Causing UI Fallback",
+    "content": "在 Triple-Lock 架构中，如果 concept-to-template 路由层返回的 templateId 缺失域级别前缀（如 chemistry/），会导致最终的 isApprovedTemplate 验证失败并返回 null。此时 UI 层（如 ExperimentRenderer）会由于拿不到 resolvedTemplateId 发生降级，错误地渲染为完全空白的 EditorShell，而非抛出明显的报错。解决方案：确保 concept-to-template 映射的 ID 字符串与 template-registry 中的 ID 完全、精确对应。",
+    "taskId": null,
+    "skill": "architecture-design",
+    "tags": [],
+    "codeExample": null,
+    "sourceFile": null,
+    "namespace": null,
+    "moduleId": null,
+    "hitCount": 0,
+    "evolutionCount": 0,
+    "createdAt": "2026-05-03T03:48:15.271Z",
+    "updatedAt": "2026-05-03T03:48:15.271Z",
+    "expiresAt": "2026-08-01T03:48:15.271Z"
+  },
+  {
+    "id": "EXP-1777784628758-IT4WTGF",
+    "type": "positive",
+    "category": "stable_pattern",
+    "title": "[优化] 依赖状态机隔离进行Iframe兜底防御重构",
+    "content": "针对前端组件通过隐式的 url 或后端 ID 进行加载时的不稳定性，可以通过将显式生成的 ID 注入前端 Schema 然后优先消费该 ID 的方式，实现业务状态隔离及防御性编程，从而解决兜底（fallback）误判。",
+    "taskId": null,
+    "skill": "architecture-design",
+    "tags": [],
+    "codeExample": null,
+    "sourceFile": null,
+    "namespace": null,
+    "moduleId": null,
+    "hitCount": 0,
+    "evolutionCount": 0,
+    "createdAt": "2026-05-03T05:03:48.758Z",
+    "updatedAt": "2026-05-03T05:03:48.758Z",
+    "expiresAt": "2027-05-03T05:03:48.758Z"
   }
 ]

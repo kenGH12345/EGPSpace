@@ -1,41 +1,38 @@
-## Structural Design / 结构设计
-针对这三个阶段的实施计划，架构在结构上做出如下设计：
-- `TickEngine` (`src/lib/framework/core/TickEngine.ts`) 必须充当时间墙：无论 `MechanicsSolver` 计算多耗时，`accumulator >= fixedDeltaTime` 与 `substepCount < maxSubsteps` 必须同时满足，否则强行截断，这是保证架构生存的最底线。
-- `MechanicsSolver` (`src/lib/framework/domains/mechanics/solver.ts`)：内部划分为节点（Node）管理器和弹簧（Spring）管理器。`performUpdate` 将遍历所有的边，计算力，并在节点上应用半隐式欧拉积分推进状态。
-- `OpticsSolver` (`src/lib/framework/domains/optics/solver.ts`)：基于几何光学的 `RaySegment` 模型，追踪每条光线经过界面的折射与反射，将其序列化到 EventBus。
-- `BiologySolver` (`src/lib/framework/domains/biology/solver.ts`)：状态机管理框架。根据时间流逝计算每个生物个体的成长周期（如种群公式迭代）。
+## Architecture Scorecard
+| Attribute | Status | Explanation |
+|---|---|---|
+| Scalability | **PASS** | 引入动态模板按需加载机制，避免一次性加载过多资源。 |
+| Maintainability | **PASS** | `concept-to-template` 严格按照学科领域 (biology, physics, chemistry) 进行子模块划分，易于后续更新。 |
+| Performance | **PASS** | Iframe 沙盒天然隔离，不会导致主 Next.js 线程内存泄漏。 |
 
-## Interfaces Contracts / 接口契约
-- **引擎层契约**：现有的 `ITickSolver` 保持不变，接受 `deltaTime`。但引入真实解算后，`lastResults` 必须使用强类型 `ComponentSolvedValues` 输出每一帧的确切物理量。
-- **Stamp 层契约**：各个 Component 的 Stamp Entry 必须拓展真实的物理参数（如 `mass`, `friction`, `springConstant`, `refractionIndex`）。如果缺失，Solver 需要注入默认回退值以防止计算奔溃。
-- **UI消费契约**：渲染层不应直接依赖内部物理对象，只能监听 `domain:mechanics:updated` 获取一份序列化快照（Snapshot）进行重绘。
+## Failure Model
+如果新的实验模板（比如极度依赖 CPU 计算的物理碰撞实验或大量微观粒子运算的化学反应）加载或渲染失败：
+- **场景 1（网络/路径找不到）**：`IframeExperiment` 将侦测到 `<iframe>` 加载错误，并自动回退为文本展示模式，保障核心内容展示不断层。
+- **场景 2（白屏/JS报错）**：触发预设的 10 秒超时渲染监控，超时后提示“模板维护中”并平滑回退。
+- **缓解策略**：在模板发布前必须经过严格的 Triple-Lock 测试，并且 `isApprovedTemplate` 提供开关，出现问题可热下线。
 
-## Security Performance / 安全与性能
-- **时间复杂度墙**：力学碰撞和光学反射是典型的 O(n²) 或指数级计算。必须在 Optics 中写死 `MAX_BOUNCE = 10`。在 Mechanics 中设置空间网格划分或暴力的硬节点数限制（`MAX_NODES = 100`）。
-- **精度发散防御**：积分方程需要限制 `deltaTime` 不得超过一个上限值，一旦超时导致位置变异，直接丢弃该帧并回滚。
+## Migration Safety Case
+对于 `concept-to-template.ts` 新增加大量学科词条的迁移：
+- 不会影响现有的可用映射（后置追加）。
+- 对于新创建但并未落地的模板，我们可以在注册表中设置为 `pending` 状态，这样就算大模型命中了概念，也不会路由到不存在的空模板页面。这是安全的增量迭代模型。
+
+## Module Breakdown
+未来扩展阶段需引入的架构增强：
+1. **`src/lib/concept-to-template.ts`**：继续解耦为 `physics-router.ts`、`chemistry-router.ts`、`biology-router.ts`。
+2. **`public/templates/biology`**：新增基础生物学 UI 组件系统（专门用于处理显微镜视场、细胞染色动画等），扩展 `ui-core.css`。
+3. **`public/templates/_shared/physics-engine.js`**：引入轻量级物理引擎 `matter.js`。针对高中力学的碰撞实验、平抛运动等缺乏强交互和动态演化的场景，利用外部引擎的刚体计算能力，突破原生 HTML DOM 动画的帧率与精度瓶颈。
+4. **`public/templates/_shared/webgl-renderer.js`**：引入特定 WebGL 方案（如基于 Three.js 或纯 WebGL 封装的轻量组件）。针对高中化学中有机微观结构（甲烷、乙酸乙酯等的立体空间构型及断键/成键动态演化）渲染需求，用以弥补 2D Canvas 和 DOM 在三维空间展示上的短板。
+
+## API Contracts
+无需修改后端的 REST 接口。大模型返回的 schema 结构依然符合预期。扩展主要发生在前端路由词库扩展。
 
 ## Consumer Adoption Design / 下游消费方案
-- **React Frontend 适配**：对于 Optics 等能产生海量光线路径段（几百条直线）的模块，React 的 Virtual DOM diff 极大概率掉帧。建议通过 EventBus 转发给一个独立的 Canvas / WebGL Renderer 层来直接执行渲染指令。
-- **LayoutSpec 同步**：用户拖拽产生的新组件必须通过统一的 `TemplateRegistry` 进行组件状态（Stamp）更新，Solver 在下一次 Tick 时将自动读取新参数，实现热重载。
+下游的 `ExperimentRenderer` 组件将无缝接管新的模板 ID。无需更改核心消费端逻辑，只需保证所有新增加的模板能够正确注册进 `isApprovedTemplate` 白名单即可。对于大语言模型，随着路由配置的丰富，能够精确命中的概念将呈几何级数增加。
 
-## Architecture Scorecard / 架构计分卡
-| 维度 | 分数 | 评估理由 |
-|---|---|---|
-| 可扩展性 | 4/5 | TickEngine 的领域插槽（Map）设计优秀，解耦良好。但未来扩展到流体等复杂计算时可能需要 Worker 支持。 |
-| 容错性 | 3/5 | Max Substeps 能保护浏览器主线程，但代价是时间“慢动作”甚至系统级的数据撕裂。 |
-| 隔离性 | 5/5 | 领域之间完全依靠纯数据 Stamp 及 EventBus 隔离，物理引擎不需要知道渲染引擎的存在。 |
-
-## Failure Model / 故障模型
-- **积分爆炸 (Integration Blow-up)**：在 `src/lib/framework/domains/mechanics/solver.ts` 中，弹簧张力极大时积分结果为 NaN 或 Infinity。检测：校验位置是否超出视口坐标范围外；恢复：抛出警告，抛弃故障帧，降级或锁定组件。
-- **光线风暴 (Ray Windup)**：两面平行镜子会产生无限循环反射。检测：`optics/solver.ts` 设置严格的单根光线反射跳数限制（Bounce Limit）；恢复：截断追踪。
-- **主线程超时 (Thread Lock)**：物理计算占用超过 50ms。检测：`TickEngine.ts` 的 `maxBudgetMs` 控制与 `Max Substeps` 共同作用；恢复：推迟至下一次 RAF。
-
-## Migration Safety Case / 迁移安全案例
-- **渐进式迁移 (Incremental)**：在改写 `MechanicsSolver` 时，其他两个仍可保持 Stub 状态，不受影响，因为 EventBus 通信机制是完全平行的。
-- **后向兼容 (Backwards-Compatible)**：现有的存根数据结构通过拓展接口属性即可完成真实化，无需推翻现有 React 渲染层（暂时），待瓶颈出现再优化为 Canvas。
-- **配置回退 (Fallback)**：由于 TemplateRegistry 控制 Stamp 的生成，若新的真实化组件计算报错，可以轻易降级，将 `Component.solverDomain` 软回退到旧有的 mock domain。
+在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。
 
 ## Scenario Coverage / 场景覆盖
-- 支持杠杆、单摆、滑轮、弹簧振子等力学教学仿真实验。
-- 支持小孔成像、透镜折射、反射定律等几何光学实验。
-- 支持种群繁衍、生物反馈循环等长周期实验演示。
+本架构扩展指引涵盖以下几大核心应用场景：
+1. **初高中物理综合实验**：解决目前系统缺乏复杂光学（折射/透镜）、力学动态沙盒（滑轮/碰撞）的问题。
+2. **初高中化学实操及微观模拟**：填补气体发生装置互动及高中微观晶体/有机分子立体结构的展示场景。
+3. **生物全流程空白填补**：支持显微镜交互观察、宏观生命周期循环及微观生理现象模拟的全新领域覆盖。

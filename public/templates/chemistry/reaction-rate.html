@@ -2,413 +2,180 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>化学反应速率</title>
+<link rel="stylesheet" href="/templates/_shared/ui-core.css">
+<style>
+  .rate-canvas-wrapper {
+    background: #1a1a2e;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .rate-canvas-wrapper canvas { max-width: 100%; height: auto; display: block; }
+</style>
 </head>
 <body>
-<!-- chemistry/reaction-rate.html — Reaction Rate Experiment -->
-<!-- Subject: Chemistry | Form: reaction-rate | Level: junior-high -->
-<!-- Language: zh-CN | engines: chemistry/reaction-rate -->
-
-<template-metadata>
-{
-  "experimentName": "化学反应速率",
-  "subjectDomain": "chemistry",
-  "gradeLevel": "junior-high",
-  "formFactor": "reaction-rate",
-  "parameters": [
-    {"id": "initialConcentration", "label": "初始浓度", "unit": "M", "min": 0.1, "max": 2.0, "default": 1.0, "step": 0.1, "type": "float"},
-    {"id": "temperature", "label": "温度", "unit": "°C", "min": 0, "max": 100, "default": 25, "step": 1, "type": "int"},
-    {"id": "catalyst", "label": "催化剂", "unit": "", "min": 0, "max": 1, "default": 0, "step": 1, "type": "enum"},
-    {"id": "time", "label": "反应时间", "unit": "s", "min": 0, "max": 120, "default": 10, "step": 1, "type": "int"}
-  ],
-  "resultMetrics": [
-    {"id": "conversion", "label": "转化率", "unit": "%"},
-    {"id": "rate", "label": "反应速率", "unit": "M/s"},
-    {"id": "rateConstant", "label": "速率常数", "unit": "1/s"}
-  ],
-  "dependencies": ["../_shared/experiment-core.js"]
-}
-</template-metadata>
-
-<template-body>
-  <div class="exp-title">化学反应速率</div>
-  <p class="exp-desc">探究浓度、温度、催化剂对反应速率的影响。</p>
-
-  <canvas id="rate-canvas" width="800" height="520" tabindex="0" aria-label="化学反应速率实验画布"></canvas>
-
-  <div class="param-panel">
-    <div class="param-group">
-      <h4>实验参数</h4>
-
-      <label for="initialConcentration">初始浓度 (M)</label>
-      <input type="range" id="initialConcentration" min="0.1" max="2.0" step="0.1" value="1.0"
-             oninput="handleSlider(this)" aria-label="初始浓度">
-      <span class="readout" id="readout-initialConcentration">1.0</span>
-
-      <label for="temperature">温度 (°C)</label>
-      <input type="range" id="temperature" min="0" max="100" step="1" value="25"
-             oninput="handleSlider(this)" aria-label="温度">
-      <span class="readout" id="readout-temperature">25</span>
-
-      <label for="catalyst">催化剂</label>
-      <select id="catalyst" onchange="handleSlider({id:'catalyst',value:+this.value});" aria-label="催化剂">
-        <option value="0" selected>无</option>
-        <option value="1">有</option>
-      </select>
-
-      <label for="time">反应时间 (s)</label>
-      <input type="range" id="time" min="0" max="120" step="1" value="10"
-             oninput="handleSlider(this)" aria-label="反应时间">
-      <span class="readout" id="readout-time">10</span>
+<div class="eureka-root">
+  <div class="eureka-grid-3">
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">转化率</p>
+      <p class="eureka-stat-value primary" id="stat-conv">0 %</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">反应速率</p>
+      <p class="eureka-stat-value" id="stat-rate">0 M/s</p>
+    </div>
+    <div class="eureka-stat">
+      <p class="eureka-stat-label">速率常数 k</p>
+      <p class="eureka-stat-value danger" id="stat-k">0</p>
     </div>
   </div>
-</template-body>
 
-<script type="module">
-  import { EurekaHost, EurekaCanvas, EurekaFormat } from '../_shared/experiment-core.js';
+  <div class="eureka-card" style="margin-top:12px;">
+    <div class="eureka-card-header">
+      <span>反应动力学 · 曲线</span>
+      <span class="badge-info" id="arch-version">v3-component · ReactionRateEngine</span>
+    </div>
+    <div class="rate-canvas-wrapper">
+      <canvas id="canvas" width="640" height="300"></canvas>
+    </div>
+  </div>
 
-  const state = {
-    initialConcentration: 1.0,
-    temperature: 25,
-    catalyst: 0,
-    time: 10,
-  };
+  <div class="eureka-card" style="margin-top:12px;">
+    <div class="eureka-card-header"><span>参数控制</span></div>
+    <div class="eureka-controls">
+      <div class="eureka-control">
+        <label>初始浓度 [A]₀ (M)</label>
+        <input type="range" class="eureka-slider" id="ctrl-conc" min="0.1" max="2.0" step="0.1" value="1.0">
+        <span class="eureka-slider-value" id="val-conc">1.0</span>
+      </div>
+      <div class="eureka-control">
+        <label>温度 T (°C)</label>
+        <input type="range" class="eureka-slider" id="ctrl-temp" min="0" max="100" step="1" value="25">
+        <span class="eureka-slider-value" id="val-temp">25</span>
+      </div>
+      <div class="eureka-control">
+        <label>时间 t (s)</label>
+        <input type="range" class="eureka-slider" id="ctrl-time" min="0" max="120" step="1" value="10">
+        <span class="eureka-slider-value" id="val-time">10</span>
+      </div>
+      <div class="eureka-control">
+        <label>催化剂</label>
+        <select id="ctrl-catalyst" class="eureka-slider">
+          <option value="0" selected>无催化剂</option>
+          <option value="1">有催化剂</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
 
-  const canvas = document.getElementById('rate-canvas');
+<script src="/templates/_shared/experiment-core.js"></script>
+<script src="/templates/_shared/ui-core.js"></script>
+
+<script>
+(function () {
+  'use strict';
+  
+  const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
-  let width = canvas.width, height = canvas.height;
-  let needRedraw = true;
-
-  // Arrhenius model (simplified for display)
-  function computeReaction(conc0, tempC, hasCatalyst, t) {
-    const tempK = tempC + 273.15;
-    const A = 1e10;
-    const Ea = hasCatalyst > 0.5 ? 50000 : 75000;
-    const R = 8.314;
-
-    const k = A * Math.exp(-Ea / (R * tempK));
-    const rate = k * conc0;
-    const conc = conc0 * Math.exp(-k * t);
-    const reacted = conc0 - conc;
-    const conversion = (reacted / conc0) * 100;
-
-    return { k, rate, conc, reacted, conversion };
-  }
-
-  function computeNoCat(conc0, tempC, t) {
-    const tempK = tempC + 273.15;
-    const Ea = 75000;
-    const kNoCat = 1e10 * Math.exp(-Ea / (8.314 * tempK));
-    const conc = conc0 * Math.exp(-kNoCat * t);
-    return conc0 - conc;
-  }
-
-  function drawRate(g, w, h) {
-    const MARGIN = 40;
-    const graphW = w - MARGIN * 2 - 220;
-    const graphH = h - MARGIN * 2 - 100;
-    const graphLeft = MARGIN;
-    const graphTop = MARGIN;
-
-    g.fillStyle = '#1a1a2e';
-    g.fillRect(0, 0, w, h);
-
-    // Title
-    g.fillStyle = '#e0e0ff';
-    g.font = 'bold 18px system-ui, sans-serif';
-    g.textAlign = 'left';
-    g.fillText('化学反应速率曲线', graphLeft, graphTop - 5);
-
-    // Subtitle
-    g.fillStyle = '#aaaaaa';
-    g.font = '13px system-ui, sans-serif';
-    g.fillText(`${state.initialConcentration}M · ${state.temperature}°C · ${state.catalyst ? '有' : '无'}催化剂`, graphLeft, graphTop + 15);
-
-    // ── Axes ──
-    g.strokeStyle = '#8888aa';
-    g.lineWidth = 1.5;
-    g.beginPath();
-    g.moveTo(graphLeft, graphTop);
-    g.lineTo(graphLeft, graphTop + graphH);
-    g.lineTo(graphLeft + graphW, graphTop + graphH);
-    g.stroke();
-
-    // X label
-    g.fillStyle = '#aaaacc';
-    g.font = '13px system-ui, sans-serif';
-    g.textAlign = 'center';
-    g.fillText('时间 (s)', graphLeft + graphW / 2, graphTop + graphH + 35);
-
-    // Y label
-    g.save();
-    g.translate(graphLeft - 30, graphTop + graphH / 2);
-    g.rotate(-Math.PI / 2);
-    g.fillText('浓度 (M)', 0, 0);
-    g.restore();
-
-    // Grid
-    g.strokeStyle = '#555577';
-    g.lineWidth = 0.5;
-    const maxT = 120;
-    const maxC = state.initialConcentration * 1.1;
-
-    // X grid (time)
-    for (let t = 0; t <= maxT; t += 10) {
-      const x = graphLeft + (t / maxT) * graphW;
-      g.beginPath();
-      g.moveTo(x, graphTop);
-      g.lineTo(x, graphTop + graphH);
-      g.stroke();
-      g.fillStyle = '#9999bb';
-      g.font = '10px system-ui, sans-serif';
-      g.textAlign = 'center';
-      g.fillText(t.toString(), x, graphTop + graphH + 15);
-    }
-
-    // Y grid (concentration)
-    g.textAlign = 'right';
-    const cStep = maxC >= 1.5 ? 0.5 : 0.2;
-    for (let c = 0; c <= maxC; c += cStep) {
-      const y = graphTop + graphH - (c / maxC) * graphH;
-      g.beginPath();
-      g.moveTo(graphLeft, y);
-      g.lineTo(graphLeft + graphW, y);
-      g.stroke();
-      g.fillStyle = '#9999bb';
-      g.font = '10px system-ui, sans-serif';
-      g.fillText(c.toFixed(1), graphLeft - 4, y + 3);
-    }
-
-    // ── Draw curves ──
-    // Curve A: With catalyst (if enabled)
-    const r = computeReaction(state.initialConcentration, state.temperature, state.catalyst, state.time);
-
-    g.lineWidth = 2.5;
-    g.strokeStyle = state.catalyst ? '#ff8c42' : '#00ffaa';
-    g.beginPath();
-    for (let i = 0; i <= graphW; i++) {
-      const t = (i / graphW) * maxT;
-      const res = computeReaction(state.initialConcentration, state.temperature, state.catalyst, t);
-      const x = graphLeft + i;
-      const y = graphTop + graphH - (res.conc / maxC) * graphH;
-      if (i === 0) g.moveTo(x, y);
-      else g.lineTo(x, y);
-    }
-    g.stroke();
-
-    // Curve B: Without catalyst (for comparison, if catalyst enabled)
-    if (state.catalyst) {
-      g.strokeStyle = '#666666';
-      g.setLineDash([5, 5]);
-      g.lineWidth = 1.5;
-      g.beginPath();
-      for (let i = 0; i <= graphW; i++) {
-        const t = (i / graphW) * maxT;
-        const res = computeReaction(state.initialConcentration, state.temperature, 0, t);
-        const x = graphLeft + i;
-        const y = graphTop + graphH - (res.conc / maxC) * graphH;
-        if (i === 0) g.moveTo(x, y);
-        else g.lineTo(x, y);
-      }
-      g.stroke();
-      g.setLineDash([]);
-
-      // Legend
-      const ly = graphTop + 20;
-      g.strokeStyle = '#ff8c42';
-      g.lineWidth = 2;
-      g.beginPath();
-      g.moveTo(graphLeft + graphW - 130, ly);
-      g.lineTo(graphLeft + graphW - 110, ly);
-      g.stroke();
-      g.fillStyle = '#cccccc';
-      g.font = '11px system-ui, sans-serif';
-      g.textAlign = 'left';
-      g.fillText('有催化剂', graphLeft + graphW - 105, ly + 4);
-
-      g.strokeStyle = '#666666';
-      g.setLineDash([4, 3]);
-      g.lineWidth = 1.5;
-      g.beginPath();
-      g.moveTo(graphLeft + graphW - 130, ly + 15);
-      g.lineTo(graphLeft + graphW - 110, ly + 15);
-      g.stroke();
-      g.setLineDash([]);
-      g.fillText('无催化剂', graphLeft + graphW - 105, ly + 19);
-    }
-
-    // ── Current point marker ──
-    const curX = graphLeft + (state.time / maxT) * graphW;
-    const curY = graphTop + graphH - (r.conc / maxC) * graphH;
-
-    g.fillStyle = '#ffff00';
-    g.beginPath();
-    g.arc(curX, curY, 5, 0, Math.PI * 2);
-    g.fill();
-    g.strokeStyle = '#ffffff';
-    g.lineWidth = 2;
-    g.stroke();
-
-    // Vertical line
-    g.strokeStyle = 'rgba(255,255,255,0.3)';
-    g.lineWidth = 1;
-    g.setLineDash([3, 3]);
-    g.beginPath();
-    g.moveTo(curX, graphTop);
-    g.lineTo(curX, graphTop + graphH);
-    g.stroke();
-    g.setLineDash([]);
-
-    // Current readout
-    g.fillStyle = '#ffffff';
-    g.font = 'bold 12px system-ui, sans-serif';
-    g.textAlign = 'right';
-    g.fillText(`t=${state.time}s, [A]=${r.conc.toFixed(3)}M`, graphLeft + graphW, graphTop + 10);
-
-    // ── Beaker visual (right side) ──
-    const beakerX = w - 180;
-    const beakerY = graphTop + 30;
-    const beakerW = 100;
-    const beakerH = 140;
-
-    // Outline
-    g.strokeStyle = '#cccccc';
-    g.lineWidth = 2;
-    g.strokeRect(beakerX, beakerY, beakerW, beakerH);
-
-    // Liquid with color intensity based on remaining concentration
-    const fillRatio = 0.7;
-    const liquidH = beakerH * fillRatio;
-    const concRatio = r.conc / state.initialConcentration;
-    const intensity = Math.max(0.1, concRatio);
-    g.fillStyle = `rgba(${100 + intensity * 100}, ${50 + intensity * 150}, 200, 0.5)`;
-    g.fillRect(beakerX + 2, beakerY + beakerH - liquidH, beakerW - 4, liquidH);
-
-    // Bubbles/molecules
-    if (state.time > 0) {
-      const bubbleCount = Math.floor((1 - concRatio) * 15);
-      for (let i = 0; i < bubbleCount; i++) {
-        const bx = beakerX + 10 + Math.sin(i * 1.5 + state.time * 0.1) * 30;
-        const by = beakerY + beakerH - liquidH + 10 + (i % 5) * 20;
-        g.fillStyle = `rgba(150,255,200,${0.15 + (1 - concRatio) * 0.3})`;
-        g.beginPath();
-        g.arc(bx, by, 3 + Math.random() * 4, 0, Math.PI * 2);
-        g.fill();
-      }
-    }
-
-    g.fillStyle = '#e0e0ff';
-    g.font = '12px system-ui, sans-serif';
-    g.textAlign = 'center';
-    g.fillText('反应容器', beakerX + beakerW / 2, beakerY + beakerH + 18);
-
-    // ── Data panel ──
-    const panelX = beakerX;
-    const panelY = beakerY + beakerH + 35;
-    const panelW = beakerW;
-
-    g.fillStyle = 'rgba(255,255,255,0.05)';
-    g.fillRect(panelX, panelY, panelW, 95);
-    g.strokeStyle = '#444466';
-    g.strokeRect(panelX, panelY, panelW, 95);
-
-    const metrics = [
-      ['转化率', `${r.conversion.toFixed(1)}%`],
-      ['反应速率', `${r.rate.toExponential(2)} M/s`],
-      ['速率常数 k', r.k.toExponential(2)],
-    ];
-
-    metrics.forEach((m, i) => {
-      const my = panelY + 18 + i * 25;
-      g.fillStyle = '#ccccff';
-      g.font = 'bold 11px system-ui, sans-serif';
-      g.textAlign = 'left';
-      g.fillText(m[0], panelX + 8, my);
-      g.fillStyle = '#ffffff';
-      g.textAlign = 'right';
-      g.fillText(m[1], panelX + panelW - 8, my);
-    });
-
-    // ── Conclusion ──
-    const conX = MARGIN;
-    const conY = graphTop + graphH + 50;
-    const conW = w - MARGIN * 2;
-
-    g.fillStyle = 'rgba(255,255,255,0.05)';
-    g.fillRect(conX, conY, conW, 50);
-    g.strokeStyle = '#444466';
-    g.strokeRect(conX, conY, conW, 50);
-
-    g.fillStyle = '#ccccff';
-    g.font = 'bold 12px system-ui, sans-serif';
-    g.textAlign = 'left';
-    g.fillText('结论', conX + 10, conY + 18);
-
-    let conclusion = '';
-    if (state.time === 0) {
-      conclusion = '反应尚未开始。调节时间观察浓度变化。';
-    } else if (state.catalyst) {
-      const comp = computeNoCat(state.initialConcentration, state.temperature, state.time);
-      const speedup = comp > 0.001 ? (state.initialConcentration - r.conc) / comp : 1;
-      conclusion = `催化剂将反应速率提高约 ${speedup.toFixed(1)} 倍。温度每升高 10°C，速率约翻倍。`;
-    } else {
-      conclusion = '反应按一级动力学进行。升高温度显著加快反应。';
-    }
-
-    g.fillStyle = '#bbbbdd';
-    g.font = '11px system-ui, sans-serif';
-    g.fillText(conclusion, conX + 10, conY + 38);
-  }
-
-  function renderLoop() {
-    if (needRedraw) {
-      drawRate(ctx, width, height);
-      needRedraw = false;
-    }
-    requestAnimationFrame(renderLoop);
-  }
-  requestAnimationFrame(renderLoop);
-
-  function handleSlider(el) {
-    const id = el.id;
-    state[id] = parseFloat(el.value);
-    const r = document.getElementById('readout-' + id);
-    if (r) {
-      if (id === 'initialConcentration') r.textContent = state[id].toFixed(1);
-      else r.textContent = Math.round(state[id]);
-    }
-    needRedraw = true;
-  }
-  window.handleSlider = handleSlider;
-
-  window.onHostCommand = function (name, payload) {
-    if (name === 'updateParams') {
-      ['initialConcentration', 'temperature', 'catalyst', 'time'].forEach(k => {
-        if (payload[k] !== undefined) {
-          state[k] = parseFloat(payload[k]);
-          const el = document.getElementById(k);
-          if (el) el.value = state[k];
-          const r = document.getElementById('readout-' + k);
-          if (r) {
-            if (k === 'initialConcentration') r.textContent = state[k].toFixed(1);
-            else r.textContent = Math.round(state[k]);
-          }
-        }
-      });
-      needRedraw = true;
-    }
+  
+  const state = {
+    conc: 1.0,
+    temp: 25,
+    time: 10,
+    catalyst: 0
   };
 
-  function emitResult() {
-    const r = computeReaction(state.initialConcentration, state.temperature, state.catalyst, state.time);
-    EurekaHost.emitResultUpdate({
-      conversion: { value: EurekaFormat.format(r.conversion, 1), label: '转化率 (%)' },
-      rate: { value: r.rate.toExponential(2), label: '反应速率 (M/s)' },
-      rateConstant: { value: r.k.toExponential(2), label: '速率常数 k (1/s)' },
+  async function recompute() {
+    try {
+      const r = await window.requestCompute('chemistry/reaction-rate', {
+        initial_concentration: state.conc,
+        temperature: state.temp,
+        time: state.time,
+        catalyst: state.catalyst
+      });
+      applyResult(r);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function applyResult(r) {
+    const v = r.values;
+    document.getElementById('stat-conv').textContent = (v.conversion || 0).toFixed(1) + ' %';
+    document.getElementById('stat-rate').textContent = (v.rate || 0).toExponential(2) + ' M/s';
+    document.getElementById('stat-k').textContent = (v.rateConstant || 0).toExponential(2);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw basic graph
+    const padding = 40;
+    const w = canvas.width - padding * 2;
+    const h = canvas.height - padding * 2;
+    
+    ctx.strokeStyle = '#8888aa';
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, padding + h);
+    ctx.lineTo(padding + w, padding + h);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#fff';
+    ctx.fillText('时间 (s)', padding + w/2, padding + h + 20);
+    ctx.fillText('浓度 [A] (M)', padding - 30, padding - 10);
+    
+    // Calculate curve based on k
+    const k = v.rateConstant || 0;
+    const maxT = 120;
+    const maxC = 2.0;
+    
+    ctx.strokeStyle = state.catalyst ? '#ff8c42' : '#00ffaa';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let t = 0; t <= maxT; t++) {
+      const c = state.conc * Math.exp(-k * t);
+      const x = padding + (t / maxT) * w;
+      const y = padding + h - (c / maxC) * h;
+      if (t === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    
+    // Draw current point
+    const currX = padding + (state.time / maxT) * w;
+    const currC = state.conc * Math.exp(-k * state.time);
+    const currY = padding + h - (currC / maxC) * h;
+    
+    ctx.fillStyle = '#ffff00';
+    ctx.beginPath();
+    ctx.arc(currX, currY, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function bindSlider(id, key) {
+    const el = document.getElementById('ctrl-' + id);
+    const val = document.getElementById('val-' + id);
+    el.addEventListener('input', () => {
+      if(val) val.textContent = el.value;
+      state[key] = parseFloat(el.value);
+      recompute();
     });
   }
-  emitResult();
+  
+  bindSlider('conc', 'conc');
+  bindSlider('temp', 'temp');
+  bindSlider('time', 'time');
+  
+  document.getElementById('ctrl-catalyst').addEventListener('change', (e) => {
+    state.catalyst = parseInt(e.target.value, 10);
+    recompute();
+  });
+
+  window.EurekaHost.setTemplateId('chemistry/reaction-rate');
+  recompute().then(() => window.EurekaHost.emitReady(['initial_concentration', 'temperature', 'time', 'catalyst']));
+})();
 </script>
 </body>
 </html>
