@@ -1,4 +1,4 @@
-import dagre from 'dagre';
+import * as dagre from 'dagre';
 import type { LayoutInput, LayoutOutput, Position } from './types';
 import { centerAt } from './types';
 
