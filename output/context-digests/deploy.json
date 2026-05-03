@@ -3,16 +3,16 @@
   "stage": "DEPLOY",
   "source": {
     "path": "output/deploy-output.md",
-    "sourceHash": "6839d8d1e152af318070bd4ec15f095df1937ba63293068cdef24b971b1b9b0e",
-    "artifactSize": 358,
-    "updatedAt": "2026-05-03T05:02:15.828Z"
+    "sourceHash": "90b145829be1af705939ef8ca5689b658b6d5804d185d5dc66b51d34d3c586ca",
+    "artifactSize": 1396,
+    "updatedAt": "2026-05-03T09:39:06.934Z"
   },
   "scope": {
-    "session": "wf-20260503125500",
+    "session": "default",
     "requirementFingerprint": ""
   },
   "content": {
-    "summary": "## 部署说明\r\n本需求所有变更均包含在前端代码层面（Next.js 的路由推演逻辑与渲染组件修改）。\r\n部署策略与现有流程完全一致。\r\n\r\n- 影响范围: 前端 web 服务应用。\r\n- 构建方式: `bash ./scripts/build.sh`\r\n- 线上启动: `bash ./scripts/start.sh`\r\n\r\n无新增环境变量依赖或配置改动要求。",
+    "summary": "## Deployment Summary\r\n本次部署针对 5 项安全与性能缺失测试（TickEngine 调度、大图基准测试、注册表一致性、宏无效导出映射及 postMessage 恶意荷载防护）的补充。代码合并后直接跟随 CI 提升了系统的抗风险基线。\r\n\r\n## Pre-Deployment Checks\r\n- 所有新增测试文件是否在本地通过执行？是（21 个断言全部通过）。\r\n- `jest.config.js` 的 `roots` 路径是否已被正向合并且未破坏现有构建？是（已成功编译运行）。\r\n\r\n## Deployment Actions\r\n- Git Add & Commit：将 `tests/*` 以及 `src/lib/framework/core/__tests__/TickEngine.test.ts`、`jest.config.js` 的变更保存至主分支。\r\n- 发布策略：无特殊的服务器下发操作，该改动随主分支流转并自然成为 CI 门禁的一部分。\r\n\r\n## Post-Deployment Verification\r\n通过在 CI 环境（模拟本地 `npx je",
     "outline": [
       "部署状态 (Deployment Status)",
       "Deployment Summary",
@@ -36,7 +36,11 @@
       "部署检查",
       "部署与验证",
       "Deployment Plan",
-      "Rollback Plan"
+      "Rollback Plan",
+      "Deploy Summary",
+      "Pre-Deployment Checks",
+      "Deployment Actions",
+      "Post-Deployment Verification"
     ],
     "keyPoints": [],
     "rootCause": [],
@@ -56,7 +60,8 @@
       "修改了以下两个文件，统一了状态存储键名：",
       "1. `src/components/AIGeneratorDialog.tsx`",
       "2. `src/components/editor/EditorShell.tsx`",
-      "修改会随着 Next.js 本地开发服务器的热更新直接反映。生产环境需正常推送代码并执行 CI/CD 构建即可部署。"
+      "修改会随着 Next.js 本地开发服务器的热更新直接反映。生产环境需正常推送代码并执行 CI/CD 构建即可部署。",
+      "通过在 CI 环境（模拟本地 `npx jest` 流程）执行验证，若全部 `PASS` 且无 Timeout（尤其是大型基准测试设置的 1000ms 阈值未越界），则证明已成功发挥门禁作用。"
     ],
     "affectedFiles": [
       "src/lib/framework/core/EventBus.ts",
@@ -70,14 +75,19 @@
       "src/lib/templates/physics-registry.ts",
       "src/lib/concept-to-template.ts",
       "src/components/AIGeneratorDialog.tsx",
-      "src/components/editor/EditorShell.tsx"
+      "src/components/editor/EditorShell.tsx",
+      "src/lib/framework/core/__tests__/TickEngine.test.ts"
     ],
     "filesChanged": [],
     "stageOutputReport": {
       "kind": "markdown",
       "artifact": "deploy-output.md",
       "outline": [
-        "部署说明"
+        "Deployment Summary",
+        "Pre-Deployment Checks",
+        "Deployment Actions",
+        "Post-Deployment Verification",
+        "Rollback Plan"
       ],
       "keyPoints": []
     }
@@ -96,28 +106,61 @@
     "hasFilesChanged": false,
     "hasTestEvidence": true
   },
-  "evidenceRefs": [],
+  "evidenceRefs": [
+    {
+      "file": "src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "artifact": "output/deploy-output.md"
+    }
+  ],
   "relevance": {
     "keywords": [
-      "bash",
-      "scripts",
-      "部署说明",
-      "本需求所有变更均包含在前端代码层面",
-      "next",
-      "的路由推演逻辑与渲染组件修改",
-      "部署策略与现有流程完全一致",
-      "影响范围",
-      "前端",
-      "web",
-      "服务应用",
-      "构建方式",
-      "build",
-      "线上启动",
-      "start",
-      "无新增环境变量依赖或配置改动要求"
+      "jest",
+      "deployment",
+      "config",
+      "tickengine",
+      "tests",
+      "src",
+      "test",
+      "summary",
+      "本次部署针对",
+      "项安全与性能缺失测试",
+      "调度",
+      "大图基准测试",
+      "注册表一致性",
+      "宏无效导出映射及",
+      "postmessage",
+      "恶意荷载防护",
+      "的补充",
+      "代码合并后直接跟随",
+      "提升了系统的抗风险基线",
+      "pre",
+      "checks",
+      "所有新增测试文件是否在本地通过执行",
+      "个断言全部通过",
+      "roots",
+      "路径是否已被正向合并且未破坏现有构建",
+      "已成功编译运行",
+      "actions",
+      "git",
+      "add",
+      "commit",
+      "以及",
+      "lib",
+      "framework",
+      "core",
+      "__tests__",
+      "的变更保存至主分支",
+      "发布策略",
+      "无特殊的服务器下发操作",
+      "该改动随主分支流转并自然成为",
+      "门禁的一部分"
     ],
-    "files": [],
-    "modules": []
+    "files": [
+      "src/lib/framework/core/__tests__/TickEngine.test.ts"
+    ],
+    "modules": [
+      "src"
+    ]
   },
-  "generatedAt": "2026-05-03T05:02:23.718Z"
+  "generatedAt": "2026-05-03T09:40:07.696Z"
 }

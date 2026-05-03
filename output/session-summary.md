@@ -1,28 +1,28 @@
 # 📊 /wf Session Summary
 
-> **Requirement**: --session
-> **Session**: `unknown`
-> **Generated**: 2026-05-03T08:55:55.103Z
+> **Requirement**: 实现关键安全与性能校验
+> **Session**: `default`
+> **Generated**: 2026-05-03T09:40:14.325Z
 
 ---
 
 ## 🔍 Analysis Highlights
 
-## 根因 / Root Cause
-通过对比项目源码 (`src/lib/concept-to-template.ts` 路由映射表及 `public/templates/` 目录树) 与初高中《物理》、《化学》、《生物》课程标准，发现当前项目的实验模板库存在明显的“偏科”与“不完备”现象。
-1. **物理学科**：虽然涉猎广泛（已配置浮力、电路、密度、压强、运动学等基础模板），但在光学、复杂电磁学以及高中核心力学（如碰撞、平抛）上缺乏实际可运行的 HTML 模板。
-2. **化学学科**：聚焦于反应速率、酸碱滴定、电解水等经典定量/定性实验，但在初中入门核心操作（如气体制备装置搭建）和有机化学微观结构上缺失。
-3. **生物学科**：目前**完全处于空白状态**，缺乏显微视角交互和宏观生理过程模拟的基础基建。
-4. **渲染瓶颈**：现有的渲染方式主要依赖原生 HTML DOM 和简单 Canvas，导致在处理需要强交互和动态演化计算的场景（如高中的刚体物理碰撞、复杂的有机微观结构 3D 展示）时表现吃力，缺乏专业引擎的辅助。
+## 根因
+当前的 EGPSpace 核心框架虽然已经实现了物理、光学、生物学等基础求解器，并且拥有基本的 EventBus 类型契约测试和 TickEngine 预算饿死拦截。但是，由于实验容器是通过 iframe 进行沙箱隔离和模板加载的，在面对第三方或复杂用户组合输入时，存在两个严重缺陷：
+1. **安全拦截盲区**：缺乏针对恶意 `postMessage` 荷载的测试。如果没有严格的验证机制，攻击者可以通过复杂的对象层次（Prototype Pollution）或包含函数字符串的 JSON 绕过沙箱的安全屏障。
+2. **性能底线不明**：目前框架没有关于数千节点的虚拟装配结构的大图渲染、序列化和首帧运算基准测试（large graph benchmark）。在未来允许学生或教师通过编辑器构建复杂实验时，缺乏明确的性能天花板和熔断度量。
+同时，调度公平性（Fairness）、注册表配置一致性以及宏导出映射的可靠性均未被系统化测试覆盖，可能导致系统崩溃或静默失败。
 
-## 修改范围 / Scope
-本项目当前为一个研究型分析任务，不需要修改现有代码，而是为未来阶段（Phase 3 及以后）的模板扩展提供指引图谱。以下是具体缺失的、高优先级的知识点模板清单：
-
-### 一、 物理 (Physics) 缺失模板
-**【初中高频/强交互需求】**
-*   **光学综合（透镜成像与折射）**：目前缺失实际的交互模板。学生极需能够自由拖动物距、调节透镜焦距，实时观察“倒立放大/缩小”、“实像虚像”转化临界点的沙盒。
-*   **摩擦力探究（控制变量法）**：通过切换不同粗糙表面的木板、增减砝码，动态读取弹簧测力计的示数。
-*   **杠杆与滑轮组**：虽然概念有配置，但缺渲染层。需要能挂载不同位置的钩码，直观体验“省力不省距离”的原理。
+## 修改范围
+| 文件 | 位置 | 修改说明 |
+|------|------|---------|
+| `jest.config.js` | `roots` 数组 | 新增 `<rootDir>/tests` 以扫描外部测试文件夹。 |
+| `tests/postmessage-security.test.ts` | 新增 | 构造包含恶意层级与函数的 postMessage Payload 测试，验证 Iframe 中间件安全拦截与丢弃逻辑。 |
+| `tests/large-graph.benchmark.ts` | 新增 | 构造 >10,000 节点的微元图结构测试 AssemblyParser 的解析和首帧装配性能。 |
+| `src/lib/framework/core/__tests__/TickEngine.test.ts` | 现有文件 | 增加针对多求解器的 `fairness test`。 |
+| `tests/registry-consistency.test.ts` | 新增 | 验证所有 `*-registry.ts` 和 `public/templates` 中 HTML 的匹配一致性。 |
+| `tests/macro-export.test.ts` | 新增 | 测试 `AssemblyParser` 当引入的宏组件导出无效或挂载点拼写错误时的容错表现。 |
 
 > 📄 Full analysis: `output/analysis.md`
 
@@ -31,15 +31,15 @@
 ## 🏗️ Architecture Decisions
 
 ## Architecture Scorecard
-| Attribute | Status | Explanation |
-|---|---|---|
-| Scalability | **PASS** | 引入动态模板按需加载机制，避免一次性加载过多资源。 |
-| Maintainability | **PASS** | `concept-to-template` 严格按照学科领域 (biology, physics, chemistry) 进行子模块划分，易于后续更新。 |
-| Performance | **PASS** | Iframe 沙盒天然隔离，不会导致主 Next.js 线程内存泄漏。 |
+| 维度 | 分数 (1-5) | 评估理由 |
+|------|-----------|---------|
+| 健壮性 | 4 | 通过增加 `postMessage` 防御性测试与大图性能测试，大幅提高了在应对不可信第三方输入和极端规模装配体时的系统健壮性。 |
+| 扩展性 | 4 | 新增的各种测试基于现有的 Jest 框架，且易于通过添加不同的 Payload 字典和宏定义配置文件扩展覆盖场景。 |
+| 安全性 | 5 | Iframe 的消息安全是沙箱的核心，补齐此测试能实质提升整个体系的防护评级。 |
+| 可维护性 | 4 | 测试代码职责单一、边界清晰，易于维护。 |
 
 ## Failure Model
-如果新的实验模板（比如极度依赖 CPU 计算的物理碰撞实验或大量微观粒子运算的化学反应）加载或渲染失败：
-- **场景 1（网络/路径找不到）**：`IframeExperiment` 将侦测到 `<iframe>` 加载错误，并自动回退为文本展示模式，保障核心内容展示不断层。
+- **Failure Mode 1**: `postMessage` Payload 中的死循环或者极度嵌套引发的栈溢出。
 
 > 📄 Full architecture: `output/architecture.md`
 
@@ -47,38 +47,14 @@
 
 ## 💻 Code Changes
 
-```diff
-diff --git a/src/app/page.tsx b/src/app/page.tsx
-@@ -128,4 +128,8 @@
-         const experimentId = schema.meta?.physicsType || mapConceptToExperiment(exp);
-+        if (experimentId && typeof schema === 'object' && schema !== null) {
-+          (schema as Record<string, unknown>)._templateId = experimentId;
-+        }
-         sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));
-diff --git a/src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx
-@@ -49,3 +49,9 @@
- }: ExperimentRendererProps) {
--  if (resolvedTemplateId) {
-+  if (resolvedTemplateId && isApprovedTemplate(resolvedTemplateId)) {
-     return <IframeExperiment templateId={resolvedTemplateId} height={900} onMetadataChange={onMetadataChange} />;
-   }
-+  const backendTid = (aiSchema as (ExperimentSchema & { _templateId?: string }) | null)?._templateId || null;
-+  const selfResolvedTid = resolveTemplateId(aiSchema, aiConfig, experiment, backendTid);
-+  if (selfResolvedTid && isApprovedTemplate(selfResolvedTid)) {
-+    return <IframeExperiment templateId={selfResolvedTid} height={900} onMetadataChange={onMetadataChange} />;
-+  }
-@@ -101,8 +107,15 @@
- ): string | null {
-+  const injectedTid = (aiSchema as (ExperimentSchema & { _templateId?: string }) | null)?._templateId || null;
-   const candidates = [
-+    injectedTid,
-     backendTid,
-     experiment?.templateId,
-     conceptToTemplateId(aiSchema?.meta?.topic ?? aiSchema?.meta?.name),
-     conceptToTemplateId(aiConfig?.topic ?? aiConfig?.name),
-   ];
--  return candidates.find((candidate): candidate is string => isApprovedTemplate(candidate)) ?? null;
-```
+**6 file(s) modified**
+
+- `jest.config.js`
+- `src/lib/framework/core/__tests__/TickEngine.test.ts`
+- `tests/large-graph.test.ts`
+- `tests/macro-export.test.ts`
+- `tests/postmessage-security.test.ts`
+- `tests/registry-consistency.test.ts`
 
 > 📄 Full diff: `output/code.diff`
 

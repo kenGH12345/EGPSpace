@@ -16,7 +16,7 @@ triggers:
     - architect
 load_level: session
 max_tokens: 1200
-generatedAt: 2026-05-03T04:56:25.407Z
+generatedAt: 2026-05-03T09:07:48.377Z
 project: egpspace
 sources:
   - skill-discovery

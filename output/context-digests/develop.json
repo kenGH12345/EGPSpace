@@ -3,16 +3,16 @@
   "stage": "DEVELOP",
   "source": {
     "path": "output/code.diff",
-    "sourceHash": "ad46ef61b6904ff685526450d085ea7f86f929fca94d944d2776b763cb0fd829",
-    "artifactSize": 2375,
-    "updatedAt": "2026-05-03T05:00:03.011Z"
+    "sourceHash": "796c74069c6ed292f7c32798c44890b222a8fefe4612e443ea4bf4293fb28db3",
+    "artifactSize": 3936,
+    "updatedAt": "2026-05-03T09:37:46.637Z"
   },
   "scope": {
-    "session": "wf-20260503125500",
-    "requirementFingerprint": "editorshell experimentrenderer id lock三锁机制安全流转的生命线 p0 resolvetemplateid templateid triple wf 一行代码 主页写入 但能够防范解析成本及意外的不确定性 修复 修复化学映射 健壮性优化建议 实现优化需求 属于高杠杆率的防御性重构 强烈建议做 必须做 成本极低 核心修复界定 消除降级为 的根源体验问题 的模板优先逻辑 解决硬编码导致具体实验报错的问题"
+    "session": "wf-20260503092858.",
+    "requirementFingerprint": "benchmark graph iframe large malicious payload test wf 实现需求 数千节点的大图压力测试 的恶意负载 等关键的安全与性能校验 诸如针对"
   },
   "content": {
-    "summary": "diff --git a/src/app/page.tsx b/src/app/page.tsx\n@@ -128,4 +128,8 @@\n         const experimentId = schema.meta?.physicsType || mapConceptToExperiment(exp);\n+        if (experimentId && typeof schema === 'object' && schema !== null) {\n+          (schema as Record<string, unknown>)._templateId = experimentId;\n+        }\n         sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));\ndiff --git a/src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx\n@@ -",
+    "summary": "diff --git a/jest.config.js b/jest.config.js\n--- a/jest.config.js\n+++ b/jest.config.js\n@@ -3,7 +3,7 @@\n   preset: 'ts-jest',\n   testEnvironment: 'node',\n-  roots: ['<rootDir>/src'],\n+  roots: ['<rootDir>/src', '<rootDir>/tests'],\n   testMatch: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],\ndiff --git a/src/lib/framework/core/__tests__/TickEngine.test.ts b/src/lib/framework/core/__tests__/TickEngine.test.ts\n--- a/src/lib/framework/core/__tests__/TickEngine.test.ts\n+++ b/src/lib/framework/core/__t",
     "outline": [],
     "keyPoints": [],
     "rootCause": [],
@@ -32,7 +32,22 @@
       "a/src/app/page.tsx",
       "b/src/app/page.tsx",
       "a/src/components/ExperimentRenderer.tsx",
-      "b/src/components/ExperimentRenderer.tsx"
+      "b/src/components/ExperimentRenderer.tsx",
+      "a/jest.config.js",
+      "b/jest.config.js",
+      "a/src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "b/src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "a/tests/large-graph.test.ts",
+      "b/tests/large-graph.test.ts",
+      "a/tests/macro-export.test.ts",
+      "b/tests/macro-export.test.ts",
+      "tests/macro-export.test.ts",
+      "a/tests/postmessage-security.test.ts",
+      "b/tests/postmessage-security.test.ts",
+      "tests/postmessage-security.test.ts",
+      "a/tests/registry-consistency.test.ts",
+      "b/tests/registry-consistency.test.ts",
+      "tests/registry-consistency.test.ts"
     ],
     "filesChanged": [
       "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts",
@@ -42,18 +57,41 @@
       "src/components/editor/EditorShell.tsx b/src/components/editor/EditorShell.tsx",
       "src/components/editor/EditorShell.tsx",
       "src/app/page.tsx b/src/app/page.tsx",
-      "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx"
+      "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx",
+      "skipped b/skipped",
+      "skipped",
+      "jest.config.js b/jest.config.js",
+      "jest.config.js",
+      "src/lib/framework/core/__tests__/TickEngine.test.ts b/src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "tests/large-graph.test.ts b/tests/large-graph.test.ts",
+      "tests/large-graph.test.ts",
+      "tests/macro-export.test.ts b/tests/macro-export.test.ts",
+      "tests/macro-export.test.ts",
+      "tests/postmessage-security.test.ts b/tests/postmessage-security.test.ts",
+      "tests/postmessage-security.test.ts",
+      "tests/registry-consistency.test.ts b/tests/registry-consistency.test.ts",
+      "tests/registry-consistency.test.ts"
     ],
     "stageOutputReport": {
       "kind": "diff",
       "artifact": "code.diff",
       "filesChanged": [
-        "src/app/page.tsx b/src/app/page.tsx",
-        "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx",
-        "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts"
+        "jest.config.js b/jest.config.js",
+        "jest.config.js",
+        "src/lib/framework/core/__tests__/TickEngine.test.ts b/src/lib/framework/core/__tests__/TickEngine.test.ts",
+        "src/lib/framework/core/__tests__/TickEngine.test.ts",
+        "tests/large-graph.test.ts b/tests/large-graph.test.ts",
+        "tests/large-graph.test.ts",
+        "tests/macro-export.test.ts b/tests/macro-export.test.ts",
+        "tests/macro-export.test.ts",
+        "tests/postmessage-security.test.ts b/tests/postmessage-security.test.ts",
+        "tests/postmessage-security.test.ts",
+        "tests/registry-consistency.test.ts b/tests/registry-consistency.test.ts",
+        "tests/registry-consistency.test.ts"
       ],
-      "additions": 24,
-      "deletions": 2
+      "additions": 74,
+      "deletions": 1
     }
   },
   "coverage": {
@@ -72,95 +110,170 @@
   },
   "evidenceRefs": [
     {
-      "file": "a/src/app/page.tsx",
+      "file": "a/jest.config.js",
       "artifact": "output/code.diff"
     },
     {
-      "file": "b/src/app/page.tsx",
+      "file": "b/jest.config.js",
       "artifact": "output/code.diff"
     },
     {
-      "file": "a/src/components/ExperimentRenderer.tsx",
+      "file": "a/src/lib/framework/core/__tests__/TickEngine.test.ts",
       "artifact": "output/code.diff"
     },
     {
-      "file": "b/src/components/ExperimentRenderer.tsx",
+      "file": "b/src/lib/framework/core/__tests__/TickEngine.test.ts",
       "artifact": "output/code.diff"
     },
     {
-      "file": "a/src/lib/concept-to-template.ts",
+      "file": "a/tests/large-graph.test.ts",
       "artifact": "output/code.diff"
     },
     {
-      "file": "b/src/lib/concept-to-template.ts",
+      "file": "b/tests/large-graph.test.ts",
       "artifact": "output/code.diff"
     },
     {
-      "file": "src/app/page.tsx b/src/app/page.tsx",
+      "file": "a/tests/macro-export.test.ts",
       "artifact": "output/code.diff"
     },
     {
-      "file": "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx",
+      "file": "b/tests/macro-export.test.ts",
       "artifact": "output/code.diff"
     },
     {
-      "file": "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts",
+      "file": "tests/macro-export.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "a/tests/postmessage-security.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "b/tests/postmessage-security.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "tests/postmessage-security.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "a/tests/registry-consistency.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "b/tests/registry-consistency.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "tests/registry-consistency.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "jest.config.js b/jest.config.js",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "jest.config.js",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/core/__tests__/TickEngine.test.ts b/src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "tests/large-graph.test.ts b/tests/large-graph.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "tests/large-graph.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "tests/macro-export.test.ts b/tests/macro-export.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "tests/postmessage-security.test.ts b/tests/postmessage-security.test.ts",
+      "artifact": "output/code.diff"
+    },
+    {
+      "file": "tests/registry-consistency.test.ts b/tests/registry-consistency.test.ts",
       "artifact": "output/code.diff"
     }
   ],
   "relevance": {
     "keywords": [
-      "candidate",
-      "null",
+      "test",
+      "tests",
       "src",
       "const",
-      "schema",
-      "string",
-      "_templateid",
-      "return",
-      "aischema",
-      "tsx",
-      "resolvedtemplateid",
-      "isapprovedtemplate",
-      "templateid",
-      "onmetadatachange",
-      "selfresolvedtid",
-      "iron",
-      "rusting",
+      "lib",
+      "now",
+      "framework",
+      "new",
+      "import",
+      "graph",
       "diff",
       "git",
-      "experimentid",
-      "meta",
-      "backendtid",
-      "aiconfig",
-      "candidates",
-      "app",
-      "page",
-      "components",
-      "experimentrenderer",
-      "iframeexperiment",
-      "height",
-      "experimentschema",
-      "experiment",
-      "injectedtid",
-      "concepttotemplateid",
-      "topic",
-      "name",
-      "reaction",
-      "rate",
-      "chemistry",
-      "lib"
+      "jest",
+      "engine",
+      "macro",
+      "registry",
+      "__tests__",
+      "tickengine",
+      "performance",
+      "large",
+      "num_nodes",
+      "export",
+      "postmessage",
+      "security",
+      "consistency",
+      "config",
+      "core",
+      "fastsolver",
+      "expect",
+      "file",
+      "mode",
+      "dev",
+      "null",
+      "describe",
+      "builder",
+      "rootdir",
+      "let",
+      "spec",
+      "assembleduration",
+      "console"
     ],
     "files": [
-      "a/src/app/page.tsx",
-      "b/src/app/page.tsx",
-      "a/src/components/ExperimentRenderer.tsx",
-      "b/src/components/ExperimentRenderer.tsx",
-      "a/src/lib/concept-to-template.ts",
-      "b/src/lib/concept-to-template.ts",
-      "src/app/page.tsx b/src/app/page.tsx",
-      "src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx",
-      "src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts"
+      "a/jest.config.js",
+      "b/jest.config.js",
+      "a/src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "b/src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "a/tests/large-graph.test.ts",
+      "b/tests/large-graph.test.ts",
+      "a/tests/macro-export.test.ts",
+      "b/tests/macro-export.test.ts",
+      "tests/macro-export.test.ts",
+      "a/tests/postmessage-security.test.ts",
+      "b/tests/postmessage-security.test.ts",
+      "tests/postmessage-security.test.ts",
+      "a/tests/registry-consistency.test.ts",
+      "b/tests/registry-consistency.test.ts",
+      "tests/registry-consistency.test.ts",
+      "jest.config.js b/jest.config.js",
+      "jest.config.js",
+      "src/lib/framework/core/__tests__/TickEngine.test.ts b/src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "src/lib/framework/core/__tests__/TickEngine.test.ts",
+      "tests/large-graph.test.ts b/tests/large-graph.test.ts",
+      "tests/large-graph.test.ts",
+      "tests/macro-export.test.ts b/tests/macro-export.test.ts",
+      "tests/postmessage-security.test.ts b/tests/postmessage-security.test.ts",
+      "tests/registry-consistency.test.ts b/tests/registry-consistency.test.ts"
     ],
     "modules": [
       "a",
@@ -169,10 +282,21 @@
       "b",
       "a",
       "b",
+      "a",
+      "b",
+      "tests",
+      "a",
+      "b",
+      "tests",
+      "a",
+      "b",
+      "tests",
+      "jest.config.js b",
+      "jest.config.js",
       "src",
       "src",
-      "src"
+      "tests"
     ]
   },
-  "generatedAt": "2026-05-03T05:00:09.304Z"
+  "generatedAt": "2026-05-03T09:37:53.025Z"
 }

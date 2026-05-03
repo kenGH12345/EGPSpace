@@ -186,4 +186,34 @@ describe('TickEngine', () => {
     expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
     expect(performanceSpy).toHaveBeenCalled();
   });
+
+  it('fairness test: prevents slow solvers from continuously starving others across ticks', () => {
+    let now = 0;
+    jest.spyOn(performance, 'now').mockImplementation(() => now);
+    
+    const bus = new EventBus();
+    const engine = new TickEngine(bus);
+    engine.maxBudgetMs = 10;
+    
+    // Slow solver takes 20ms to execute, exceeding budget
+    const slowSolver = {
+      domain: 'slow',
+      update: () => { now += 20; }
+    };
+    const fastSolver = new RecordingSolver('fast');
+    
+    engine.registerSolver(slowSolver);
+    engine.registerSolver(fastSolver);
+    
+    // First tick: starts at idx 0 (slow). Slow takes 20ms, budget exceeded. Fast is skipped.
+    now = 0;
+    engine.tick(0.5);
+    expect(fastSolver.calls).toHaveLength(0);
+    
+    // Second tick: should start at idx 1 (fast) due to fairness rotation.
+    // Fast takes 0ms, then Slow takes 20ms, budget exceeded.
+    now = 0;
+    engine.tick(0.5);
+    expect(fastSolver.calls).toHaveLength(1); // Fast should have run this time!
+  });
 });

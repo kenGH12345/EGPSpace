@@ -1,6 +1,10 @@
 {
-  "capturedAt": "2026-05-03T08:55:02.582Z",
+  "capturedAt": "2026-05-03T09:37:53.017Z",
   "snapshots": {
-    "tests/engine-integration.test.ts": "45eaadc7d07fc2781a7e688ce3d9f12793d1f006e499024ff7abe7c0e2110039"
+    "tests/engine-integration.test.ts": "45eaadc7d07fc2781a7e688ce3d9f12793d1f006e499024ff7abe7c0e2110039",
+    "tests/large-graph.test.ts": "36853719f856b9ec0545977014ec7ca21fc1703a9b960ca16c8100713c473f7b",
+    "tests/macro-export.test.ts": "1b4c734deb30fd2de6841944885a72b7838756f7cba0526e918fe67c324354cb",
+    "tests/postmessage-security.test.ts": "7e5f542a8d0f3f79bc92f406c9162ee46c5ee7ce9e4234f2c61e9e30e18ac5a4",
+    "tests/registry-consistency.test.ts": "da05cfe7b1cc9f08b235f152e5cf97103b28b7564d784148ec5021576b221ede"
   }
 }

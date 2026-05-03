@@ -3,16 +3,16 @@
   "stage": "ARCHITECT",
   "source": {
     "path": "output/architecture.md",
-    "sourceHash": "7eede21464b0593280c40dbe7426e9d7f7a98d8d5c59e64164e0406d0b28e180",
-    "artifactSize": 3818,
-    "updatedAt": "2026-05-03T05:34:52.567Z"
+    "sourceHash": "3cc69f5491ba7d49c256a1554e3ad516c67e64cbaddb3ac3f6e4dfeff29b72f1",
+    "artifactSize": 4032,
+    "updatedAt": "2026-05-03T09:30:50.104Z"
   },
   "scope": {
-    "session": "wf-20260503053412.",
-    "requirementFingerprint": "dom html js matter webgl wf 以突破现有 力学 动态演化场景 化学 在架构设计中建议后续对高中碰撞实验 实现物理与化学缺乏强交互 引入外部轻量级引擎辅助 或特定 方案 有机微观结构 渲染能力的瓶颈"
+    "session": "wf-20260503092858.",
+    "requirementFingerprint": "benchmark graph iframe large malicious payload test wf 实现需求 数千节点的大图压力测试 的恶意负载 等关键的安全与性能校验 诸如针对"
   },
   "content": {
-    "summary": "## Architecture Scorecard\n| Attribute | Status | Explanation |\n|---|---|---|\n| Scalability | **PASS** | 引入动态模板按需加载机制，避免一次性加载过多资源。 |\n| Maintainability | **PASS** | `concept-to-template` 严格按照学科领域 (biology, physics, chemistry) 进行子模块划分，易于后续更新。 |\n| Performance | **PASS** | Iframe 沙盒天然隔离，不会导致主 Next.js 线程内存泄漏。 |",
+    "summary": "## Architecture Scorecard\n| 维度 | 分数 (1-5) | 评估理由 |\n|------|-----------|---------|\n| 健壮性 | 4 | 通过增加 `postMessage` 防御性测试与大图性能测试，大幅提高了在应对不可信第三方输入和极端规模装配体时的系统健壮性。 |\n| 扩展性 | 4 | 新增的各种测试基于现有的 Jest 框架，且易于通过添加不同的 Payload 字典和宏定义配置文件扩展覆盖场景。 |\n| 安全性 | 5 | Iframe 的消息安全是沙箱的核心，补齐此测试能实质提升整个体系的防护评级。 |\n| 可维护性 | 4 | 测试代码职责单一、边界清晰，易于维护。 |",
     "outline": [
       "Architecture Scorecard",
       "核心系统架构 / Core Systems",
@@ -54,7 +54,11 @@
       "Migration / 迁移说明",
       "Migration Safety Case / 迁移安全性分析",
       "Module Breakdown",
-      "API Contracts"
+      "API Contracts",
+      "Failure Mode Analysis",
+      "Component Design",
+      "Core Algorithm Design",
+      "Component Boundaries"
     ],
     "keyPoints": [
       "[Component] *组件链路解析：**"
@@ -99,7 +103,13 @@
       "- 下游消费方：`DEVELOP` 阶段执行代码修改。",
       "- `DEVELOP` 需要将这些策略转换为代码，确保遵循分析文档的影响范围：修改 `page.tsx`, `ExperimentRenderer.tsx`, 和 `concept-to-template.ts` 中的具体逻辑，并使用测试命令 `npx jest` 等保证改动后的正确性。",
       "下游的 `ExperimentRenderer` 组件将无缝接管新的模板 ID。无需更改核心消费端逻辑，只需保证所有新增加的模板能够正确注册进 `isApprovedTemplate` 白名单即可。对于大语言模型，随着路由配置的丰富，能够精确命中的概念将呈几何级数增加。",
-      "在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。"
+      "在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。",
+      "这些测试架构的直接消费者是本项目的 **CI/CD Pipeline** 及 **引擎开发人员**。",
+      "- **CI 流水线整合**：`large-graph.benchmark.ts` 等将被挂载到 `npm run test` 与 PR Check 流程中。一旦基线跌破阈值（如大图解析耗时 > 100ms），流水线将主动阻断合并，这极大减轻了人工 Code Review 的性能评估压力。",
+      "- **Engine Maintainers (引擎开发人员)**：通过 `TickEngine fairness test` 的规范，后续添加新的计算密集型模拟（如 WebGL 计算节点）时，开发者必须遵循测试定义的分时约束，从而保证主线程的高可用性。",
+      "- **Security Audit Team**：依赖 `postmessage-security.test.ts` 作为应用核心沙箱隔离（Iframe）可信度的基石。任何突破该测试集的漏洞提报都将触发安全警报。",
+      "- **CI 流水线整合**：新增的测试会自动由现有的 `pnpm test` 和 `pnpm test:e2e`（若适用）覆盖，下游基础设施无须修改即可直接享用更强的回归防线。",
+      "- **开发者日常指引**：开发者可以单独运行 `npx jest tests/large-graph.benchmark.ts` 来测量其底层逻辑改动对大图解析性能的影响。"
     ],
     "risks": [],
     "downstreamConsumers": [
@@ -151,7 +161,13 @@
       "- 下游消费方：`DEVELOP` 阶段执行代码修改。",
       "- `DEVELOP` 需要将这些策略转换为代码，确保遵循分析文档的影响范围：修改 `page.tsx`, `ExperimentRenderer.tsx`, 和 `concept-to-template.ts` 中的具体逻辑，并使用测试命令 `npx jest` 等保证改动后的正确性。",
       "下游的 `ExperimentRenderer` 组件将无缝接管新的模板 ID。无需更改核心消费端逻辑，只需保证所有新增加的模板能够正确注册进 `isApprovedTemplate` 白名单即可。对于大语言模型，随着路由配置的丰富，能够精确命中的概念将呈几何级数增加。",
-      "在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。"
+      "在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。",
+      "这些测试架构的直接消费者是本项目的 **CI/CD Pipeline** 及 **引擎开发人员**。",
+      "- **CI 流水线整合**：`large-graph.benchmark.ts` 等将被挂载到 `npm run test` 与 PR Check 流程中。一旦基线跌破阈值（如大图解析耗时 > 100ms），流水线将主动阻断合并，这极大减轻了人工 Code Review 的性能评估压力。",
+      "- **Engine Maintainers (引擎开发人员)**：通过 `TickEngine fairness test` 的规范，后续添加新的计算密集型模拟（如 WebGL 计算节点）时，开发者必须遵循测试定义的分时约束，从而保证主线程的高可用性。",
+      "- **Security Audit Team**：依赖 `postmessage-security.test.ts` 作为应用核心沙箱隔离（Iframe）可信度的基石。任何突破该测试集的漏洞提报都将触发安全警报。",
+      "- **CI 流水线整合**：新增的测试会自动由现有的 `pnpm test` 和 `pnpm test:e2e`（若适用）覆盖，下游基础设施无须修改即可直接享用更强的回归防线。",
+      "- **开发者日常指引**：开发者可以单独运行 `npx jest tests/large-graph.benchmark.ts` 来测量其底层逻辑改动对大图解析性能的影响。"
     ],
     "tasks": [],
     "acceptanceCriteria": [],
@@ -179,7 +195,10 @@
       "src/components/ExperimentRenderer.tsx",
       "src/app/page.tsx",
       "public/templates/_shared/physics-engine.js",
-      "public/templates/_shared/webgl-renderer.js"
+      "public/templates/_shared/webgl-renderer.js",
+      "tests/postmessage-security.test.ts",
+      "tests/registry-consistency.test.ts",
+      "tests/large-graph.benchmark.ts"
     ],
     "filesChanged": [],
     "stageOutputReport": {
@@ -188,11 +207,11 @@
       "outline": [
         "Architecture Scorecard",
         "Failure Model",
+        "Component Boundaries",
         "Migration Safety Case",
-        "Module Breakdown",
         "API Contracts",
-        "Consumer Adoption Design / 下游消费方案",
-        "Scenario Coverage / 场景覆盖"
+        "Scenario Coverage",
+        "Consumer Adoption Design / 下游消费方案"
       ],
       "keyPoints": []
     }
@@ -213,71 +232,65 @@
   },
   "evidenceRefs": [
     {
-      "file": "src/lib/concept-to-template.ts",
+      "file": "tests/postmessage-security.test.ts",
       "artifact": "output/architecture.md"
     },
     {
-      "file": "public/templates/_shared/physics-engine.js",
-      "artifact": "output/architecture.md"
-    },
-    {
-      "file": "public/templates/_shared/webgl-renderer.js",
+      "file": "tests/large-graph.benchmark.ts",
       "artifact": "output/architecture.md"
     }
   ],
   "relevance": {
     "keywords": [
-      "pass",
-      "concept",
-      "template",
-      "biology",
-      "physics",
-      "router",
-      "public",
-      "templates",
-      "webgl",
-      "chemistry",
-      "iframe",
+      "test",
+      "tests",
+      "benchmark",
+      "覆盖",
+      "postmessage",
+      "jest",
+      "payload",
+      "large",
+      "graph",
       "场景",
-      "isapprovedtemplate",
-      "_shared",
-      "dom",
-      "schema",
+      "iframe",
+      "failure",
+      "mode",
+      "mitigation",
+      "eventbus",
+      "layer",
+      "tickengine",
+      "registry",
+      "api",
+      "constraint",
+      "pnpm",
       "architecture",
       "scorecard",
-      "attribute",
-      "status",
-      "explanation",
-      "scalability",
-      "引入动态模板按需加载机制",
-      "避免一次性加载过多资源",
-      "maintainability",
-      "严格按照学科领域",
-      "进行子模块划分",
-      "易于后续更新",
-      "performance",
-      "沙盒天然隔离",
-      "不会导致主",
-      "next",
-      "线程内存泄漏",
-      "failure",
-      "model",
-      "如果新的实验模板",
-      "比如极度依赖",
-      "cpu",
-      "计算的物理碰撞实验或大量微观粒子运算的化学反应",
-      "加载或渲染失败"
+      "维度",
+      "分数",
+      "评估理由",
+      "健壮性",
+      "通过增加",
+      "防御性测试与大图性能测试",
+      "大幅提高了在应对不可信第三方输入和极端规模装配体时的系统健壮性",
+      "扩展性",
+      "新增的各种测试基于现有的",
+      "框架",
+      "且易于通过添加不同的",
+      "字典和宏定义配置文件扩展覆盖场景",
+      "安全性",
+      "的消息安全是沙箱的核心",
+      "补齐此测试能实质提升整个体系的防护评级",
+      "可维护性",
+      "测试代码职责单一"
     ],
     "files": [
-      "src/lib/concept-to-template.ts",
-      "public/templates/_shared/physics-engine.js",
-      "public/templates/_shared/webgl-renderer.js"
+      "tests/postmessage-security.test.ts",
+      "tests/large-graph.benchmark.ts"
     ],
     "modules": [
-      "src",
-      "public",
-      "public"
+      "tests",
+      "tests"
     ]
   },
-  "generatedAt": "2026-05-03T05:35:26.810Z"
+  "generatedAt": "2026-05-03T09:30:55.864Z"
 }

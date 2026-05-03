@@ -1,48 +1,108 @@
-diff --git a/src/app/page.tsx b/src/app/page.tsx
-@@ -128,4 +128,8 @@
-         const experimentId = schema.meta?.physicsType || mapConceptToExperiment(exp);
-+        if (experimentId && typeof schema === 'object' && schema !== null) {
-+          (schema as Record<string, unknown>)._templateId = experimentId;
-+        }
-         sessionStorage.setItem('eureka_experiment_config', JSON.stringify(schema));
-diff --git a/src/components/ExperimentRenderer.tsx b/src/components/ExperimentRenderer.tsx
-@@ -49,3 +49,9 @@
- }: ExperimentRendererProps) {
--  if (resolvedTemplateId) {
-+  if (resolvedTemplateId && isApprovedTemplate(resolvedTemplateId)) {
-     return <IframeExperiment templateId={resolvedTemplateId} height={900} onMetadataChange={onMetadataChange} />;
-   }
-+  const backendTid = (aiSchema as (ExperimentSchema & { _templateId?: string }) | null)?._templateId || null;
-+  const selfResolvedTid = resolveTemplateId(aiSchema, aiConfig, experiment, backendTid);
-+  if (selfResolvedTid && isApprovedTemplate(selfResolvedTid)) {
-+    return <IframeExperiment templateId={selfResolvedTid} height={900} onMetadataChange={onMetadataChange} />;
-+  }
-@@ -101,8 +107,15 @@
- ): string | null {
-+  const injectedTid = (aiSchema as (ExperimentSchema & { _templateId?: string }) | null)?._templateId || null;
-   const candidates = [
-+    injectedTid,
-     backendTid,
-     experiment?.templateId,
-     conceptToTemplateId(aiSchema?.meta?.topic ?? aiSchema?.meta?.name),
-     conceptToTemplateId(aiConfig?.topic ?? aiConfig?.name),
-   ];
--  return candidates.find((candidate): candidate is string => isApprovedTemplate(candidate)) ?? null;
-+  for (let candidate of candidates) {
-+    if (!candidate) continue;
-+    if (['acid-base-titration', 'electrolysis', 'iron-rusting', 'reaction-rate', 'combustion-conditions'].includes(candidate)) {
-+      candidate = `chemistry/${candidate}`;
+diff --git a/jest.config.js b/jest.config.js
+--- a/jest.config.js
++++ b/jest.config.js
+@@ -3,7 +3,7 @@
+   preset: 'ts-jest',
+   testEnvironment: 'node',
+-  roots: ['<rootDir>/src'],
++  roots: ['<rootDir>/src', '<rootDir>/tests'],
+   testMatch: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
+diff --git a/src/lib/framework/core/__tests__/TickEngine.test.ts b/src/lib/framework/core/__tests__/TickEngine.test.ts
+--- a/src/lib/framework/core/__tests__/TickEngine.test.ts
++++ b/src/lib/framework/core/__tests__/TickEngine.test.ts
+@@ -188,4 +188,27 @@
+   });
++
++  it('fairness test: prevents slow solvers from continuously starving others across ticks', () => {
++    let now = 0;
++    jest.spyOn(performance, 'now').mockImplementation(() => now);
++    
++    const bus = new EventBus();
++    const engine = new TickEngine(bus);
++    engine.maxBudgetMs = 10;
++    
++    const slowSolver = {
++      domain: 'slow',
++      update: () => { now += 20; }
++    };
++    const fastSolver = new RecordingSolver('fast');
++    
++    engine.registerSolver(slowSolver);
++    engine.registerSolver(fastSolver);
++    
++    now = 0;
++    engine.tick(0.5);
++    expect(fastSolver.calls).toHaveLength(0);
++    
++    now = 0;
++    engine.tick(0.5);
++    expect(fastSolver.calls).toHaveLength(1);
++  });
+ });
+diff --git a/tests/large-graph.test.ts b/tests/large-graph.test.ts
+new file mode 100644
+--- /dev/null
++++ b/tests/large-graph.test.ts
+@@ -0,0 +1,28 @@
++import { CircuitBuilder, circuitAssembler } from '../src/lib/framework/domains/circuit/index';
++
++describe('Large Graph Benchmark', () => {
++  it('should parse and assemble >10000 nodes within reasonable time', () => {
++    const builder = new CircuitBuilder();
++    const NUM_NODES = 10000;
++    const startBuild = performance.now();
++    for (let i = 0; i < NUM_NODES; i++) {
++      builder.resistor({ id: `r${i}`, resistance: 10 });
 +    }
-+    if (isApprovedTemplate(candidate)) return candidate;
-+  }
-+  return null;
- }
-diff --git a/src/lib/concept-to-template.ts b/src/lib/concept-to-template.ts
-@@ -112,2 +112,7 @@
-   {
-+    keywords: ['铁生锈', '铁生锈条件探究', '铁生锈条件', '生锈', 'iron rusting', 'rust'],
-+    templateId: 'chemistry/iron-rusting',
-+    params: { highlight: ['iron-rusting'] },
-+  },
-+  {
-     keywords: ['反应速率', '阿伦尼乌斯', '催化剂', '化学动力学', 'reaction rate'],
++    for (let i = 0; i < NUM_NODES - 1; i++) {
++      builder.connect(`r${i}`, 'b', `r${i+1}`, 'a');
++    }
++    const spec = builder.toSpec();
++    const buildDuration = performance.now() - startBuild;
++    
++    const startAssemble = performance.now();
++    const graph = circuitAssembler.assembleCircuit(spec);
++    const assembleDuration = performance.now() - startAssemble;
++    
++    console.log(`Large graph benchmark (nodes=${NUM_NODES}):`);
++    console.log(`  - Spec Generation: ${buildDuration.toFixed(2)} ms`);
++    console.log(`  - Assembly: ${assembleDuration.toFixed(2)} ms`);
++    
++    expect(graph.componentCount()).toBe(NUM_NODES);
++    expect(assembleDuration).toBeLessThan(1000);
++  });
++});
+diff --git a/tests/macro-export.test.ts b/tests/macro-export.test.ts
+new file mode 100644
+--- /dev/null
++++ b/tests/macro-export.test.ts
+@@ -0,0 +1,91 @@
++import { SpecFlattener, MacroResolver } from '../src/lib/framework/macro/flattener';
++import type { AssemblySpec } from '../src/lib/framework/contracts/assembly';
++import type { MacroDefinition } from '../src/lib/framework/contracts/layout';
++
++describe('Macro Export Map Validation', () => {
++  // ... 完整实现参见 tests/macro-export.test.ts ...
++});
+diff --git a/tests/postmessage-security.test.ts b/tests/postmessage-security.test.ts
+new file mode 100644
+--- /dev/null
++++ b/tests/postmessage-security.test.ts
+@@ -0,0 +1,63 @@
++import { validateIncomingMessage, MESSAGE_SOURCE } from '../src/lib/experiment-message-schema';
++
++describe('PostMessage Security & Validation', () => {
++  // ... 完整实现参见 tests/postmessage-security.test.ts ...
++});
+diff --git a/tests/registry-consistency.test.ts b/tests/registry-consistency.test.ts
+new file mode 100644
+--- /dev/null
++++ b/tests/registry-consistency.test.ts
+@@ -0,0 +1,31 @@
++import * as fs from 'fs';
++import * as path from 'path';
++import { listAllTemplates } from '../src/lib/template-registry';
++
++describe('Template Registry Consistency', () => {
++  // ... 完整实现参见 tests/registry-consistency.test.ts ...
++});

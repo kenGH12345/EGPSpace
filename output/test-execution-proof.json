@@ -1,34 +1,34 @@
 {
-  "executedAt": "2026-05-03T08:55:15.924Z",
+  "executedAt": "2026-05-03T09:38:25.914Z",
   "sessionId": "",
-  "command": "npm test",
+  "command": "pnpm test",
   "exitCode": 1,
   "passed": false,
-  "totalTests": 686,
-  "passedTests": 683,
-  "failedTests": 3,
+  "totalTests": 0,
+  "passedTests": 0,
+  "failedTests": 0,
   "skippedTests": 0,
-  "durationMs": 6915,
-  "passRate": 0.9956,
+  "durationMs": 15,
+  "passRate": 0,
   "testStatus": {
     "overallPassed": false,
-    "rootCause": "test_count_failures",
+    "rootCause": "process_exit_nonzero_without_parseable_counts",
     "contradiction": false,
-    "countsKnown": true,
+    "countsKnown": false,
     "countsPassed": false,
     "processPassed": false,
     "stderrPresent": true,
-    "stderrExcerpt": " \u001b[90m 32 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:29:37)\n\n  ● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)\n\n    expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"success\"\n    Received: undefined\n\n    \u001b[0m \u001b[90m 49 |\u001b[39m       })\u001b[33m;\u001b[39m\n     \u001b[90m 50 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mstateLabel)\u001b[33m.\u001b[39mtoBe(\u001b[32m'等当点'\u001b[39m)\u001b[33m;\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mbadgeKind)\u001b[33m.\u001b[39mtoBe(\u001b[32m'success'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 52 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mpH)\u001b[33m.\u001b[39mtoBeCloseTo(\u001b[35m7\u001b[39m\u001b[33m,\u001b[39m \u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n     \u001b[90m 54 |\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:51:34)\n\n\nTest Suites: 1 failed, 41 passed, 42 total\nTests:       3 failed, 683 passed, 686 total\nSnapshots:   0 total\nTime:        5.564 s\nRan all test suites.",
-    "outputTail": " \u001b[90m 32 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:29:37)\n\n  ● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)\n\n    expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"success\"\n    Received: undefined\n\n    \u001b[0m \u001b[90m 49 |\u001b[39m       })\u001b[33m;\u001b[39m\n     \u001b[90m 50 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mstateLabel)\u001b[33m.\u001b[39mtoBe(\u001b[32m'等当点'\u001b[39m)\u001b[33m;\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mbadgeKind)\u001b[33m.\u001b[39mtoBe(\u001b[32m'success'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 52 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mpH)\u001b[33m.\u001b[39mtoBeCloseTo(\u001b[35m7\u001b[39m\u001b[33m,\u001b[39m \u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n     \u001b[90m 54 |\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:51:34)\n\n\nTest Suites: 1 failed, 41 passed, 42 total\nTests:       3 failed, 683 passed, 686 total\nSnapshots:   0 total\nTime:        5.564 s\nRan all test suites.",
+    "stderrExcerpt": "'pnpm' is not recognized as an internal or external command,\r\noperable program or batch file.",
+    "outputTail": "'pnpm' is not recognized as an internal or external command,\r\noperable program or batch file.",
     "reasons": [
       {
         "dimension": "test-counts",
-        "passed": false,
-        "totalTests": 686,
+        "passed": null,
+        "totalTests": null,
         "passedTests": null,
-        "failedTests": 3,
+        "failedTests": null,
         "skippedTests": null,
-        "message": "683/686 parsed tests passed, 3 failed"
+        "message": "No parseable test counts found in runner output"
       },
       {
         "dimension": "process-exit",
@@ -40,26 +40,9 @@
         "dimension": "stderr",
         "passed": false,
         "message": "stderr was emitted by the test command",
-        "excerpt": " \u001b[90m 32 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:29:37)\n\n  ● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)\n\n    expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"success\"\n    Received: undefined\n\n    \u001b[0m \u001b[90m 49 |\u001b[39m       })\u001b[33m;\u001b[39m\n     \u001b[90m 50 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mstateLabel)\u001b[33m.\u001b[39mtoBe(\u001b[32m'等当点'\u001b[39m)\u001b[33m;\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mbadgeKind)\u001b[33m.\u001b[39mtoBe(\u001b[32m'success'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 52 |\u001b[39m       expect(r\u001b[33m.\u001b[39mvalues\u001b[33m.\u001b[39mpH)\u001b[33m.\u001b[39mtoBeCloseTo(\u001b[35m7\u001b[39m\u001b[33m,\u001b[39m \u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n     \u001b[90m 54 |\u001b[39m\u001b[0m\n\n      at Object.<anonymous> (src/lib/engines/__tests__/atomization-refactor.test.ts:51:34)\n\n\nTest Suites: 1 failed, 41 passed, 42 total\nTests:       3 failed, 683 passed, 686 total\nSnapshots:   0 total\nTime:        5.564 s\nRan all test suites."
-      },
-      {
-        "dimension": "failure-summary",
-        "passed": false,
-        "message": "10 failure line(s) extracted from output",
-        "failures": [
-          "● Console",
-          "FAIL src/lib/engines/__tests__/atomization-refactor.test.ts",
-          "● L2/L4 Atomization Refactor › T-8 BuoyancyEngine display fields › returns materialName/liquidName/hue/badgeKind for floating object",
-          "● L2/L4 Atomization Refactor › T-8 BuoyancyEngine display fields › marks dense object as 铜 with danger badge",
-          "● L2/L4 Atomization Refactor › T-9 TitrationEngine display fields › returns badgeKind/colorName at equivalence point (phenolphthalein)",
-          "● Console",
-          "● Console",
-          "● Console",
-          "Error in event listener for execution.started: Error: Listener error",
-          "FAIL src/lib/engines/__tests__/atomization-refactor.test.ts"
-        ]
+        "excerpt": "'pnpm' is not recognized as an internal or external command,\r\noperable program or batch file."
       }
     ]
   },
-  "proofHash": "6097948da4dbc3af25c0a7e0d7646d95902c8c915a493d421cd0f5c1113d1c3c"
+  "proofHash": "dbede8e5ec754985336833720b73b36b16758d694b42c2fb9dce7124c75bfcdc"
 }

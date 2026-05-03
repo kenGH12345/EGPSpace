@@ -1,38 +1,48 @@
 ## Architecture Scorecard
-| Attribute | Status | Explanation |
-|---|---|---|
-| Scalability | **PASS** | 引入动态模板按需加载机制，避免一次性加载过多资源。 |
-| Maintainability | **PASS** | `concept-to-template` 严格按照学科领域 (biology, physics, chemistry) 进行子模块划分，易于后续更新。 |
-| Performance | **PASS** | Iframe 沙盒天然隔离，不会导致主 Next.js 线程内存泄漏。 |
+| 维度 | 分数 (1-5) | 评估理由 |
+|------|-----------|---------|
+| 健壮性 | 4 | 通过增加 `postMessage` 防御性测试与大图性能测试，大幅提高了在应对不可信第三方输入和极端规模装配体时的系统健壮性。 |
+| 扩展性 | 4 | 新增的各种测试基于现有的 Jest 框架，且易于通过添加不同的 Payload 字典和宏定义配置文件扩展覆盖场景。 |
+| 安全性 | 5 | Iframe 的消息安全是沙箱的核心，补齐此测试能实质提升整个体系的防护评级。 |
+| 可维护性 | 4 | 测试代码职责单一、边界清晰，易于维护。 |
 
 ## Failure Model
-如果新的实验模板（比如极度依赖 CPU 计算的物理碰撞实验或大量微观粒子运算的化学反应）加载或渲染失败：
-- **场景 1（网络/路径找不到）**：`IframeExperiment` 将侦测到 `<iframe>` 加载错误，并自动回退为文本展示模式，保障核心内容展示不断层。
-- **场景 2（白屏/JS报错）**：触发预设的 10 秒超时渲染监控，超时后提示“模板维护中”并平滑回退。
-- **缓解策略**：在模板发布前必须经过严格的 Triple-Lock 测试，并且 `isApprovedTemplate` 提供开关，出现问题可热下线。
+- **Failure Mode 1**: `postMessage` Payload 中的死循环或者极度嵌套引发的栈溢出。
+  - **Mitigation**: 设计测试用例验证我们在 `EventBus` 中的 Payload Schema Validator 会配置 `depth` 限制，直接拒绝超深层级对象，防止主线程栈溢出。
+- **Failure Mode 2**: 大图基准测试在不同性能机器上由于执行环境波动导致误报失败。
+  - **Mitigation**: 测试中应设计预热（Warm-up）阶段，且以多次采样的均值为准，并保留一定的允许抖动区间（如 ±20%），甚至对于只用于 CI/CD 卡点的测试以 `console.warn` 形式输出软失败而不是硬抛出 `Error` 阻塞构建。
+
+## Component Boundaries
+- **测试执行层 (Test Execution Layer)**：包含所有新增的 Jest 测试文件（`tests/*.test.ts`, `tests/*.benchmark.ts`），作为发起探测的一方。
+- **核心框架层 (Core Framework Layer)**：
+  - `TickEngine`：测试调度器分时复用能力的端点。
+  - `AssemblyParser`：大图解析和宏导出的端点。
+  - `EventBus`：Iframe Message 通信的安全校验端点。
+- **外围资源 (Peripheral Resources)**：包括所有的 `registry.ts` 与静态文件 `public/templates`。
 
 ## Migration Safety Case
-对于 `concept-to-template.ts` 新增加大量学科词条的迁移：
-- 不会影响现有的可用映射（后置追加）。
-- 对于新创建但并未落地的模板，我们可以在注册表中设置为 `pending` 状态，这样就算大模型命中了概念，也不会路由到不存在的空模板页面。这是安全的增量迭代模型。
-
-## Module Breakdown
-未来扩展阶段需引入的架构增强：
-1. **`src/lib/concept-to-template.ts`**：继续解耦为 `physics-router.ts`、`chemistry-router.ts`、`biology-router.ts`。
-2. **`public/templates/biology`**：新增基础生物学 UI 组件系统（专门用于处理显微镜视场、细胞染色动画等），扩展 `ui-core.css`。
-3. **`public/templates/_shared/physics-engine.js`**：引入轻量级物理引擎 `matter.js`。针对高中力学的碰撞实验、平抛运动等缺乏强交互和动态演化的场景，利用外部引擎的刚体计算能力，突破原生 HTML DOM 动画的帧率与精度瓶颈。
-4. **`public/templates/_shared/webgl-renderer.js`**：引入特定 WebGL 方案（如基于 Three.js 或纯 WebGL 封装的轻量组件）。针对高中化学中有机微观结构（甲烷、乙酸乙酯等的立体空间构型及断键/成键动态演化）渲染需求，用以弥补 2D Canvas 和 DOM 在三维空间展示上的短板。
+- 本次均为新增测试代码与测试配置修改，不会改变生产环境的主分支执行逻辑。
+- 对 `jest.config.js` 的修改也仅扩充了扫描路径（加入 `<rootDir>/tests`），不会影响现有 `src/` 下已有的测试运行。对流水线为纯加法，无迁移破坏风险。
+- 在后续合并代码时，如果在 CI 环境中因为资源不足引起大图基准测试（large graph benchmark）抖动，可以随时通过 `--testPathIgnorePatterns` 暂时将其旁路，保证集成流水线不阻断。
 
 ## API Contracts
-无需修改后端的 REST 接口。大模型返回的 schema 结构依然符合预期。扩展主要发生在前端路由词库扩展。
+对于新增的基准测试和大图测试，不直接暴露 API 供外部调用，但会设定严格的测试阈值作为内部约束契约：
+- **Large Graph Benchmark**:
+  - `Input`: 自动生成的包含 10000 节点和 10000 边的结构描述 JSON。
+  - `Constraint`: 解析和首帧 Tick 必须在 < 500ms 内收敛（具体阈值视实际测试跑分校准）。
+- **PostMessage Payload**:
+  - `Constraint`: 如果消息含有 `__proto__` 或者函数字符串定义，验证器返回并终止。
+
+## Scenario Coverage
+- **场景 1**：攻击者通过 Iframe 注入原型污染攻击结构。
+  - **覆盖**：`tests/postmessage-security.test.ts`
+- **场景 2**：用户构造万级组件节点，试图卡死计算线程。
+  - **覆盖**：`tests/large-graph.benchmark.ts`
+- **场景 3**：后续开发者添加了一个耗时较长的重型计算求解器。
+  - **覆盖**：`TickEngine fairness test` 保证该求解器不会饿死同时间运行的其他轻量求解器。
+- **场景 4**：模板开发者误删除了 HTML 或编写了未定义的宏端口映射。
+  - **覆盖**：`registry consistency test` 和 `macro invalid export map test`。
 
 ## Consumer Adoption Design / 下游消费方案
-下游的 `ExperimentRenderer` 组件将无缝接管新的模板 ID。无需更改核心消费端逻辑，只需保证所有新增加的模板能够正确注册进 `isApprovedTemplate` 白名单即可。对于大语言模型，随着路由配置的丰富，能够精确命中的概念将呈几何级数增加。
-
-在实际的业务落地中，我们的 AI 代理将直接根据新增的字典返回更加丰富的 `schema._templateId`，并由首页的拦截策略安全地写入 SessionStorage 供消费方读取。这种模式对下游消费者（前端渲染组件和 UI 展示逻辑）是完全透明且平滑的，实现了零侵入扩展。
-
-## Scenario Coverage / 场景覆盖
-本架构扩展指引涵盖以下几大核心应用场景：
-1. **初高中物理综合实验**：解决目前系统缺乏复杂光学（折射/透镜）、力学动态沙盒（滑轮/碰撞）的问题。
-2. **初高中化学实操及微观模拟**：填补气体发生装置互动及高中微观晶体/有机分子立体结构的展示场景。
-3. **生物全流程空白填补**：支持显微镜交互观察、宏观生命周期循环及微观生理现象模拟的全新领域覆盖。
+- **CI 流水线整合**：新增的测试会自动由现有的 `pnpm test` 和 `pnpm test:e2e`（若适用）覆盖，下游基础设施无须修改即可直接享用更强的回归防线。
+- **开发者日常指引**：开发者可以单独运行 `npx jest tests/large-graph.benchmark.ts` 来测量其底层逻辑改动对大图解析性能的影响。
