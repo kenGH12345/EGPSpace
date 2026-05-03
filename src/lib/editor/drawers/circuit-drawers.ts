@@ -173,21 +173,36 @@ export const bulbDrawer: CanvasDrawer = createSvgDrawer({
     const ay = c.anchor.y;
     const glow = Math.max(0, Math.min(1.5, (v?.glow as number) || 0));
     const state = (v?.state as string) || 'normal';
-    
+
     ctx.save();
     ctx.translate(ax, ay);
-    
+
     const cx = 25;
     const cy = 20;
     const intensity = Math.min(1, glow);
-    ctx.fillStyle = `rgba(250, 204, 21, ${0.2 + intensity * 0.8})`;
+    // Off: subtle dark-yellow fill so the bulb shape is still visible
+    // On:  warm yellow fill driven by glow intensity
+    const offColor  = 'rgba(250, 204, 21, 0.04)';
+    const onColor   = `rgba(250, 204, 21, ${intensity})`;
+    ctx.fillStyle = intensity === 0 ? offColor : onColor;
     ctx.beginPath();
     ctx.arc(cx, cy, 12, 0, Math.PI * 2);
     ctx.fill();
+
+    // Add a small halo when glowing (intensity > 0.1)
+    if (intensity > 0.1) {
+      ctx.shadowColor = 'rgba(250, 204, 21, 0.6)';
+      ctx.shadowBlur  = 6 + intensity * 10;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
     ctx.strokeStyle = state === 'overload' ? '#DC2626' : STROKE;
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     ctx.restore();
   }
 });

@@ -125,6 +125,57 @@ describe('CircuitEngine v2.0 · v2 graph path', () => {
     const perComp = result.values.perComponent as Record<string, Record<string, number>>;
     expect(perComp.r1.current).toBeCloseTo(1.2, 2);  // 12/10
   });
+
+  test('switch open breaks circuit → bulb goes dark', () => {
+    // Battery(+9V) → Switch(open) → Bulb → Battery(-)
+    const spec: AssemblySpec<'circuit'> = {
+      domain: 'circuit',
+      components: [
+        { id: 'b1', kind: 'battery', props: { voltage: 9 } },
+        { id: 's1', kind: 'switch', props: { closed: false } },
+        { id: 'l1', kind: 'bulb', props: { resistance: 6, ratedPower: 2 } },
+      ],
+      connections: [
+        { from: { componentId: 'b1', portName: 'positive' }, to: { componentId: 's1', portName: 'in' } },
+        { from: { componentId: 's1', portName: 'out' }, to: { componentId: 'l1', portName: 'a' } },
+        { from: { componentId: 'l1', portName: 'b' }, to: { componentId: 'b1', portName: 'negative' } },
+      ],
+    };
+    // @ts-expect-error — runtime payload
+    const result = circuitEngine.compute({ graph: spec, reactions: false });
+    const perComp = result.values.perComponent as Record<string, Record<string, number>>;
+    // Bulb should have zero current, zero power, zero glow
+    expect(perComp.l1.current).toBeCloseTo(0, 6);
+    expect(perComp.l1.power).toBeCloseTo(0, 6);
+    expect(perComp.l1.glow).toBeCloseTo(0, 6);
+    // Bulb state remains 'normal' because its stamp is resistor, not 'open'
+    expect(perComp.l1.state).toBe('normal');
+    // Switch should report open state (its stamp is kind: 'open')
+    expect(perComp.s1.state).toBe('open');
+  });
+
+  test('switch closed completes circuit → bulb lights up', () => {
+    const spec: AssemblySpec<'circuit'> = {
+      domain: 'circuit',
+      components: [
+        { id: 'b1', kind: 'battery', props: { voltage: 9 } },
+        { id: 's1', kind: 'switch', props: { closed: true } },
+        { id: 'l1', kind: 'bulb', props: { resistance: 6, ratedPower: 2 } },
+      ],
+      connections: [
+        { from: { componentId: 'b1', portName: 'positive' }, to: { componentId: 's1', portName: 'in' } },
+        { from: { componentId: 's1', portName: 'out' }, to: { componentId: 'l1', portName: 'a' } },
+        { from: { componentId: 'l1', portName: 'b' }, to: { componentId: 'b1', portName: 'negative' } },
+      ],
+    };
+    // @ts-expect-error — runtime payload
+    const result = circuitEngine.compute({ graph: spec, reactions: false });
+    const perComp = result.values.perComponent as Record<string, Record<string, number>>;
+    // Total R = 6; I = 9/6 = 1.5A; P = I²R = 2.25*6 = 13.5W; glow = 13.5/2 = 6.75 (capped at 1.5 in display)
+    expect(perComp.l1.current).toBeCloseTo(1.5, 3);
+    expect(perComp.l1.power).toBeCloseTo(13.5, 3);
+    expect(perComp.l1.state).toBe('overload');
+  });
 });
 
 describe('CircuitEngine v2.0 · failure modes', () => {
